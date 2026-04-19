@@ -1,0 +1,43 @@
+# Android / Gradle
+.gradle/
+.gradle-local/
+.gradle-user/
+.g/
+.kotlin/
+build/
+app/build/
+**/build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IDE
+.idea/
+*.iml
+
+# Android local state
+.android-user/
+*.keystore
+*.jks
+
+# Local tooling / agent workspace
+.codex/
+.tmp/
+
+# Local run copies / diagnostics
+_buildrun/
+_buildrun2/
+_buildrun3/
+_buildrun4/
+window_dump*.xml
+
+# Pending manual confirmation before first Git import
+# Default to ignore for safety until scope is confirmed.
+tools/
+openclaw-main/
+
+# OS / temp
+.DS_Store
+Thumbs.db
+*.tmp

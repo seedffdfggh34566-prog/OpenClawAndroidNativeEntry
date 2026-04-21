@@ -1,3 +1,5 @@
+> Historical reference only. Not part of the current AI Sales Assistant V1 primary workflow.
+
 # OpenClaw 在鸿蒙平板上的安装配置总结与 Android 迁移流程
 
 ## 文档目的

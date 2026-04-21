@@ -46,6 +46,7 @@ import com.openclaw.android.nativeentry.ui.home.GatewayCheckSnapshot
 import com.openclaw.android.nativeentry.ui.home.GatewayStatus
 import com.openclaw.android.nativeentry.ui.home.OpenClawLaunchSnapshot
 import com.openclaw.android.nativeentry.ui.home.detectGatewayStatus
+import com.openclaw.android.nativeentry.ui.shell.sampleV1ShellPlaceholderState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -65,6 +66,7 @@ fun OpenClawApp() {
     val currentDestination = backStackEntry?.destination
     val currentScreen = OpenClawDestination.fromRoute(currentDestination?.route) ?: OpenClawDestination.Home
     val isTopLevelScreen = OpenClawDestination.topLevelDestinations.any { it.route == currentScreen.route }
+    val placeholderState = remember { sampleV1ShellPlaceholderState() }
     var gatewaySnapshot by remember { mutableStateOf(GatewayCheckSnapshot()) }
     var launchSnapshot by remember { mutableStateOf(OpenClawLaunchSnapshot()) }
     var chatEntryState by remember { mutableStateOf(OpenClawChatEntryState()) }
@@ -318,8 +320,10 @@ fun OpenClawApp() {
         }
     }
 
-    fun returnFromChat() {
-        chatEntryState = chatEntryState.copy(isLoadingDashboardUrl = false)
+    fun navigateBack() {
+        if (currentScreen == OpenClawDestination.Chat) {
+            chatEntryState = chatEntryState.copy(isLoadingDashboardUrl = false)
+        }
         if (!navController.popBackStack()) {
             navController.navigateToTopLevel(OpenClawDestination.Home)
         }
@@ -347,7 +351,7 @@ fun OpenClawApp() {
                 title = { Text(text = currentScreen.title) },
                 navigationIcon = {
                     if (!isTopLevelScreen) {
-                        IconButton(onClick = ::returnFromChat) {
+                        IconButton(onClick = ::navigateBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "返回",
@@ -379,15 +383,16 @@ fun OpenClawApp() {
     ) { innerPadding ->
         OpenClawNavHost(
             navController = navController,
+            placeholderState = placeholderState,
             gatewaySnapshot = gatewaySnapshot,
             launchSnapshot = launchSnapshot,
             chatEntryState = chatEntryState,
             onRefreshGatewayStatus = ::refreshGatewayStatus,
             modifier = Modifier.padding(innerPadding),
             onStartOpenClawClick = ::startOpenClaw,
-            onEnterChatClick = ::loadChatEntry,
+            onOpenDashboardClick = ::loadChatEntry,
             onRetryChatClick = ::loadChatEntry,
-            onBackFromChatClick = ::returnFromChat,
+            onBackFromChatClick = ::navigateBack,
         )
     }
 }

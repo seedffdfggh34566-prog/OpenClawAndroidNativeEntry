@@ -1,8 +1,10 @@
 ﻿package com.openclaw.android.nativeentry.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ListAlt
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.ListAlt
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -24,35 +26,84 @@ sealed class OpenClawDestination(
 
     data object Home : OpenClawDestination(
         route = "home",
-        title = "OpenClaw",
+        title = "AI 销售助手",
         label = "Home",
         iconVector = Icons.Outlined.Home,
     )
 
-    data object Logs : OpenClawDestination(
-        route = "logs",
-        title = "Logs",
-        label = "Logs",
-        iconVector = Icons.Outlined.ListAlt,
+    data object History : OpenClawDestination(
+        route = "history",
+        title = "历史与状态",
+        label = "History",
+        iconVector = Icons.Outlined.History,
+    )
+
+    data object Ops : OpenClawDestination(
+        route = "ops",
+        title = "运维与诊断",
+        label = "Ops",
+        iconVector = Icons.Outlined.Build,
     )
 
     data object Settings : OpenClawDestination(
         route = "settings",
-        title = "Settings",
+        title = "设置",
         label = "Settings",
         iconVector = Icons.Outlined.Settings,
     )
 
+    data object ProductLearning : OpenClawDestination(
+        route = "product_learning",
+        title = "产品学习",
+        label = "产品学习",
+        iconVector = Icons.AutoMirrored.Outlined.ListAlt,
+    )
+
+    data object ProductProfile : OpenClawDestination(
+        route = "product_profile",
+        title = "产品画像",
+        label = "产品画像",
+        iconVector = Icons.AutoMirrored.Outlined.ListAlt,
+    )
+
+    data object AnalysisResult : OpenClawDestination(
+        route = "analysis_result",
+        title = "分析结果",
+        label = "分析结果",
+        iconVector = Icons.AutoMirrored.Outlined.ListAlt,
+    )
+
+    data object AnalysisReport : OpenClawDestination(
+        route = "analysis_report",
+        title = "分析报告",
+        label = "分析报告",
+        iconVector = Icons.AutoMirrored.Outlined.ListAlt,
+    )
+
+    data object OpsDiagnostics : OpenClawDestination(
+        route = "ops_diagnostics",
+        title = "详细诊断",
+        label = "详细诊断",
+        iconVector = Icons.AutoMirrored.Outlined.ListAlt,
+    )
+
     data object Chat : OpenClawDestination(
         route = "chat",
-        title = "聊天",
-        label = "聊天",
-        iconVector = Icons.Outlined.Home,
+        title = "Dashboard",
+        label = "Dashboard",
+        iconVector = Icons.AutoMirrored.Outlined.ListAlt,
     )
 
     companion object {
-        val topLevelDestinations = listOf(Home, Logs, Settings)
-        private val allDestinations = topLevelDestinations + Chat
+        val topLevelDestinations = listOf(Home, History, Ops, Settings)
+        private val allDestinations = topLevelDestinations + listOf(
+            ProductLearning,
+            ProductProfile,
+            AnalysisResult,
+            AnalysisReport,
+            OpsDiagnostics,
+            Chat,
+        )
 
         fun fromRoute(route: String?): OpenClawDestination? =
             allDestinations.firstOrNull { it.route == route }

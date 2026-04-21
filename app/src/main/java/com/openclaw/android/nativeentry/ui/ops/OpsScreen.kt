@@ -1,4 +1,4 @@
-﻿package com.openclaw.android.nativeentry.ui.home
+package com.openclaw.android.nativeentry.ui.ops
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,17 +20,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.openclaw.android.nativeentry.ui.shell.V1ShellPlaceholderState
+import com.openclaw.android.nativeentry.ui.home.GatewayCheckSnapshot
+import com.openclaw.android.nativeentry.ui.home.GatewayStatusSummaryCard
+import com.openclaw.android.nativeentry.ui.home.OpenClawLaunchSnapshot
+import com.openclaw.android.nativeentry.ui.home.attemptedAtLabel
 
 @Composable
-fun HomeScreen(
-    placeholderState: V1ShellPlaceholderState,
-    onStartAnalysisClick: () -> Unit,
-    onContinueFlowClick: () -> Unit,
-    onViewHistoryClick: () -> Unit,
-    onViewLatestAnalysisClick: () -> Unit,
-    onViewLatestReportClick: () -> Unit,
-    onViewOpsClick: () -> Unit,
+fun OpsScreen(
+    gatewaySnapshot: GatewayCheckSnapshot,
+    launchSnapshot: OpenClawLaunchSnapshot,
+    onRefreshGatewayStatus: () -> Unit,
+    onStartOpenClawClick: () -> Unit,
+    onOpenDashboardClick: () -> Unit,
+    onViewDiagnosticsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -47,43 +49,50 @@ fun HomeScreen(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "AI 销售助手 V1",
+                    text = "运维与诊断",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = "通过产品学习、获客分析和结构化报告，帮助你用更短时间明确下一步销售方向。",
+                    text = "这里保留 Gateway、Dashboard、日志与启动能力，作为 AI 销售助手控制入口的辅助运维区域。",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
-            Button(
-                onClick = onStartAnalysisClick,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(text = "开始分析")
-            }
+            GatewayStatusSummaryCard(
+                snapshot = gatewaySnapshot,
+                onRefreshClick = onRefreshGatewayStatus,
+            )
 
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(
-                        text = "当前工作摘要",
+                        text = "运行入口",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
-                    Text(text = "阶段：${placeholderState.runStatus.stageTitle}", style = MaterialTheme.typography.bodyLarge)
-                    Text(text = "状态：${placeholderState.runStatus.statusLabel}", style = MaterialTheme.typography.bodyMedium)
-                    Text(text = "最近更新时间：${placeholderState.runStatus.updatedAt}", style = MaterialTheme.typography.bodyMedium)
-                    Text(text = placeholderState.runStatus.summary, style = MaterialTheme.typography.bodyMedium)
+                    Button(
+                        onClick = onStartOpenClawClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !launchSnapshot.isLaunching,
+                    ) {
+                        Text(text = if (launchSnapshot.isLaunching) "启动中..." else "启动 OpenClaw")
+                    }
                     OutlinedButton(
-                        onClick = onContinueFlowClick,
+                        onClick = onOpenDashboardClick,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(text = "继续当前流程")
+                        Text(text = "打开 Dashboard 技术入口")
+                    }
+                    OutlinedButton(
+                        onClick = onViewDiagnosticsClick,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(text = "查看详细诊断")
                     }
                 }
             }
@@ -94,51 +103,31 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = "最近结果入口",
+                        text = "诊断摘要",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(text = "最近一次启动尝试：${launchSnapshot.attemptedAtLabel()}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "启动发起说明：${launchSnapshot.dispatchMessage}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "tmux 会话检测：${launchSnapshot.tmuxSessionMessage}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "当前诊断：${launchSnapshot.finalMessage}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "当前说明",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = "ProductProfile：${placeholderState.productProfile.name} (${placeholderState.productProfile.statusLabel})",
+                        text = "该区域保留现有可运行能力，但不再作为产品默认首页。后续真实产品流程仍以后端对象和正式页面为准。",
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    OutlinedButton(
-                        onClick = onViewLatestAnalysisClick,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(text = "查看最新分析结果")
-                    }
-                    OutlinedButton(
-                        onClick = onViewLatestReportClick,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(text = "查看最新分析报告")
-                    }
-                }
-            }
-
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = "辅助入口",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    OutlinedButton(
-                        onClick = onViewHistoryClick,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(text = "查看历史与状态")
-                    }
-                    OutlinedButton(
-                        onClick = onViewOpsClick,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(text = "进入运维与诊断")
-                    }
                 }
             }
         }

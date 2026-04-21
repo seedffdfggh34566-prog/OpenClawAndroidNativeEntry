@@ -35,12 +35,12 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    text = "Settings",
+                    text = "设置",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = "Settings will be connected in a later milestone.",
+                    text = "当前仅保留最小设置占位。后续可在这里接入环境说明、版本信息和轻量产品设置。",
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }

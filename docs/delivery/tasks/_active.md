@@ -26,6 +26,9 @@
 - `task_docs_structure_migration.md`
 - `task_docs_migration_review_and_old_path_cleanup.md`
 - `task_v1_backend_minimum_implementation.md`
+- `task_v1_android_minimum_real_backend_integration.md`
+- `task_v1_android_minimum_product_profile_write_path.md`
+- `task_v1_android_analysis_run_trigger_poll.md`
 
 这些任务当前应视为：
 
@@ -35,13 +38,21 @@
 
 ### 当前推荐的下一正式任务
 
+- 暂无已创建的下一正式 implementation task
+
+最近完成：
+
+- `task_v1_android_analysis_run_trigger_poll.md`
+- `task_v1_android_minimum_product_profile_write_path.md`
 - `task_v1_android_minimum_real_backend_integration.md`
 
 推荐原因：
 
-- 当前项目已完成最小正式后端落地
-- 下一步更适合让 Android 从占位数据切到真实 `/history` 与对象详情读取
-- 真实 OpenClaw runtime 接入可作为 Android 联调后的下一阶段
+- Android 已完成最小真实后端读路径联调
+- Android 已完成最小 ProductProfile 写路径
+- Android 已完成 `lead_analysis` 触发 / 轮询
+- 下一步更适合新建 report_generation 触发 / 轮询任务，或先补 AnalysisResult 详情 contract
+- 真实 OpenClaw runtime 接入可作为 report_generation 或结果详情链路稳定后的后续阶段
 
 ---
 

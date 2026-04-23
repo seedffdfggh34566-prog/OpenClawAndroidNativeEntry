@@ -6,7 +6,7 @@
 
 - 任务名称：Android 壳层最小真实后端对接
 - 建议路径：`docs/delivery/tasks/task_v1_android_minimum_real_backend_integration.md`
-- 当前状态：`planned`
+- 当前状态：`done`
 - 优先级：P0
 
 本任务用于让当前 Android 控制壳层从占位数据切到真实后端读取，但只做最小读路径联调，不扩展到完整分析流程执行。
@@ -179,3 +179,66 @@
 1. Android 发起 `POST /product-profiles` 与最小写路径 task
 2. Android 触发 `POST /analysis-runs` / 轮询 `GET /analysis-runs/{id}` task
 3. 真实 OpenClaw runtime 与 backend 接入 task
+
+---
+
+## 12. 实际产出
+
+本次已完成以下产出：
+
+1. 新增 Android 最小 V1 backend client，默认读取 `http://127.0.0.1:8013`
+2. 新增 `/history`、`ProductProfileDetail`、`AnalysisReport` 对应 DTO 与 JSON parser
+3. 新增 Android 侧 `V1BackendUiState`，覆盖 loading / empty / loaded / failed / fallback debug 状态
+4. Home / History 改为优先读取真实 `/history`
+5. ProductProfile 页改为按 `/history.latest_product_profile.id` 读取真实详情
+6. AnalysisReport 页改为按 `/history.latest_report.id` 读取真实详情
+7. AnalysisResult 页只展示 `/history.latest_analysis_result` 摘要，并标明详情接口不在本轮范围
+8. 新增 Android 真实后端读路径联调 runbook
+9. 新增本任务 handoff
+
+---
+
+## 13. 本次定稿边界
+
+本次明确采用以下边界：
+
+- Android 网络访问采用 `HttpURLConnection + org.json + Dispatchers.IO`
+- 不新增 Retrofit、Hilt、Room、WorkManager 或重型 MVI 框架
+- 不修改后端 API contract
+- 不新增 `GET /lead-analysis-results/{id}`
+- 不改为动态 id 导航；详情页读取 `/history` 中的 latest 对象
+- 不实现写路径、分析触发、轮询、鉴权或多环境配置
+
+---
+
+## 14. 已做验证
+
+本次已完成以下验证：
+
+1. `backend/.venv/bin/python -m pytest backend/tests`
+2. `./gradlew :app:assembleDebug`
+3. `adb devices`
+4. `adb reverse tcp:8013 tcp:8013`
+5. `adb install -r app/build/outputs/apk/debug/app-debug.apk`
+6. `adb shell am start -n com.openclaw.android.nativeentry/.MainActivity`
+7. 后端本地启动后手工调用：
+   - `curl http://127.0.0.1:8013/health`
+   - `curl http://127.0.0.1:8013/history`
+8. 真机 UI smoke：
+   - Home 显示真实 `/history` 摘要
+   - ProductProfile 页显示真实 `GET /product-profiles/{id}` 内容
+   - AnalysisReport 页显示真实 `GET /reports/{id}` 内容
+   - AnalysisResult 页显示 `/history.latest_analysis_result` 摘要
+   - 后端不可达显示失败态与调试降级入口
+   - 临时空库后端显示真实空态
+
+---
+
+## 15. 实际结果说明
+
+当前该任务已满足原验收目标：
+
+1. Android 首页和 History 入口已不再默认展示占位数据
+2. 真实后端读路径已可在真机通过 `adb reverse` 跑通
+3. 占位数据仅作为显式调试降级使用
+4. 后续可继续拆 Android 最小写路径或 analysis-run 触发 / 轮询任务

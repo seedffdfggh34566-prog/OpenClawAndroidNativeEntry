@@ -22,7 +22,6 @@
 当前项目尚未完成：
 
 - 第一批正式开发任务的连续推进
-- Android 壳层与真实后端的最小联调
 - 真实 OpenClaw runtime 与正式后端的最小接入
 
 因此，当前阶段的重点是：
@@ -35,14 +34,18 @@
 
 建议按以下顺序进入下一批任务：
 
-1. `task_v1_android_minimum_real_backend_integration.md`
-2. 真实 OpenClaw runtime 接入 follow-up task
+1. report_generation 触发 / 轮询 follow-up task
+2. AnalysisResult 详情 contract / 页面 follow-up task
+3. 真实 OpenClaw runtime 接入 follow-up task
 
 原因如下：
 
 - 文档结构现已切到新 docs 架构，后续任务应直接按新入口推进
-- 当前最有价值的是让 Android 从占位数据切到真实数据
-- runtime 真实接入应在客户端联调后继续推进
+- Android 已完成从占位数据切到真实 `/history` 与对象详情读取
+- Android 已完成最小 ProductProfile 创建
+- Android 已完成 `lead_analysis` 触发与轮询
+- 当前最有价值的是补齐报告生成或 AnalysisResult 详情链路
+- runtime 真实接入应在客户端运行链路稳定后继续推进
 
 ---
 
@@ -58,7 +61,9 @@
 | `task_docs_structure_migration.md` | 将 docs 从旧编号目录迁移到新 docs 架构 | `done` |
 | `task_docs_migration_review_and_old_path_cleanup.md` | 复核 docs 迁移结果并清理旧路径与旧项目叙事残留 | `done` |
 | `task_v1_backend_minimum_implementation.md` | 落地 V1 最小正式后端实现 | `done` |
-| `task_v1_android_minimum_real_backend_integration.md` | 让 Android 壳层切到真实 `/history`、`ProductProfile` 与报告读取 | `planned` |
+| `task_v1_android_minimum_real_backend_integration.md` | 让 Android 壳层切到真实 `/history`、`ProductProfile` 与报告读取 | `done` |
+| `task_v1_android_minimum_product_profile_write_path.md` | 让 Android 壳层创建第一版 ProductProfile 草稿 | `done` |
+| `task_v1_android_analysis_run_trigger_poll.md` | 让 Android 壳层触发 lead_analysis 并轮询 AgentRun | `done` |
 
 ---
 

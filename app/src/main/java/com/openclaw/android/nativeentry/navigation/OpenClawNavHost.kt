@@ -19,16 +19,30 @@ import com.openclaw.android.nativeentry.ui.shell.AnalysisResultScreen
 import com.openclaw.android.nativeentry.ui.shell.HistoryScreen
 import com.openclaw.android.nativeentry.ui.shell.ProductLearningScreen
 import com.openclaw.android.nativeentry.ui.shell.ProductProfileScreen
+import com.openclaw.android.nativeentry.ui.shell.V1BackendUiState
 import com.openclaw.android.nativeentry.ui.shell.V1ShellPlaceholderState
 
 @Composable
 fun OpenClawNavHost(
     navController: NavHostController,
+    backendState: V1BackendUiState,
     placeholderState: V1ShellPlaceholderState,
     gatewaySnapshot: GatewayCheckSnapshot,
     launchSnapshot: OpenClawLaunchSnapshot,
     chatEntryState: OpenClawChatEntryState,
     onRefreshGatewayStatus: () -> Unit,
+    onRefreshBackend: () -> Unit,
+    onUseDebugFallback: () -> Unit,
+    onLoadLatestProductProfile: () -> Unit,
+    onLoadLatestReport: () -> Unit,
+    productName: String,
+    productDescription: String,
+    sourceNotes: String,
+    onProductNameChange: (String) -> Unit,
+    onProductDescriptionChange: (String) -> Unit,
+    onSourceNotesChange: (String) -> Unit,
+    onSubmitProductProfile: () -> Unit,
+    onTriggerLeadAnalysis: () -> Unit,
     modifier: Modifier = Modifier,
     onStartOpenClawClick: () -> Unit,
     onOpenDashboardClick: () -> Unit,
@@ -42,6 +56,7 @@ fun OpenClawNavHost(
     ) {
         composable(OpenClawDestination.Home.route) {
             HomeScreen(
+                backendState = backendState,
                 placeholderState = placeholderState,
                 onStartAnalysisClick = { navController.navigate(OpenClawDestination.ProductLearning.route) },
                 onContinueFlowClick = { navController.navigate(OpenClawDestination.ProductProfile.route) },
@@ -49,14 +64,19 @@ fun OpenClawNavHost(
                 onViewLatestAnalysisClick = { navController.navigate(OpenClawDestination.AnalysisResult.route) },
                 onViewLatestReportClick = { navController.navigate(OpenClawDestination.AnalysisReport.route) },
                 onViewOpsClick = { navController.navigateToTopLevel(OpenClawDestination.Ops) },
+                onRefreshBackendClick = onRefreshBackend,
+                onUseDebugFallbackClick = onUseDebugFallback,
             )
         }
         composable(OpenClawDestination.History.route) {
             HistoryScreen(
+                backendState = backendState,
                 placeholderState = placeholderState,
                 onOpenProductProfileClick = { navController.navigate(OpenClawDestination.ProductProfile.route) },
                 onOpenAnalysisResultClick = { navController.navigate(OpenClawDestination.AnalysisResult.route) },
                 onOpenAnalysisReportClick = { navController.navigate(OpenClawDestination.AnalysisReport.route) },
+                onRefreshBackendClick = onRefreshBackend,
+                onUseDebugFallbackClick = onUseDebugFallback,
             )
         }
         composable(OpenClawDestination.Ops.route) {
@@ -74,26 +94,40 @@ fun OpenClawNavHost(
         }
         composable(OpenClawDestination.ProductLearning.route) {
             ProductLearningScreen(
+                backendState = backendState,
                 placeholderState = placeholderState,
+                productName = productName,
+                productDescription = productDescription,
+                sourceNotes = sourceNotes,
+                onProductNameChange = onProductNameChange,
+                onProductDescriptionChange = onProductDescriptionChange,
+                onSourceNotesChange = onSourceNotesChange,
+                onSubmitProductProfileClick = onSubmitProductProfile,
                 onContinueClick = { navController.navigate(OpenClawDestination.ProductProfile.route) },
                 onOpenOpsClick = { navController.navigateToTopLevel(OpenClawDestination.Ops) },
             )
         }
         composable(OpenClawDestination.ProductProfile.route) {
             ProductProfileScreen(
+                backendState = backendState,
                 placeholderState = placeholderState,
                 onContinueClick = { navController.navigate(OpenClawDestination.AnalysisResult.route) },
+                onRefreshClick = onLoadLatestProductProfile,
+                onTriggerLeadAnalysisClick = onTriggerLeadAnalysis,
             )
         }
         composable(OpenClawDestination.AnalysisResult.route) {
             AnalysisResultScreen(
+                backendState = backendState,
                 placeholderState = placeholderState,
                 onContinueClick = { navController.navigate(OpenClawDestination.AnalysisReport.route) },
             )
         }
         composable(OpenClawDestination.AnalysisReport.route) {
             AnalysisReportScreen(
+                backendState = backendState,
                 placeholderState = placeholderState,
+                onRefreshClick = onLoadLatestReport,
             )
         }
         composable(OpenClawDestination.OpsDiagnostics.route) {

@@ -30,6 +30,11 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.openclaw.android.nativeentry.data.backend.AnalysisRunCreateRequestDto
+import com.openclaw.android.nativeentry.data.backend.BackendReadResult
+import com.openclaw.android.nativeentry.data.backend.HistoryResponseDto
+import com.openclaw.android.nativeentry.data.backend.ProductProfileCreateRequestDto
+import com.openclaw.android.nativeentry.data.backend.V1BackendClient
 import com.openclaw.android.nativeentry.navigation.OpenClawDestination
 import com.openclaw.android.nativeentry.navigation.OpenClawNavHost
 import com.openclaw.android.nativeentry.navigation.navigateToTopLevel
@@ -46,6 +51,8 @@ import com.openclaw.android.nativeentry.ui.home.GatewayCheckSnapshot
 import com.openclaw.android.nativeentry.ui.home.GatewayStatus
 import com.openclaw.android.nativeentry.ui.home.OpenClawLaunchSnapshot
 import com.openclaw.android.nativeentry.ui.home.detectGatewayStatus
+import com.openclaw.android.nativeentry.ui.shell.V1BackendUiState
+import com.openclaw.android.nativeentry.ui.shell.V1SectionState
 import com.openclaw.android.nativeentry.ui.shell.sampleV1ShellPlaceholderState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -53,6 +60,8 @@ import kotlinx.coroutines.launch
 
 private const val GatewayLaunchTimeoutMillis = 75_000L
 private const val GatewayLaunchPollIntervalMillis = 1_500L
+private const val AnalysisRunPollAttempts = 10
+private const val AnalysisRunPollIntervalMillis = 1_000L
 private val DashboardUrlPattern = Regex("""http://127\.0\.0\.1:18789[^\s]*#token=[^\s]+""")
 
 @Composable
@@ -62,18 +71,31 @@ fun OpenClawApp() {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val backendClient = remember { V1BackendClient() }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
     val currentScreen = OpenClawDestination.fromRoute(currentDestination?.route) ?: OpenClawDestination.Home
     val isTopLevelScreen = OpenClawDestination.topLevelDestinations.any { it.route == currentScreen.route }
     val placeholderState = remember { sampleV1ShellPlaceholderState() }
+    var backendState by remember { mutableStateOf(V1BackendUiState()) }
+    var productName by remember { mutableStateOf("") }
+    var productDescription by remember { mutableStateOf("") }
+    var sourceNotes by remember { mutableStateOf("") }
     var gatewaySnapshot by remember { mutableStateOf(GatewayCheckSnapshot()) }
     var launchSnapshot by remember { mutableStateOf(OpenClawLaunchSnapshot()) }
     var chatEntryState by remember { mutableStateOf(OpenClawChatEntryState()) }
     var lastDashboardUrlSummary by remember { mutableStateOf<DashboardUrlSummary?>(null) }
     var latestRefreshToken by remember { mutableIntStateOf(0) }
     var refreshJob by remember { mutableStateOf<Job?>(null) }
+    var backendRefreshJob by remember { mutableStateOf<Job?>(null) }
+    var productProfileLoadJob by remember { mutableStateOf<Job?>(null) }
+    var productProfileCreateJob by remember { mutableStateOf<Job?>(null) }
+    var analysisRunJob by remember { mutableStateOf<Job?>(null) }
+    var reportLoadJob by remember { mutableStateOf<Job?>(null) }
     var launchPollingJob by remember { mutableStateOf<Job?>(null) }
+    val loadedHistory = backendState.loadedHistory()
+    val latestProductProfileId = loadedHistory?.latestProductProfile?.id
+    val latestReportId = loadedHistory?.latestReport?.id
 
     fun updateGatewaySnapshot(status: GatewayStatus) {
         gatewaySnapshot = gatewaySnapshot.copy(
@@ -95,6 +117,251 @@ fun OpenClawApp() {
             val detectedStatus = detectGatewayStatus()
             if (requestToken == latestRefreshToken && launchPollingJob?.isActive != true) {
                 updateGatewaySnapshot(detectedStatus)
+            }
+        }
+    }
+
+    fun useDebugFallback() {
+        backendState = backendState.copy(isDebugFallbackEnabled = true)
+    }
+
+    fun refreshV1History() {
+        backendRefreshJob?.cancel()
+        backendState = backendState.copy(
+            history = V1SectionState.Loading,
+            productProfile = V1SectionState.Idle,
+            report = V1SectionState.Idle,
+            isDebugFallbackEnabled = false,
+        )
+        backendRefreshJob = scope.launch {
+            when (val result = backendClient.getHistory()) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(history = V1SectionState.Failed(result.error))
+                }
+
+                is BackendReadResult.Success -> {
+                    backendState = backendState.copy(
+                        history = if (result.value.isEmpty) {
+                            V1SectionState.Empty
+                        } else {
+                            V1SectionState.Loaded(result.value)
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    fun loadLatestProductProfile() {
+        val profileId = backendState.loadedHistory()?.latestProductProfile?.id
+        if (profileId.isNullOrBlank()) {
+            backendState = backendState.copy(productProfile = V1SectionState.Empty)
+            return
+        }
+
+        productProfileLoadJob?.cancel()
+        backendState = backendState.copy(productProfile = V1SectionState.Loading)
+        productProfileLoadJob = scope.launch {
+            when (val result = backendClient.getProductProfile(profileId)) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(productProfile = V1SectionState.Failed(result.error))
+                }
+
+                is BackendReadResult.Success -> {
+                    backendState = backendState.copy(productProfile = V1SectionState.Loaded(result.value))
+                }
+            }
+        }
+    }
+
+    fun loadLatestReport() {
+        val reportId = backendState.loadedHistory()?.latestReport?.id
+        if (reportId.isNullOrBlank()) {
+            backendState = backendState.copy(report = V1SectionState.Empty)
+            return
+        }
+
+        reportLoadJob?.cancel()
+        backendState = backendState.copy(report = V1SectionState.Loading)
+        reportLoadJob = scope.launch {
+            when (val result = backendClient.getReport(reportId)) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(report = V1SectionState.Failed(result.error))
+                }
+
+                is BackendReadResult.Success -> {
+                    backendState = backendState.copy(report = V1SectionState.Loaded(result.value))
+                }
+            }
+        }
+    }
+
+    fun submitProductProfile() {
+        val trimmedName = productName.trim()
+        val trimmedDescription = productDescription.trim()
+        val trimmedSourceNotes = sourceNotes.trim()
+
+        if (trimmedName.isBlank() || trimmedDescription.isBlank()) {
+            return
+        }
+
+        productProfileCreateJob?.cancel()
+        backendState = backendState.copy(productProfileCreate = V1SectionState.Loading)
+        productProfileCreateJob = scope.launch {
+            val createResult = backendClient.createProductProfile(
+                ProductProfileCreateRequestDto(
+                    name = trimmedName,
+                    oneLineDescription = trimmedDescription,
+                    sourceNotes = trimmedSourceNotes.ifBlank { null },
+                ),
+            )
+
+            when (createResult) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(
+                        productProfileCreate = V1SectionState.Failed(createResult.error),
+                    )
+                }
+
+                is BackendReadResult.Success -> {
+                    val createdProfile = createResult.value.productProfile
+                    backendState = backendState.copy(
+                        productProfileCreate = V1SectionState.Loaded(createResult.value),
+                        productProfile = V1SectionState.Loading,
+                    )
+
+                    when (val profileResult = backendClient.getProductProfile(createdProfile.id)) {
+                        is BackendReadResult.Failure -> {
+                            backendState = backendState.copy(
+                                productProfile = V1SectionState.Failed(profileResult.error),
+                            )
+                        }
+
+                        is BackendReadResult.Success -> {
+                            backendState = backendState.copy(
+                                productProfile = V1SectionState.Loaded(profileResult.value),
+                            )
+                        }
+                    }
+
+                    when (val historyResult = backendClient.getHistory()) {
+                        is BackendReadResult.Failure -> {
+                            backendState = backendState.copy(
+                                history = V1SectionState.Failed(historyResult.error),
+                            )
+                        }
+
+                        is BackendReadResult.Success -> {
+                            backendState = backendState.copy(
+                                history = if (historyResult.value.isEmpty) {
+                                    V1SectionState.Empty
+                                } else {
+                                    V1SectionState.Loaded(historyResult.value)
+                                },
+                                isDebugFallbackEnabled = false,
+                            )
+                        }
+                    }
+
+                    navController.navigate(OpenClawDestination.ProductProfile.route) {
+                        launchSingleTop = true
+                    }
+                }
+            }
+        }
+    }
+
+    fun triggerLeadAnalysis() {
+        val profileId = when (val profileState = backendState.productProfile) {
+            is V1SectionState.Loaded -> profileState.value.id
+            else -> backendState.loadedHistory()?.latestProductProfile?.id
+        }
+
+        if (profileId.isNullOrBlank()) {
+            backendState = backendState.copy(analysisRun = V1SectionState.Empty)
+            return
+        }
+
+        analysisRunJob?.cancel()
+        backendState = backendState.copy(analysisRun = V1SectionState.Loading)
+        analysisRunJob = scope.launch {
+            val createResult = backendClient.createAnalysisRun(
+                AnalysisRunCreateRequestDto(
+                    runType = "lead_analysis",
+                    productProfileId = profileId,
+                    leadAnalysisResultId = null,
+                    triggerSource = "android_product_profile",
+                ),
+            )
+
+            val runId = when (createResult) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(
+                        analysisRun = V1SectionState.Failed(createResult.error),
+                    )
+                    return@launch
+                }
+
+                is BackendReadResult.Success -> {
+                    createResult.value.agentRun.id
+                }
+            }
+
+            var finalSucceeded = false
+            var attempt = 0
+            while (attempt < AnalysisRunPollAttempts && !finalSucceeded) {
+                val detailResult = backendClient.getAnalysisRun(runId)
+                when (detailResult) {
+                    is BackendReadResult.Failure -> {
+                        backendState = backendState.copy(
+                            analysisRun = V1SectionState.Failed(detailResult.error),
+                        )
+                        return@launch
+                    }
+
+                    is BackendReadResult.Success -> {
+                        backendState = backendState.copy(
+                            analysisRun = V1SectionState.Loaded(detailResult.value),
+                        )
+
+                        val run = detailResult.value.agentRun
+                        if (run.status == "succeeded") {
+                            finalSucceeded = true
+                        } else if (run.status == "failed" || run.status == "cancelled") {
+                            return@launch
+                        }
+                    }
+                }
+
+                attempt += 1
+                if (attempt < AnalysisRunPollAttempts && !finalSucceeded) {
+                    delay(AnalysisRunPollIntervalMillis)
+                }
+            }
+
+            if (!finalSucceeded) {
+                return@launch
+            }
+
+            when (val historyResult = backendClient.getHistory()) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(history = V1SectionState.Failed(historyResult.error))
+                }
+
+                is BackendReadResult.Success -> {
+                    backendState = backendState.copy(
+                        history = if (historyResult.value.isEmpty) {
+                            V1SectionState.Empty
+                        } else {
+                            V1SectionState.Loaded(historyResult.value)
+                        },
+                        isDebugFallbackEnabled = false,
+                    )
+                }
+            }
+
+            navController.navigate(OpenClawDestination.AnalysisResult.route) {
+                launchSingleTop = true
             }
         }
     }
@@ -331,12 +598,26 @@ fun OpenClawApp() {
 
     LaunchedEffect(Unit) {
         refreshGatewayStatus()
+        refreshV1History()
+    }
+
+    LaunchedEffect(currentScreen, latestProductProfileId) {
+        if (currentScreen == OpenClawDestination.ProductProfile) {
+            loadLatestProductProfile()
+        }
+    }
+
+    LaunchedEffect(currentScreen, latestReportId) {
+        if (currentScreen == OpenClawDestination.AnalysisReport) {
+            loadLatestReport()
+        }
     }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 refreshGatewayStatus()
+                refreshV1History()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -383,11 +664,24 @@ fun OpenClawApp() {
     ) { innerPadding ->
         OpenClawNavHost(
             navController = navController,
+            backendState = backendState,
             placeholderState = placeholderState,
             gatewaySnapshot = gatewaySnapshot,
             launchSnapshot = launchSnapshot,
             chatEntryState = chatEntryState,
             onRefreshGatewayStatus = ::refreshGatewayStatus,
+            onRefreshBackend = ::refreshV1History,
+            onUseDebugFallback = ::useDebugFallback,
+            onLoadLatestProductProfile = ::loadLatestProductProfile,
+            onLoadLatestReport = ::loadLatestReport,
+            productName = productName,
+            productDescription = productDescription,
+            sourceNotes = sourceNotes,
+            onProductNameChange = { productName = it },
+            onProductDescriptionChange = { productDescription = it },
+            onSourceNotesChange = { sourceNotes = it },
+            onSubmitProductProfile = ::submitProductProfile,
+            onTriggerLeadAnalysis = ::triggerLeadAnalysis,
             modifier = Modifier.padding(innerPadding),
             onStartOpenClawClick = ::startOpenClaw,
             onOpenDashboardClick = ::loadChatEntry,
@@ -453,3 +747,6 @@ private fun maskDashboardUrlForSummary(url: String): String =
 
 private fun generateChatAttemptId(): String =
     "chat-${System.currentTimeMillis().toString(16)}"
+
+private fun V1BackendUiState.loadedHistory(): HistoryResponseDto? =
+    (history as? V1SectionState.Loaded)?.value

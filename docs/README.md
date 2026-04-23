@@ -146,6 +146,6 @@ docs/
 
 当前最推荐的下一步执行顺序为：
 
-1. 进入 `docs/delivery/tasks/task_v1_android_minimum_real_backend_integration.md`
-2. 让 Android 首先对接 `/history` 与对象详情读取
-3. 在客户端联调稳定后，再拆真实 OpenClaw runtime 接入任务
+1. 为 report_generation 触发 / 轮询新建 follow-up task
+2. 决定是否补 `GET /lead-analysis-results/{id}` contract
+3. 在客户端运行链路稳定后，再拆真实 OpenClaw runtime 接入任务

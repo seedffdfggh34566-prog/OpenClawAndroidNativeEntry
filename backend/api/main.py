@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import logging
+from time import perf_counter
+from uuid import uuid4
 
 from fastapi import BackgroundTasks, Depends, FastAPI
 from sqlalchemy.orm import Session
@@ -8,6 +11,11 @@ from sqlalchemy.orm import Session
 from backend.api import serializers, services
 from backend.api.config import get_settings
 from backend.api.database import get_db_session, init_db
+from backend.api.logging_utils import (
+    configure_logging,
+    reset_request_context,
+    set_request_context,
+)
 from backend.api.schemas import (
     AnalysisRunCreateRequest,
     AnalysisRunCreateResponse,
@@ -19,9 +27,12 @@ from backend.api.schemas import (
     ReportDetailResponse,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    configure_logging()
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -30,6 +41,48 @@ def create_app() -> FastAPI:
 
     init_db()
     app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
+
+    @app.middleware("http")
+    async def request_logging_middleware(request, call_next):
+        request_id = request.headers.get("X-Request-ID") or uuid4().hex
+        token = set_request_context(request_id)
+        started_at = perf_counter()
+
+        try:
+            response = await call_next(request)
+        except Exception as exc:  # noqa: BLE001
+            duration_ms = round((perf_counter() - started_at) * 1000, 3)
+            logger.exception(
+                "request.failed",
+                extra={
+                    "event": "request.failed",
+                    "request_id": request_id,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status": "failed",
+                    "duration_ms": duration_ms,
+                    "error": str(exc),
+                },
+            )
+            reset_request_context(token)
+            raise
+
+        duration_ms = round((perf_counter() - started_at) * 1000, 3)
+        response.headers["X-Request-ID"] = request_id
+        logger.info(
+            "request.completed",
+            extra={
+                "event": "request.completed",
+                "request_id": request_id,
+                "method": request.method,
+                "path": request.url.path,
+                "status": "succeeded",
+                "status_code": response.status_code,
+                "duration_ms": duration_ms,
+            },
+        )
+        reset_request_context(token)
+        return response
 
     @app.get("/health")
     def health() -> dict[str, str]:

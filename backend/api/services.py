@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import timezone
+import logging
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -11,6 +12,8 @@ from backend.api import models, schemas
 from backend.api.config import get_settings
 from backend.api.database import get_session_factory
 from backend.runtime.adapter import StubRuntimeAdapter
+
+logger = logging.getLogger(__name__)
 
 
 def generate_prefixed_id(prefix: str) -> str:
@@ -39,6 +42,13 @@ def create_product_profile(
     session.add(profile)
     session.commit()
     session.refresh(profile)
+    logger.info(
+        "product_profile.created",
+        extra={
+            "event": "product_profile.created",
+            "status": profile.status,
+        },
+    )
     return profile
 
 
@@ -127,6 +137,16 @@ def create_analysis_run(
     session.add(agent_run)
     session.commit()
     session.refresh(agent_run)
+    logger.info(
+        "analysis_run.created",
+        extra={
+            "event": "analysis_run.created",
+            "agent_run_id": agent_run.id,
+            "run_type": agent_run.run_type,
+            "status": agent_run.status,
+            "runtime_provider": agent_run.runtime_provider,
+        },
+    )
     return agent_run
 
 
@@ -144,6 +164,17 @@ def process_agent_run(run_id: str) -> None:
         agent_run.runtime_provider = adapter.provider_name
         agent_run.runtime_metadata = adapter.runtime_metadata()
         session.commit()
+        logger.info(
+            "analysis_run.started",
+            extra={
+                "event": "analysis_run.started",
+                "agent_run_id": agent_run.id,
+                "run_type": agent_run.run_type,
+                "status": agent_run.status,
+                "runtime_provider": agent_run.runtime_provider,
+                "trace_id": agent_run.runtime_metadata.get("trace_id"),
+            },
+        )
 
         if agent_run.run_type == "lead_analysis":
             _process_lead_analysis(session, agent_run, adapter)
@@ -155,6 +186,17 @@ def process_agent_run(run_id: str) -> None:
         agent_run.status = "succeeded"
         agent_run.ended_at = models.utcnow()
         session.commit()
+        logger.info(
+            "analysis_run.succeeded",
+            extra={
+                "event": "analysis_run.succeeded",
+                "agent_run_id": agent_run.id,
+                "run_type": agent_run.run_type,
+                "status": agent_run.status,
+                "runtime_provider": agent_run.runtime_provider,
+                "trace_id": agent_run.runtime_metadata.get("trace_id"),
+            },
+        )
     except Exception as exc:  # noqa: BLE001
         session.rollback()
         failed_run = session.get(models.AgentRun, run_id)
@@ -165,6 +207,20 @@ def process_agent_run(run_id: str) -> None:
                 failed_run.started_at = models.utcnow()
             failed_run.ended_at = models.utcnow()
             session.commit()
+            logger.exception(
+                "analysis_run.failed",
+                extra={
+                    "event": "analysis_run.failed",
+                    "agent_run_id": failed_run.id,
+                    "run_type": failed_run.run_type,
+                    "status": failed_run.status,
+                    "runtime_provider": failed_run.runtime_provider,
+                    "trace_id": failed_run.runtime_metadata.get("trace_id")
+                    if failed_run.runtime_metadata
+                    else None,
+                    "error": str(exc),
+                },
+            )
     finally:
         session.close()
 

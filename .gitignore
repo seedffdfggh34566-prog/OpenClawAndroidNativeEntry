@@ -27,6 +27,16 @@ captures/
 backend/.venv/
 backend/data/*.db
 
+# Python generated artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.eggs/
+
 # Local run copies / diagnostics
 _buildrun/
 _buildrun2/

@@ -206,13 +206,14 @@ backend/.venv/bin/pip install -e backend
 ### 9.2 启动后端
 
 ```bash
+backend/.venv/bin/alembic upgrade head
 backend/.venv/bin/python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8013
 ```
 
 ### 9.3 运行后端测试
 
 ```bash
-backend/.venv/bin/python -m unittest backend.tests.test_api
+backend/.venv/bin/python -m pytest backend/tests
 ```
 
 ### 9.4 最小手工验证
@@ -224,3 +225,9 @@ backend/.venv/bin/python -m unittest backend.tests.test_api
 3. `POST /analysis-runs` with `lead_analysis`
 4. `POST /analysis-runs` with `report_generation`
 5. `GET /history`
+
+### 9.5 数据库迁移检查
+
+```bash
+backend/.venv/bin/alembic check
+```

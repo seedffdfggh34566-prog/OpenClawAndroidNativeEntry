@@ -7,3 +7,8 @@
 - `system-context.md`
 - `repository-layout.md`
 - `clients/`
+
+当前与客户端边界直接相关的重点文档包括：
+
+- `clients/mobile-information-architecture.md`
+- `clients/android-client-implementation-constraints.md`

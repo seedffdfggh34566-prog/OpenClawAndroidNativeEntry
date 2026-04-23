@@ -300,3 +300,81 @@ When multiple implementation options exist:
 - prefer incremental progress over ambitious rewrites
 
 This repository values controllability and maintainability over unnecessary speed.
+
+---
+
+## 16. Scoped Rules And Platform-Specific Instructions
+
+This repository is now a product-level mono-repo rather than an Android-only repo.
+
+Use this root `AGENTS.md` for:
+
+- repository-wide workflow rules
+- source-of-truth rules
+- Git and validation expectations
+- documentation and handoff requirements
+- cross-cutting escalation rules
+
+When a task touches a platform or subsystem with its own local rule file, agents must obey both:
+
+- this root `AGENTS.md`
+- the more specific `AGENTS.md` inside the relevant subtree
+
+Current scoped rule files:
+
+- `app/AGENTS.md`
+
+Therefore:
+
+- when editing `app/`, read and follow `app/AGENTS.md`
+- if future `backend/` or `ios/` local rule files are added, use the same layered rule model
+
+This root file should not carry detailed Android implementation defaults unless they are truly repository-wide concerns.
+
+---
+
+## 17. Docs And Skills Boundary
+
+This repository remains **docs-driven first**.
+
+### 17.1 What stays in `AGENTS.md`
+
+Keep repository-wide, stable instructions here, such as:
+
+- workspace and environment assumptions
+- validation rules
+- escalation rules
+- high-risk file categories
+- subtree rule entry points
+
+### 17.2 What stays in `docs/`
+
+Keep source-of-truth project content in `docs/`, including:
+
+- product direction and non-goals
+- architecture boundaries
+- API / schema references
+- task status
+- handoffs
+- runbooks
+
+### 17.3 What belongs in Skills
+
+Skills are appropriate for **reusable procedures**, especially when they bundle:
+
+- repeatable instructions
+- resource references
+- scripts or command sequences
+- recurring evidence collection workflows
+
+Skills should **augment** the repository workflow, not replace it.
+
+Do **not** treat Skills as the source of truth for:
+
+- V1 scope
+- active task priority
+- product meaning
+- ADR-level decisions
+- canonical API or schema definitions
+
+If a Skill and repository docs diverge, the repository docs and current task context win.

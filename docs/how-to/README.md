@@ -6,3 +6,14 @@
 
 - `operate/`
 - `debug/`
+
+当前建议优先关注的工作流文档包括：
+
+- `operate/developer_workflow_playbook.md`
+- `operate/codex_backend_first_workflow.md`
+- `operate/skills/README.md`
+
+其他补充型工作流文档包括：
+
+- `operate/jianglab_codex_ops.md`
+- `operate/agent_skills_boundary_and_index.md`

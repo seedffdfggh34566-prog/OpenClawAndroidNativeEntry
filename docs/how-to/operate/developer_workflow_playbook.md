@@ -262,6 +262,34 @@ Codex 做完后，你至少检查：
 - 只在真正重要的取舍时记录
 - 不写零碎临时决定
 
+### 7.4.1 Android 官方资料怎么接入当前工作流
+
+当问题属于 Android 平台知识判断，而不是仓库事实判断时，优先参考：
+
+- 官方 Android 文档
+- Android Knowledge Base
+
+当前建议优先这样做的场景包括：
+
+- Compose / Navigation / `AndroidManifest.xml` / 权限
+- Android 测试与 screenshot testing
+- SDK / AGP / library 升级判断
+- 新 API / 最新最佳实践判断
+
+当前仍然必须以仓库文档为准的场景包括：
+
+- 当前 task 优先级
+- 产品方向与 V1 范围
+- backend / Android 角色边界
+- 仓库内自定义 Skills 的事实定义
+
+如果官方 Android 文档与当前仓库现状冲突，处理顺序应为：
+
+1. 先停下，不直接按外部资料改动仓库
+2. 回到当前 task / handoff / `docs/`
+3. 如涉及边界变化，再补方向层或方案层文档
+4. 必要时由开发者明确确认后再继续
+
 ### 7.5 `docs/architecture/` 与 `docs/reference/`
 
 用途：

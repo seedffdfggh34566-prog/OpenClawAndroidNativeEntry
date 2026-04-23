@@ -67,6 +67,7 @@
 - `docs/architecture/system-context.md`
 - `docs/reference/api/backend-v1-minimum-contract.md`
 - `docs/architecture/repository-layout.md`
+- `docs/architecture/clients/android-client-implementation-constraints.md`
 
 ### 5.3 当前执行入口
 

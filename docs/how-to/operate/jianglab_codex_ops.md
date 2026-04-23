@@ -1,6 +1,6 @@
 # jianglab + Codex 运维与工作区说明
 
-更新时间：2026-04-20
+更新时间：2026-04-23
 
 ## 1. 文档定位
 
@@ -257,6 +257,59 @@ jianglab -> GitHub
 ## 8.3 推送原则
 除非明确需要，否则不要自动 push。  
 先确认改动范围与文档同步，再 push。
+
+---
+
+## 8.4 Android Knowledge Base 与 Android CLI 的当前定位
+
+当前仓库对 Android 官方工具的定位如下：
+
+- Android Knowledge Base：推荐作为 Android 问题的优先官方参考层
+- Android CLI：当前已在 `jianglab` 可用，定位为推荐增强工具，不是仓库前置依赖
+
+适合优先查 Android Knowledge Base 的问题包括：
+
+- Compose / Navigation / `AndroidManifest.xml` / 权限
+- Android 测试与 screenshot testing
+- SDK / AGP / library 升级判断
+- 新 API、最新 guidance、最近新增能力
+
+当前不应把 Android Knowledge Base 当作：
+
+- 项目事实源
+- 产品方向来源
+- task 优先级来源
+
+当前仓库默认仍以以下基本链路工作：
+
+- `./gradlew ...`
+- `adb ...`
+- `docs/`
+- task / handoff
+
+即使后续试点 Android CLI，也不能直接替代这条基础链路。
+
+当前 `jianglab` 上 Android CLI 已按官方 Linux 二进制来源安装到：
+
+- `/home/yulin/bin/android`
+
+当前已验证可用的能力包括：
+
+- `android --version`
+- `android -h`
+- `android info`
+- `android docs search`
+- `android docs fetch`
+
+当前推荐把 Android CLI 视为可直接使用的增强项，例如：
+
+- `android docs`
+- `android describe`
+- `android run`
+- `android layout`
+- `android screen capture`
+
+但当前只正式验证了 `android docs search/fetch`，其他子命令仍应在具体 task 中按需验证。
 
 ---
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Task Handoff Sync"
+  short_description: "Check task, handoff, and docs closeout consistency."
+  default_prompt: "Use $task-handoff-sync to verify task, handoff, and docs are synchronized before closeout."

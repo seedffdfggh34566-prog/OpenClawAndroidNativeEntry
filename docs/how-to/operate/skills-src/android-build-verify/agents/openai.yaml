@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android Build Verify"
+  short_description: "Run safe Android build and device validation."
+  default_prompt: "Use $android-build-verify to choose and run the smallest meaningful Android validation."

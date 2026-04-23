@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend Contract Sync"
+  short_description: "Close out backend docs, task, and handoff sync."
+  default_prompt: "Use $backend-contract-sync to verify backend docs, task, and handoff are synchronized."

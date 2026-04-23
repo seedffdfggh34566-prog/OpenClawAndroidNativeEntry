@@ -116,6 +116,15 @@
 - Android / Termux / OpenClaw 连接链路排障
 - 常见日志采集与摘要
 
+### 5.4 Backend 执行类 Skill
+
+例如：
+
+- backend 本地验证
+- API contract 变更守门
+- runtime / product backend 边界巡检
+- 数据库风险分级与迁移前检查
+
 这些流程适合做 Skill，是因为它们：
 
 - 跨多个线程会重复出现
@@ -196,6 +205,14 @@ Notes:
    - 负责视觉变更的截图验证或截图基线检查建议
 4. `task-handoff-sync-check`
    - 负责 task、handoff、README 导航的一致性巡检
+5. `backend-task-bootstrap`
+   - 负责 backend task / validation / handoff 模板收口
+6. `backend-local-verify`
+   - 负责后端最小测试、启动与 `/health` 验证摘要
+7. `backend-runtime-boundary-guard`
+   - 负责 runtime 与产品后端边界巡检
+8. `backend-api-change-check`
+   - 负责 API / schema / object 含义漂移守门
 
 这些候选都应被理解为：
 
@@ -207,6 +224,28 @@ Notes:
 
 - `docs/how-to/operate/skills/README.md`
 - `docs/how-to/operate/skills/rollout-order.md`
+- `docs/how-to/operate/skills/backend-rollout-order.md`
+
+当前 repo-managed skills 还进一步形成了 repo 内真实 skill 源码与本机安装入口：
+
+- repo skill source：`docs/how-to/operate/skills-src/`
+- 同步脚本：`scripts/sync_codex_skills.py`
+- 本机安装目录：`${CODEX_HOME:-$HOME/.codex}/skills/`
+
+当前正式 repo-managed skill 集合为：
+
+1. `android-build-verify`
+2. `android-runtime-integration-guard`
+3. `android-logcat-triage`
+4. `task-handoff-sync`
+5. `backend-task-bootstrap`
+6. `backend-local-verify`
+7. `backend-api-change-check`
+8. `backend-db-risk-check`
+9. `backend-runtime-boundary-guard`
+10. `backend-contract-sync`
+
+当前 `android-ui-change-check` 仍只保留在 spec 层，暂不安装为 real skill。
 
 ---
 

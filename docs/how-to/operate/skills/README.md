@@ -1,4 +1,4 @@
-# Android / Workflow Skills Specs
+# Android / Backend / Workflow Skill Specs
 
 更新时间：2026-04-23
 
@@ -16,21 +16,33 @@
 
 1. 根 `AGENTS.md`
 2. `app/AGENTS.md`
-3. `docs/README.md`
-4. `docs/delivery/tasks/_active.md`
-5. 当前 task / handoff / runbook
+3. `backend/AGENTS.md`（如触及 `backend/`）
+4. `docs/README.md`
+5. `docs/delivery/tasks/_active.md`
+6. 当前 task / handoff / runbook
 
 ---
 
 ## 2. 当前 Skill 规格总览
 
-本轮规划覆盖以下 5 个推荐 Skills：
+当前 repo 内 Skill 规格层分为两组：
+
+### Android / workflow 组
 
 1. `android-build-verify`
 2. `android-logcat-triage`
 3. `task-handoff-sync`
 4. `android-ui-change-check`
 5. `android-runtime-integration-guard`
+
+### Backend 组
+
+6. `backend-task-bootstrap`
+7. `backend-local-verify`
+8. `backend-api-change-check`
+9. `backend-runtime-boundary-guard`
+10. `backend-db-risk-check`
+11. `backend-contract-sync`
 
 这些 Skills 都应被理解为：
 
@@ -43,7 +55,7 @@
 
 ## 3. 当前优先级与成熟度
 
-### P0：现在最适合先落地
+### Android / workflow：P0
 
 1. `android-build-verify`
 2. `task-handoff-sync`
@@ -55,7 +67,7 @@
 - 当前环境已具备 `adb`、真机和相关 Gradle 任务
 - 最容易直接提升 Android thread 的稳定性与收口质量
 
-### P1：适合紧接着落地
+### Android / workflow：P1
 
 4. `android-logcat-triage`
 
@@ -73,6 +85,29 @@
 - 当前需要 UI 守门与证据要求
 - 但当前仓库没有 `test/`、`androidTest/` 或 screenshot testing 基建
 - 因此只适合先做“轻量守门版”
+
+### Backend：P0
+
+1. `backend-task-bootstrap`
+2. `backend-local-verify`
+3. `backend-api-change-check`
+
+原因：
+
+- 当前 backend thread 最容易先失控在 task 边界与验证口径
+- 当前最值得先稳定的是 task 收口、验证口径与 API 合同边界
+
+### Backend：P1
+
+4. `backend-db-risk-check`
+5. `backend-runtime-boundary-guard`
+6. `backend-contract-sync`
+
+原因：
+
+- 数据库风险会在 `Postgres`、迁移和 DB 工具层任务中进一步抬升
+- runtime 边界在真实 runtime 接入前仍需守门，但频率略低于当前 task/bootstrap 与 API/验证
+- docs / task / handoff 收口对 backend thread 很重要
 
 ---
 
@@ -101,11 +136,18 @@
 ## 5. 当前文件清单
 
 - `rollout-order.md`
+- `backend-rollout-order.md`
 - `android-build-verify.md`
 - `android-logcat-triage.md`
 - `task-handoff-sync.md`
 - `android-ui-change-check.md`
 - `android-runtime-integration-guard.md`
+- `backend-local-verify.md`
+- `backend-task-bootstrap.md`
+- `backend-api-change-check.md`
+- `backend-runtime-boundary-guard.md`
+- `backend-db-risk-check.md`
+- `backend-contract-sync.md`
 
 ---
 
@@ -120,3 +162,26 @@
 换句话说：
 
 > **本目录先解决“该怎么做”，而不是立刻解决“把 Skill 放哪儿并自动触发”。**
+
+当前这组 specs 已进一步收敛出一组 repo-managed real skills，并有对应的真实 skill 源码位于：
+
+- `docs/how-to/operate/skills-src/android-build-verify/`
+- `docs/how-to/operate/skills-src/android-runtime-integration-guard/`
+- `docs/how-to/operate/skills-src/android-logcat-triage/`
+- `docs/how-to/operate/skills-src/task-handoff-sync/`
+- `docs/how-to/operate/skills-src/backend-task-bootstrap/`
+- `docs/how-to/operate/skills-src/backend-local-verify/`
+- `docs/how-to/operate/skills-src/backend-api-change-check/`
+- `docs/how-to/operate/skills-src/backend-db-risk-check/`
+- `docs/how-to/operate/skills-src/backend-runtime-boundary-guard/`
+- `docs/how-to/operate/skills-src/backend-contract-sync/`
+
+当前暂不落地为 real skill：
+
+- `android-ui-change-check`
+
+原因是当前仓库仍无 screenshot testing 基建，避免将它误用为完整视觉自动化能力。
+
+同步到本机 Codex skills 目录的方式见：
+
+- `scripts/sync_codex_skills.py`

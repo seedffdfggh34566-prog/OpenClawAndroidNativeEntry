@@ -61,9 +61,9 @@ Do not assume a Windows-local working copy is authoritative.
 ### Human-owned documents
 Agents may suggest edits, but must **not silently redefine** intent in these files:
 
-- `docs/00_project_overview.md`
-- `docs/01_prd/*`
-- `docs/06_decisions/*`
+- `docs/product/overview.md`
+- `docs/product/*`
+- `docs/adr/*`
 
 These files define product direction, version scope, and key decisions.  
 Changes to meaning or scope must be explicit.
@@ -71,10 +71,12 @@ Changes to meaning or scope must be explicit.
 ### Agent-maintained documents
 Agents are expected to create and update these when relevant:
 
-- `docs/02_specs/*`
-- `docs/03_tasks/*`
-- `docs/04_runbooks/*`
-- `docs/05_handoffs/*`
+- `docs/README.md`
+- `docs/architecture/*`
+- `docs/reference/*`
+- `docs/delivery/tasks/*`
+- `docs/how-to/*`
+- `docs/delivery/handoffs/*`
 
 Agents should keep these documents aligned with the current code and workflow reality.
 
@@ -86,10 +88,11 @@ Agents should keep these documents aligned with the current code and workflow re
 An agent should first:
 
 1. read this `AGENTS.md`
-2. inspect relevant files under `docs/`
-3. identify the active task file under `docs/03_tasks/`
-4. confirm current scope and non-goals
-5. avoid editing unrelated areas
+2. read `docs/README.md`
+3. inspect relevant files under `docs/`
+4. identify the active task from `docs/delivery/tasks/_active.md`
+5. confirm current scope and non-goals
+6. avoid editing unrelated areas
 
 ### Preferred execution order
 For non-trivial work, use this sequence:
@@ -160,10 +163,11 @@ Do not push automatically unless explicitly requested.
 ### Safe areas for agent-led drafting
 These are generally safe for structured drafting and iteration:
 
-- `docs/02_specs/*`
-- `docs/03_tasks/*`
-- `docs/04_runbooks/*`
-- `docs/05_handoffs/*`
+- `docs/architecture/*`
+- `docs/reference/*`
+- `docs/delivery/tasks/*`
+- `docs/how-to/*`
+- `docs/delivery/handoffs/*`
 
 ### Higher-risk areas
 Be more conservative when editing:
@@ -183,9 +187,10 @@ Avoid touching these unless the task clearly requires it.
 When a task changes behavior, structure, or workflow, the agent must update the relevant docs.
 
 ### At minimum, update:
-- the active task file in `docs/03_tasks/`
-- a handoff note in `docs/05_handoffs/` for non-trivial work
+- the active task file in `docs/delivery/tasks/`
+- a handoff note in `docs/delivery/handoffs/` for non-trivial work
 - a spec/runbook file if the change affects architecture or execution flow
+- `docs/delivery/tasks/_active.md` if task priority or active status changes
 
 ### Do not leave:
 - code updated but docs stale
@@ -218,7 +223,7 @@ Do not claim success without checking the result.
 For meaningful tasks, create or update a handoff file under:
 
 ```text
-docs/05_handoffs/
+docs/delivery/handoffs/
 ```
 
 A handoff should include:
@@ -235,7 +240,7 @@ Keep handoffs concise and factual.
 
 ## 13. Task File Expectations
 
-Each active task file under `docs/03_tasks/` should ideally include:
+Each active task file under `docs/delivery/tasks/` should ideally include:
 
 - objective
 - scope
@@ -268,6 +273,20 @@ Agents should prefer tasks that improve:
 - small, reviewable changes
 
 Before large feature work, ensure the repository operating model is stable.
+
+### Current execution emphasis
+
+After the initial workflow bootstrap and API contract freeze, the next recommended engineering priority is:
+
+> **formal backend implementation with the client remaining a control entry**
+
+Agents should treat:
+
+- backend-first repo alignment
+- active task clarity
+- minimal backend implementation readiness
+
+as higher priority than additional Android shell expansion.
 
 ---
 

@@ -24,6 +24,8 @@ captures/
 # Local tooling / agent workspace
 .codex/
 .tmp/
+backend/.venv/
+backend/data/*.db
 
 # Local run copies / diagnostics
 _buildrun/

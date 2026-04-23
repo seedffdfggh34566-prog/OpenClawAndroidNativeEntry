@@ -1,3 +1,5 @@
+> Historical reference only. Not part of the current AI Sales Assistant V1 primary workflow.
+
 # OpenClaw Dashboard `static {}` 改动说明
 
 ## 结论先行

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend Task Bootstrap"
+  short_description: "Bootstrap backend task docs and validation."
+  default_prompt: "Use $backend-task-bootstrap to structure this backend task before implementation."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend DB Risk Check"
+  short_description: "Assess backend schema, migration, and DB risk."
+  default_prompt: "Use $backend-db-risk-check to classify the database and migration risk of this backend change."

@@ -43,12 +43,12 @@ fun LogsScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    text = "Logs",
+                    text = "详细诊断",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = "当前提供最小诊断信息，帮助确认 Gateway 检测结果是否已刷新。",
+                    text = "这里保留 Gateway 与启动链路的详细诊断信息，作为 Ops 页面下的辅助查看入口。",
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Text(

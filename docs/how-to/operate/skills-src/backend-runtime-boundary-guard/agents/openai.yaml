@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend Runtime Boundary Guard"
+  short_description: "Protect backend vs runtime ownership boundaries."
+  default_prompt: "Use $backend-runtime-boundary-guard to review whether this change crosses backend runtime boundaries."

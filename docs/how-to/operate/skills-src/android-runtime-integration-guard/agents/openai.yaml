@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android Runtime Integration Guard"
+  short_description: "Guard high-risk Android runtime integration changes."
+  default_prompt: "Use $android-runtime-integration-guard to assess Android runtime integration risk and required evidence."

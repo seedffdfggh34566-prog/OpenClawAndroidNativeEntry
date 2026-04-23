@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android Logcat Triage"
+  short_description: "Collect and summarize Android device logs safely."
+  default_prompt: "Use $android-logcat-triage to gather logcat evidence and classify the Android failure."

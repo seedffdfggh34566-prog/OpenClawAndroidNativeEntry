@@ -1,3 +1,5 @@
+> Historical reference only. Not part of the current AI Sales Assistant V1 primary workflow.
+
 # OpenClaw Android Native Entry 阶段性开发交接文档
 
 ## 1. 项目概述

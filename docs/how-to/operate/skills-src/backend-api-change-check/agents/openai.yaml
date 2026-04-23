@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend API Change Check"
+  short_description: "Guard backend API and schema contract changes."
+  default_prompt: "Use $backend-api-change-check to review this backend API or schema change before landing it."

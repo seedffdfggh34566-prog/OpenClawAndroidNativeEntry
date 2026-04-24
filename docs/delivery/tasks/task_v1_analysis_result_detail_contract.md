@@ -6,7 +6,7 @@
 
 - 任务名称：AnalysisResult 详情 contract 与页面读取
 - 建议路径：`docs/delivery/tasks/task_v1_analysis_result_detail_contract.md`
-- 当前状态：`planned`
+- 当前状态：`done`
 - 优先级：P0
 
 本任务用于补齐 `LeadAnalysisResult` 的正式详情读取边界，让 Android AnalysisResult 页不再只展示 `/history.latest_analysis_result` 摘要。
@@ -59,7 +59,36 @@
 
 ---
 
-## 5. 风险与注意事项
+## 5. 完成记录
+
+### 5.1 实际改动
+
+- `backend/api/schemas.py`：新增 `LeadAnalysisResultDetail`、`LeadAnalysisResultDetailResponse`
+- `backend/api/serializers.py`：新增 `lead_analysis_result_detail()`
+- `backend/api/main.py`：新增 `GET /lead-analysis-results/{id}`
+- `backend/tests/test_api.py`：新增 `test_lead_analysis_result_detail`
+- `V1BackendModels.kt`：新增 `LeadAnalysisResultDetailDto`
+- `V1BackendJsonParser.kt`：新增 `parseLeadAnalysisResultDetail()`
+- `V1BackendClient.kt`：新增 `getLeadAnalysisResult()`
+- `V1BackendUiState.kt`：新增 `analysisResult` 字段
+- `OpenClawApp.kt`：新增 `loadLatestAnalysisResult()`、`analysisResultLoadJob`、`LaunchedEffect`
+- `OpenClawNavHost.kt`：新增 `onLoadLatestAnalysisResult` 参数
+- `V1ShellScreens.kt`：重写 `AnalysisResultScreen`，展示完整详情字段
+- `docs/reference/api/backend-v1-minimum-contract.md`：更新 contract 文档
+
+### 5.2 验证结果
+
+1. 后端测试：`backend/.venv/bin/python -m pytest tests/` — 16 passed
+2. Android 构建：`./gradlew :app:assembleDebug` — BUILD SUCCESSFUL
+3. 后端 curl smoke：`GET /lead-analysis-results/{id}` 返回完整详情，`404` 对 missing ID 正常
+
+### 5.3 已知限制
+
+- 后端 runtime 仍为 `StubRuntimeAdapter`，详情内容是硬编码模板
+- Android `analysisResult` 加载仅在进入 `AnalysisResult` 屏幕时触发一次
+- 当前未实现下拉刷新或自动重试机制
+
+## 6. 风险与注意事项
 
 - 这是 contract 变化任务，应先更新 reference，再改实现
 - 不要把本任务扩大成真实 runtime 接入

@@ -30,6 +30,7 @@
 - `task_v1_android_minimum_product_profile_write_path.md`
 - `task_v1_android_analysis_run_trigger_poll.md`
 - `task_v1_android_report_generation_trigger_poll.md`
+- `task_v1_analysis_result_detail_contract.md`
 
 这些任务当前应视为：
 
@@ -39,10 +40,11 @@
 
 ### 当前推荐的下一正式任务
 
-- `task_v1_analysis_result_detail_contract.md`
+- 暂无已创建的下一正式 implementation task
 
 最近完成：
 
+- `task_v1_analysis_result_detail_contract.md`
 - `task_v1_android_report_generation_trigger_poll.md`
 - `task_v1_android_analysis_run_trigger_poll.md`
 - `task_v1_android_minimum_product_profile_write_path.md`
@@ -54,8 +56,8 @@
 - Android 已完成最小 ProductProfile 写路径
 - Android 已完成 `lead_analysis` 触发 / 轮询
 - Android 已完成 `report_generation` 触发 / 轮询
-- 下一步更适合补齐 AnalysisResult 详情 contract 与页面读取
-- 真实 OpenClaw runtime 接入可作为详情 contract 稳定后的后续阶段
+- Android 已完成 AnalysisResult 详情 contract 与页面读取
+- 下一步更适合真实 OpenClaw runtime 接入，或根据产品优先级选择其他方向
 
 ---
 

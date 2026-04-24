@@ -1,6 +1,6 @@
 # 当前活跃任务
 
-更新时间：2026-04-23
+更新时间：2026-04-24
 
 ## 1. 使用说明
 
@@ -31,6 +31,7 @@
 - `task_v1_android_analysis_run_trigger_poll.md`
 - `task_v1_android_report_generation_trigger_poll.md`
 - `task_v1_analysis_result_detail_contract.md`
+- `task_v1_product_profile_confirmation_flow.md`
 
 这些任务当前应视为：
 
@@ -44,6 +45,7 @@
 
 最近完成：
 
+- `task_v1_product_profile_confirmation_flow.md`
 - `task_v1_analysis_result_detail_contract.md`
 - `task_v1_android_report_generation_trigger_poll.md`
 - `task_v1_android_analysis_run_trigger_poll.md`
@@ -57,6 +59,7 @@
 - Android 已完成 `lead_analysis` 触发 / 轮询
 - Android 已完成 `report_generation` 触发 / 轮询
 - Android 已完成 AnalysisResult 详情 contract 与页面读取
+- Android 已完成 ProductProfile draft → confirmed 确认流程闭环
 - 下一步更适合真实 OpenClaw runtime 接入，或根据产品优先级选择其他方向
 
 ---

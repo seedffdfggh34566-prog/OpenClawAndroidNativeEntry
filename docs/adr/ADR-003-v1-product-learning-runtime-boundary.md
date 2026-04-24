@@ -23,6 +23,11 @@
 3. 客户端应读取什么阶段字段
 4. 第一版 product learning runtime 采用什么接入形态
 
+补充说明：
+
+- 本文档冻结的是 **第一版 single-turn enrich 基线**
+- 下一轮 iteration contract 已由 `ADR-004-v1-product-learning-iteration-contract.md` 单独承接
+
 ---
 
 ## 2. 最终决策
@@ -114,7 +119,9 @@ product learning 执行记录继续通过 `AgentRun` 承担，只新增：
 6. 客户端通过现有 `GET /analysis-runs/{id}` 轮询 run 状态
 7. 客户端通过现有 `GET /product-profiles/{id}` 读取富化后的正式对象
 
-当前**不新增新的 public endpoint**，V1 仍保持当前 8 个接口。
+当前**不新增新的 public endpoint**，V1 第一版保持当前 8 个接口。
+
+下一轮“继续补充一轮信息”的 contract 不再由本文档承接，改由 `ADR-004` 冻结。
 
 当前也**不引入多轮聊天 public API**、`/product-learning/*` 路径或额外 lifecycle 状态。
 

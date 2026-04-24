@@ -579,6 +579,25 @@ AgentRun 是系统内部执行过程的记录对象。
 - 独立 public `/product-learning/*` 路径
 - 新 lifecycle 状态
 
+### 下一轮 iteration contract
+
+在当前 single-turn enrich 落地后，下一轮 product learning 默认采用：
+
+- 新增 `POST /product-profiles/{id}/enrich`
+- 请求体只承接：
+  - `supplemental_notes`
+  - `trigger_source`
+- backend 将补充文本追加到同一个 `ProductProfile.source_notes`
+- backend 创建新的 `run_type = product_learning` `AgentRun`
+- 客户端继续通过 `GET /analysis-runs/{id}` 轮询
+- 富化结果继续写回同一个 `ProductProfile`
+
+当前仍不进入：
+
+- 消息持久化
+- `/product-learning/messages`
+- 新生命周期状态
+
 ## 12.2 产品画像确认模块
 
 ### 目标

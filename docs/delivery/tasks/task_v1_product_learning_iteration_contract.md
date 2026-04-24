@@ -6,7 +6,7 @@
 
 - 任务名称：V1 Product Learning Iteration Contract
 - 建议路径：`docs/delivery/tasks/task_v1_product_learning_iteration_contract.md`
-- 当前状态：`planned`
+- 当前状态：`done`
 - 优先级：P0
 
 本任务用于在当前 single-turn enrich 已落地后，先冻结 product learning 下一轮迭代的 public contract、对象边界和交互承载方式，再进入新的 runtime 或 Android 实现。
@@ -152,22 +152,39 @@
 
 ## 11. 实际产出
 
-任务执行完成后补充。
+- `docs/adr/ADR-004-v1-product-learning-iteration-contract.md`
+- `docs/reference/api/backend-v1-minimum-contract.md`
+- `docs/reference/schemas/v1-domain-model-baseline.md`
+- `docs/architecture/system-context.md`
+- `docs/architecture/clients/mobile-information-architecture.md`
+- `docs/architecture/runtime/langgraph-runtime-architecture.md`
+- `docs/product/prd/ai_sales_assistant_v1_prd.md`
+- `docs/product/overview.md`
+- `docs/delivery/tasks/_active.md`
+- `docs/delivery/handoffs/handoff_2026_04_24_product_learning_iteration_contract.md`
 
 ---
 
 ## 12. 本次定稿边界
 
-任务执行完成后补充。
+- 默认新增 `POST /product-profiles/{id}/enrich`
+- iteration 继续复用 `AgentRun`
+- enrich 请求体固定为 `supplemental_notes + trigger_source`
+- backend 先把 `supplemental_notes` 追加到 `ProductProfile.source_notes`
+- 写回规则固定为“补空优先，有限覆盖弱默认值”
+- Android 只承接轻量 iteration 交互，不引入消息持久化
 
 ---
 
 ## 13. 已做验证
 
-任务执行完成后补充。
+- `git diff --check`
+- 交叉检查 PRD / system-context / mobile IA / API contract / runtime architecture 已对齐到 `ADR-004`
 
 ---
 
 ## 14. 实际结果说明
 
-任务执行完成后补充。
+- 仓库已正式冻结下一轮 product learning iteration contract
+- `POST /product-profiles/{id}/enrich` 已成为默认下一轮接口方向
+- 当前下一条 queued task 已切到 `task_v1_runtime_observability_eval_baseline.md`

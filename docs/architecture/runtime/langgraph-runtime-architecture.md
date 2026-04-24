@@ -166,7 +166,7 @@ product learning follow-up 默认应新增：
 当前 product learning follow-up 已固定：
 
 - 继续复用 `AgentRun`
-- 继续复用现有 8 个 public API
+- 第一版继续复用现有 8 个 public API
 - 采用 single-turn enrich
 - 由 backend 负责 `learning_stage` 判定与写回
 
@@ -297,6 +297,26 @@ product learning 第一版默认流程为：
 - 新增 `/product-learning/*`
 - `waiting_for_user / paused / resumed`
 - 多轮聊天 public API
+
+## 11.1 Product Learning Iteration 默认形态
+
+在 single-turn enrich 已落地后，下一轮默认流程固定为：
+
+1. 客户端调用 `POST /product-profiles/{id}/enrich`
+2. 请求体只承接 `supplemental_notes` 与 `trigger_source`
+3. backend 先将 `supplemental_notes` 追加到同一个 `ProductProfile.source_notes`
+4. backend 再创建新的 `run_type = product_learning` `AgentRun`
+5. LangGraph 继续基于同一个 `ProductProfile` 执行富化
+6. runtime 输出新的 `ProductLearningDraft`
+7. backend 继续按“补空优先，有限覆盖弱默认值”写回同一个 `ProductProfile`
+8. backend 重算 `missing_fields` 与 `learning_stage`
+9. 客户端继续通过 `GET /analysis-runs/{id}` 与 `GET /product-profiles/{id}` 读取结果
+
+当前 iteration 仍不引入：
+
+- `/product-learning/messages`
+- 新正式对象
+- 新 lifecycle
 
 Phase 1 不要求：
 

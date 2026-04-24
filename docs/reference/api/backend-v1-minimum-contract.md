@@ -32,7 +32,7 @@
 
 ## 2. 当前结论
 
-V1 当前只冻结以下 8 个最小接口：
+V1 当前已实现以下 8 个最小接口：
 
 - `POST /product-profiles`
 - `POST /product-profiles/{id}/confirm`
@@ -43,6 +43,10 @@ V1 当前只冻结以下 8 个最小接口：
 - `GET /reports/{id}`
 - `GET /history`
 
+在已实现 8 个接口的基础上，下一轮 product learning iteration contract 默认新增第 9 个接口：
+
+- `POST /product-profiles/{id}/enrich`
+
 当前采用以下关键 contract 决策：
 
 1. 后端是正式对象权威真相
@@ -51,8 +55,9 @@ V1 当前只冻结以下 8 个最小接口：
    - `product_learning`
    - `lead_analysis`
    - `report_generation`
-4. `/history` 采用首页聚合结构，优先服务 Android 首页与 History 页
-5. 正式对象状态与 `AgentRun` 状态严格分离
+4. product learning iteration 默认通过 `POST /product-profiles/{id}/enrich` 承接
+5. `/history` 采用首页聚合结构，优先服务 Android 首页与 History 页
+6. 正式对象状态与 `AgentRun` 状态严格分离
 
 ---
 
@@ -215,8 +220,20 @@ runtime 负责：
 
 说明：
 
-- Phase 0 / 当前已实现：`current_run` 允许为 `null`
-- product learning runtime 第一版：`current_run` 允许返回一个 `run_type = product_learning` 的 `AgentRunSummary`
+- 当前已实现：`current_run` 允许返回一个 `run_type = product_learning` 的 `AgentRunSummary`
+
+## 4.9 `ProductProfileEnrichRequest`
+
+最小字段：
+
+- `supplemental_notes`
+- `trigger_source`
+
+## 4.10 `ProductProfileEnrichResponse`
+
+最小字段：
+
+- `agent_run`
 
 ---
 
@@ -356,7 +373,55 @@ queued → running → succeeded | failed | cancelled
 - 当前已实现：创建成功后会同步返回一个 `run_type = product_learning` 的 `AgentRunPayload`
 - 需要通过 `POST /product-profiles/{id}/confirm` 将状态升级为 `confirmed`
 
-## 6.2 `POST /product-profiles/{id}/confirm`
+## 6.2 `POST /product-profiles/{id}/enrich`
+
+### 职责
+
+在已有 `ProductProfile draft` 基础上承接一轮补充输入，并重新触发一次 `product_learning`。
+
+### 最小请求字段
+
+```json
+{
+  "supplemental_notes": "补充一轮产品、客户或场景说明。",
+  "trigger_source": "android_product_learning_iteration"
+}
+```
+
+### 最小响应字段
+
+```json
+{
+  "agent_run": {
+    "id": "run_002",
+    "run_type": "product_learning",
+    "status": "queued",
+    "triggered_by": "user",
+    "trigger_source": "android_product_learning_iteration",
+    "input_refs": [
+      {
+        "object_type": "product_profile",
+        "object_id": "pp_001",
+        "version": 2
+      }
+    ],
+    "output_refs": [],
+    "started_at": null,
+    "ended_at": null,
+    "error_message": null
+  }
+}
+```
+
+### 说明
+
+- backend 先将 `supplemental_notes` 追加到同一个 `ProductProfile.source_notes`
+- backend 再创建新的 `run_type = product_learning` `AgentRun`
+- 客户端继续使用 `GET /analysis-runs/{id}` 轮询
+- 富化结果继续通过 `GET /product-profiles/{id}` 读取
+- 当前不引入消息持久化与新的 public `/product-learning/*` 路径
+
+## 6.3 `POST /product-profiles/{id}/confirm`
 
 ### 职责
 
@@ -384,7 +449,7 @@ queued → running → succeeded | failed | cancelled
 - 若 `learning_stage != ready_for_confirmation`，backend 返回 `409`
 - 只有 `confirmed` 的 `ProductProfile` 才能作为 `lead_analysis` 的输入
 
-## 6.3 `GET /product-profiles/{id}`
+## 6.4 `GET /product-profiles/{id}`
 
 ### 职责
 
@@ -423,7 +488,7 @@ Android 产品画像确认页应依赖该接口作为主要读取入口。
 - `missing_fields` 用于帮助 Android 确认页展示“仍待补充”的信息
 - `learning_stage` 由 backend 计算并显式返回
 
-## 6.4 `POST /analysis-runs`
+## 6.5 `POST /analysis-runs`
 
 ### 职责
 
@@ -479,7 +544,7 @@ Android 产品画像确认页应依赖该接口作为主要读取入口。
 - `report_generation` 只能接受已有 `LeadAnalysisResult`
 - 创建成功后默认 `AgentRun.status = queued`
 
-## 6.5 `GET /analysis-runs/{id}`
+## 6.6 `GET /analysis-runs/{id}`
 
 ### 职责
 
@@ -559,7 +624,7 @@ Android 轮询状态页和 History 页应优先依赖该接口。
   - 不在同一 `AgentRun` 内复用状态
   - 建议重新创建新的 `AgentRun`
 
-## 6.6 `GET /lead-analysis-results/{id}`
+## 6.7 `GET /lead-analysis-results/{id}`
 
 ### 职责
 
@@ -599,7 +664,7 @@ Android 分析结果页应依赖该接口作为主要读取入口。
 - 字段列表与 `LeadAnalysisResult` 模型一一对应
 - Android 端使用该接口展示完整分析结果，不再仅依赖 `/history` 摘要
 
-## 6.7 `GET /reports/{id}`
+## 6.8 `GET /reports/{id}`
 
 ### 职责
 
@@ -636,7 +701,7 @@ Android 分析结果页应依赖该接口作为主要读取入口。
 }
 ```
 
-## 6.8 `GET /history`
+## 6.9 `GET /history`
 
 ### 职责
 

@@ -327,6 +327,17 @@ Gateway / Dashboard / Logs
 - `GET /analysis-runs/{id}` 轮询
 - `GET /product-profiles/{id}` 读取富化后的 draft
 
+下一轮 iteration 默认采用：
+
+- `POST /product-profiles/{id}/enrich`
+- 一次补充输入框承接 `supplemental_notes`
+- `GET /analysis-runs/{id}` 继续轮询
+- 学习页继续展示：
+  - 当前理解摘要
+  - 缺失字段
+  - 当前 run 状态
+- 当前不引入消息持久化时间线
+
 最低完整度门槛：
 
 - `name`

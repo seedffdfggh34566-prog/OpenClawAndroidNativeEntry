@@ -186,6 +186,7 @@ queued → running → succeeded | failed | cancelled
 
 - `AgentRun` 负责记录执行过程，不承担正式业务真相
 - product learning 执行继续复用 `AgentRun`
+- create 阶段与 iteration 阶段的 product learning 都继续复用 `AgentRun`
 
 ---
 
@@ -210,7 +211,7 @@ queued → running → succeeded | failed | cancelled
 ### 建议字段分组
 
 - 标识与归属：`id`、`workspace_id`、`owner_id`
-- 产品概述：`name`、`one_line_description`、`category`
+- 产品概述：`name`、`one_line_description`、`source_notes`、`category`
 - 客户与场景：`target_customers`、`target_industries`、`typical_use_cases`
 - 销售线索：`pain_points_solved`、`core_advantages`、`delivery_model`、`price_range`、`sales_region`、`constraints`
 - 质量与版本：`status`、`learning_stage`、`confidence_score`、`version`

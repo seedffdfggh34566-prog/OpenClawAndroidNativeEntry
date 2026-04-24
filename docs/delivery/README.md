@@ -21,7 +21,7 @@
 
 当前项目尚未完成：
 
-- product learning runtime 的正式接入
+- runtime observability / eval baseline
 - 首页、结果页和报告页的最终产品表达收口
 
 因此，当前阶段的重点是：
@@ -34,9 +34,9 @@
 
 建议按以下顺序进入下一批任务：
 
-1. product learning runtime follow-up task
-2. 首页 / 结果页 / 报告页的产品表达收口
-3. 视需要再拆 observability 或导出 follow-up task
+1. runtime observability / eval baseline
+2. product learning LLM phase 1
+3. Android product learning iteration UI
 
 原因如下：
 
@@ -45,8 +45,8 @@
 - Android 已完成最小 ProductProfile 创建
 - Android 已完成 `lead_analysis` 触发与轮询
 - Android 已完成 `report_generation` 触发与轮询
-- 产品学习交互基线与 runtime 边界已经冻结，下一步应转向 product learning runtime 实现
-- `lead_analysis` / `report_generation` 已完成 runtime Phase 1，下一批任务不应再回头追加 stub 时代需求
+- product learning iteration contract 已冻结，下一步应先补 runtime observability / eval baseline
+- `lead_analysis` / `report_generation` 已完成 runtime Phase 1，下一批任务应转向 iteration、observability 与真实 LLM
 
 ---
 
@@ -71,7 +71,11 @@
 | `task_v1_product_learning_interaction_baseline.md` | 冻结产品学习交互基线、最低完整度门槛与阶段状态 | `done` |
 | `task_v1_real_runtime_integration_phase1.md` | 以 backend-direct LangGraph 替换 analysis/report stub runtime | `done` |
 | `task_v1_product_learning_runtime_decision_freeze.md` | 冻结 product learning runtime 的对象边界、阶段判定与接口承载 | `done` |
-| `task_v1_product_learning_runtime_followup.md` | 以现有 public API 落地 product learning single-turn enrich 实现 | `planned` |
+| `task_v1_product_learning_runtime_followup.md` | 以现有 public API 落地 product learning single-turn enrich 实现 | `done` |
+| `task_v1_product_learning_iteration_contract.md` | 冻结下一轮 product learning enrich endpoint 与写回 contract | `done` |
+| `task_v1_runtime_observability_eval_baseline.md` | 冻结 runtime metadata、样例集与最小评估基线 | `planned` |
+| `task_v1_product_learning_llm_phase1.md` | 将 heuristic product learning 切换到真实 LLM draft 生成 | `planned` |
+| `task_v1_android_product_learning_iteration_ui.md` | 让 Android 学习页支持继续补充一轮信息 | `planned` |
 
 ---
 

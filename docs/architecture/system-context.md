@@ -618,9 +618,17 @@ Runtime execution layer 执行 product_learning_agent
     ↓
 后端校验并写回 `ProductProfile` 的 `draft` 状态
     ↓
-手机端展示草稿并请求用户确认
+手机端展示草稿并请求用户确认或继续补充
     ↓
-用户确认后升级为正式 ProductProfile
+若仍处于 collecting，则调用 `POST /product-profiles/{id}/enrich`
+    ↓
+后端将 `supplemental_notes` 追加到同一个 `ProductProfile.source_notes`
+    ↓
+后端再次创建 `run_type = product_learning` 的 `AgentRun`
+    ↓
+Runtime execution layer 继续富化同一个 `ProductProfile`
+    ↓
+达到 `ready_for_confirmation` 后，用户确认并升级为正式 ProductProfile
 
 产品学习阶段当前至少区分：
 

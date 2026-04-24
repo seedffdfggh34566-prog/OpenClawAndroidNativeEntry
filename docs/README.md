@@ -35,8 +35,9 @@
 4. `docs/adr/ADR-001-backend-deployment-baseline.md`
 5. `docs/adr/ADR-002-v1-runtime-and-product-learning-baseline.md`
 6. `docs/adr/ADR-003-v1-product-learning-runtime-boundary.md`
-7. `docs/delivery/tasks/_active.md`
-8. 当前 task 引用的 spec / runbook / handoff
+7. `docs/adr/ADR-004-v1-product-learning-iteration-contract.md`
+8. `docs/delivery/tasks/_active.md`
+9. 当前 task 引用的 spec / runbook / handoff
 
 ---
 
@@ -65,6 +66,7 @@
 - `docs/adr/ADR-001-backend-deployment-baseline.md`
 - `docs/adr/ADR-002-v1-runtime-and-product-learning-baseline.md`
 - `docs/adr/ADR-003-v1-product-learning-runtime-boundary.md`
+- `docs/adr/ADR-004-v1-product-learning-iteration-contract.md`
 
 ### 5.2 当前架构与后端方向
 
@@ -152,10 +154,10 @@ docs/
 
 当前最推荐的下一步执行顺序为：
 
-1. 参考 `ADR-003` 与 `task_v1_product_learning_runtime_decision_freeze.md`
-2. 执行 `task_v1_product_learning_runtime_followup.md`
-3. 在已完成的 runtime Phase 1 基础上，把 product learning 接入正式 runtime
-4. 再补首页、结果页、报告页的产品表达收口
+1. 参考 `ADR-004` 与 `task_v1_runtime_observability_eval_baseline.md`
+2. 先冻结 runtime metadata、样例集与最小评估基线
+3. 然后进入 product learning LLM Phase 1
+4. 最后再做 Android iteration UI
 
 当前补充建议阅读：
 

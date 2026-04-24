@@ -265,10 +265,10 @@ OpenClaw 相关旧文档仅作参考，不应主导当前 V1 设计。
 
 当前最合理的下一步是：
 
-1. 按 `ADR-003` 进入 product learning runtime follow-up 实现
-2. 先用现有 public API 落地 single-turn enrich
-3. 再补首页、结果页与报告页的产品表达收口
-4. 最后按需要拆 observability 或更多交互 follow-up
+1. 已按 `ADR-004` 冻结 product learning iteration contract
+2. 下一步先补 runtime observability / eval baseline
+3. 然后进入 product learning LLM Phase 1
+4. 最后按 contract 做 Android iteration UI
 
 ---
 

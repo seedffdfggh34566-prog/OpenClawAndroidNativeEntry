@@ -542,6 +542,9 @@ AgentRun 是系统内部执行过程的记录对象。
 - `ready_for_confirmation`：最低完整度已满足，可进入确认页
 - `confirmed`：用户已确认 ProductProfile，可进入 analysis
 
+当前阶段表达由 backend 计算并通过 `learning_stage` 对外暴露。
+它不是新的正式对象状态字段。
+
 ### 最低完整度门槛
 - `name`
 - `one_line_description`
@@ -559,6 +562,22 @@ AgentRun 是系统内部执行过程的记录对象。
 - 至少能从自由输入中提炼出 5~8 个关键字段
 - 至少能补问 3~5 个关键问题
 - 至少能生成一版用户可读的结构化摘要
+
+### 当前第一版实现形态
+
+当前默认实现形态为：
+
+- 复用现有 `POST /product-profiles`
+- backend 创建 `product_learning` 类型的 `AgentRun`
+- runtime 执行 single-turn enrich
+- backend 写回同一个 `ProductProfile`
+- 客户端通过现有轮询与详情接口读取结果
+
+当前不先实现：
+
+- 多轮聊天 public API
+- 独立 public `/product-learning/*` 路径
+- 新 lifecycle 状态
 
 ## 12.2 产品画像确认模块
 
@@ -799,9 +818,9 @@ AgentRun 是系统内部执行过程的记录对象。
 基于当前 PRD，建议后续推进顺序为：
 
 1. 固化本 PRD v0.3
-2. 回写 `docs/architecture/system-context.md`、mobile IA 与相关架构文档
-3. 先完成真实 runtime Phase 1：`lead_analysis` / `report_generation` 从 stub 切到 LangGraph
-4. 再拆 product learning runtime follow-up task
+2. 完成 `ADR-003` 与 product learning runtime 决策冻结
+3. 执行 product learning runtime follow-up
+4. 再补首页、结果页与报告页的产品表达收口
 5. 由执行 agent 按单 task 小步推进
 6. 每个 task 完成后写 handoff
 7. 再进入第二轮 PRD 微调

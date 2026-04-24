@@ -33,9 +33,9 @@
 
 ## 4. 已知限制
 
-- 本次没有新增 product learning API
+- 本次没有新增独立 product learning public endpoint
 - 本次没有改 Android UI 和 backend 实现
-- `ProductLearningRun` 是否独立冻结，仍留给后续 follow-up task
+- 运行对象、阶段判定与接口承载的冻结留给后续 runtime boundary 决策任务
 
 ---
 

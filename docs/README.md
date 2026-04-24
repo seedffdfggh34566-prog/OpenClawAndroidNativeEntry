@@ -34,8 +34,9 @@
 3. `docs/product/prd/ai_sales_assistant_v1_prd.md`
 4. `docs/adr/ADR-001-backend-deployment-baseline.md`
 5. `docs/adr/ADR-002-v1-runtime-and-product-learning-baseline.md`
-6. `docs/delivery/tasks/_active.md`
-7. 当前 task 引用的 spec / runbook / handoff
+6. `docs/adr/ADR-003-v1-product-learning-runtime-boundary.md`
+7. `docs/delivery/tasks/_active.md`
+8. 当前 task 引用的 spec / runbook / handoff
 
 ---
 
@@ -63,6 +64,7 @@
 - `docs/product/prd/ai_sales_assistant_v1_prd.md`
 - `docs/adr/ADR-001-backend-deployment-baseline.md`
 - `docs/adr/ADR-002-v1-runtime-and-product-learning-baseline.md`
+- `docs/adr/ADR-003-v1-product-learning-runtime-boundary.md`
 
 ### 5.2 当前架构与后端方向
 
@@ -77,8 +79,9 @@
 
 - `docs/delivery/tasks/_active.md`
 - `docs/delivery/README.md`
+- `docs/delivery/tasks/task_v1_product_learning_runtime_decision_freeze.md`
 - `docs/delivery/tasks/task_v1_product_learning_runtime_followup.md`
-- `docs/delivery/handoffs/handoff_2026_04_24_real_runtime_integration_phase1.md`
+- `docs/delivery/handoffs/handoff_2026_04_24_product_learning_runtime_decision_freeze.md`
 
 ### 5.4 当前工作流
 
@@ -149,8 +152,8 @@ docs/
 
 当前最推荐的下一步执行顺序为：
 
-1. 执行 `task_v1_product_learning_runtime_followup.md`
-2. 冻结 `ready_for_confirmation` 的正式判断归属与 product learning run object 方案
+1. 参考 `ADR-003` 与 `task_v1_product_learning_runtime_decision_freeze.md`
+2. 执行 `task_v1_product_learning_runtime_followup.md`
 3. 在已完成的 runtime Phase 1 基础上，把 product learning 接入正式 runtime
 4. 再补首页、结果页、报告页的产品表达收口
 

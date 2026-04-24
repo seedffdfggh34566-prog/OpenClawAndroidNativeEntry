@@ -34,6 +34,7 @@
 - `task_v1_product_profile_confirmation_flow.md`
 - `task_v1_product_learning_interaction_baseline.md`
 - `task_v1_real_runtime_integration_phase1.md`
+- `task_v1_product_learning_runtime_decision_freeze.md`
 
 这些任务当前应视为：
 
@@ -51,6 +52,7 @@
 
 最近完成：
 
+- `task_v1_product_learning_runtime_decision_freeze.md`
 - `task_v1_real_runtime_integration_phase1.md`
 - `task_v1_product_learning_interaction_baseline.md`
 - `task_v1_product_profile_confirmation_flow.md`
@@ -64,8 +66,8 @@
 
 - 产品学习交互基线已冻结并回写到主文档
 - `lead_analysis` / `report_generation` 已完成 backend-direct LangGraph Phase 1
-- 当前剩余的最大空缺已转为 product learning runtime follow-up
-- 下一步需要单独解决 `ProductLearningRun` 与 `ready_for_confirmation` 的归属问题
+- product learning runtime 的对象边界、阶段判定与接口承载已通过 ADR-003 冻结
+- 当前剩余的最大空缺已收敛为 product learning runtime 实现本身
 
 ### Auto-continue allowed when
 

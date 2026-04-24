@@ -1,6 +1,6 @@
 # V1 后端最小 API contract
 
-更新时间：2026-04-21
+更新时间：2026-04-24
 
 ## 1. 文档定位
 
@@ -48,6 +48,7 @@ V1 当前只冻结以下 8 个最小接口：
 1. 后端是正式对象权威真相
 2. runtime 只返回草稿形态和执行结果，不直接定义正式对象生命周期
 3. `POST /analysis-runs` 采用统一入口，用 `run_type` 区分：
+   - `product_learning`
    - `lead_analysis`
    - `report_generation`
 4. `/history` 采用首页聚合结构，优先服务 Android 首页与 History 页
@@ -131,6 +132,12 @@ runtime 负责：
 - `ended_at`
 - `error_message`
 
+支持的 `run_type`：
+
+- `product_learning`
+- `lead_analysis`
+- `report_generation`
+
 ## 4.3 `ProductProfileSummary`
 
 最小字段：
@@ -138,6 +145,7 @@ runtime 负责：
 - `id`
 - `name`
 - `one_line_description`
+- `learning_stage`
 - `status`
 - `version`
 - `updated_at`
@@ -149,6 +157,7 @@ runtime 负责：
 - `id`
 - `name`
 - `one_line_description`
+- `learning_stage`
 - `status`
 - `version`
 - `target_customers`
@@ -196,6 +205,19 @@ runtime 负责：
 - `latest_report`
 - `recent_items`
 
+## 4.8 `ProductProfileCreateResponse`
+
+最小字段：
+
+- `product_profile`
+- `current_run`
+- `links`
+
+说明：
+
+- Phase 0 / 当前已实现：`current_run` 允许为 `null`
+- product learning runtime 第一版：`current_run` 允许返回一个 `run_type = product_learning` 的 `AgentRunSummary`
+
 ---
 
 ## 5. 状态与对象关系
@@ -213,6 +235,7 @@ draft → confirmed → superseded
 - `draft`：已写回正式对象，但仍待用户确认
 - `confirmed`：可作为正式分析输入
 - `superseded`：被更新版本替代
+- 产品学习阶段表达通过 `learning_stage` 暴露，而不是扩展 `status`
 
 ### `LeadAnalysisResult`
 
@@ -248,6 +271,7 @@ queued → running → succeeded | failed | cancelled
 
 - 失败、重试、取消只体现在 `AgentRun`
 - `superseded` 不表示失败，只表示新版本替代
+- `product_learning` 执行继续复用 `AgentRun`
 
 ## 5.2 `AgentRun` 与正式对象的关系
 
@@ -257,6 +281,9 @@ queued → running → succeeded | failed | cancelled
 
 当前最小关系约定：
 
+- `product_learning`：
+  - 输入：一次产品描述与当前 `ProductProfile` draft
+  - 输出：同一个 `ProductProfile` 的富化版本
 - `lead_analysis`：
   - 输入：一个 `confirmed` 的 `ProductProfile`
   - 输出：一个 `LeadAnalysisResult`
@@ -294,11 +321,20 @@ queued → running → succeeded | failed | cancelled
     "id": "pp_001",
     "name": "AI 销售助手 V1",
     "one_line_description": "帮助用户先讲清产品，再生成获客分析结果。",
+    "learning_stage": "collecting",
     "status": "draft",
     "version": 1,
     "updated_at": "2026-04-21T10:00:00Z"
   },
-  "current_run": null,
+  "current_run": {
+    "id": "run_001",
+    "run_type": "product_learning",
+    "status": "queued",
+    "trigger_source": "product_profile_create",
+    "started_at": null,
+    "ended_at": null,
+    "error_message": null
+  },
   "links": {
     "self": "/product-profiles/pp_001"
   }
@@ -308,6 +344,7 @@ queued → running → succeeded | failed | cancelled
 ### 说明
 
 - 创建成功后默认 `status = draft`
+- 第一版 product learning runtime 接入后，`current_run` 允许非空
 - 需要通过 `POST /product-profiles/{id}/confirm` 将状态升级为 `confirmed`
 
 ## 6.2 `POST /product-profiles/{id}/confirm`
@@ -353,6 +390,7 @@ Android 产品画像确认页应依赖该接口作为主要读取入口。
     "id": "pp_001",
     "name": "AI 销售助手 V1",
     "one_line_description": "帮助用户先讲清产品，再生成获客分析结果。",
+    "learning_stage": "ready_for_confirmation",
     "status": "draft",
     "version": 1,
     "target_customers": ["中小企业老板", "销售负责人"],
@@ -373,6 +411,7 @@ Android 产品画像确认页应依赖该接口作为主要读取入口。
 
 - 可返回 `draft` 或 `confirmed` 的正式对象形态
 - `missing_fields` 用于帮助 Android 确认页展示“仍待补充”的信息
+- `learning_stage` 由 backend 计算并显式返回
 
 ## 6.4 `POST /analysis-runs`
 

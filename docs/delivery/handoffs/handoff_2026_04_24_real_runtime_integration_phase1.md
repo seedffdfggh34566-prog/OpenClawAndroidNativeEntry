@@ -47,4 +47,4 @@
 ## 5. 推荐下一步
 
 1. 创建并执行 `task_v1_product_learning_runtime_followup.md`
-2. 在 product learning runtime task 中明确 `ProductLearningRun` 与 `ready_for_confirmation` 的最终归属
+2. 先完成 product learning runtime boundary 决策冻结，再进入实现

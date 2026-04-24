@@ -34,7 +34,7 @@ Phase 1 仅覆盖：
 
 当前不覆盖：
 
-- product learning runtime
+- product learning runtime 的正式实现
 - queue worker infrastructure
 - 可恢复人工审核流
 - 持久化 checkpoint 恢复流程
@@ -144,6 +144,11 @@ Phase 1 最小 state 可包含：
 - `error`
 - `runtime_metadata`
 
+product learning follow-up 默认应新增：
+
+- `learning_stage`
+- `confidence_score`
+
 建议继续使用 `Pydantic` 作为 schema 核心。
 
 原因：
@@ -155,6 +160,21 @@ Phase 1 最小 state 可包含：
 ---
 
 ## 7. Graph 设计
+
+### 7.0 product learning 的默认后续落地方式
+
+当前 product learning follow-up 已固定：
+
+- 继续复用 `AgentRun`
+- 继续复用现有 8 个 public API
+- 采用 single-turn enrich
+- 由 backend 负责 `learning_stage` 判定与写回
+
+这意味着 product learning 第一版 graph 不应被设计成：
+
+- 多轮聊天 public API
+- 独立 product learning run 正式对象
+- 新 lifecycle 或人工暂停流
 
 ### 7.1 `lead_analysis` graph
 
@@ -257,6 +277,26 @@ LangGraph 对外输出应是：
 
 - `AgentRun.runtime_metadata`
 - 结构化日志
+
+---
+
+## 11. Product Learning Follow-up 默认形态
+
+product learning 第一版默认流程为：
+
+1. `POST /product-profiles` 创建初始 draft
+2. backend 创建 `run_type = product_learning` 的 `AgentRun`
+3. LangGraph 执行单轮富化
+4. runtime 输出 `ProductProfileDraft`、`missing_fields`、`confidence_score`
+5. backend 写回同一个 `ProductProfile`
+6. backend 计算 `learning_stage`
+7. 客户端通过现有轮询与详情接口读取结果
+
+当前不做：
+
+- 新增 `/product-learning/*`
+- `waiting_for_user / paused / resumed`
+- 多轮聊天 public API
 
 Phase 1 不要求：
 

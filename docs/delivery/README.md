@@ -45,7 +45,7 @@
 - Android 已完成最小 ProductProfile 创建
 - Android 已完成 `lead_analysis` 触发与轮询
 - Android 已完成 `report_generation` 触发与轮询
-- 产品学习交互基线已经冻结，下一步应转向 product learning runtime
+- 产品学习交互基线与 runtime 边界已经冻结，下一步应转向 product learning runtime 实现
 - `lead_analysis` / `report_generation` 已完成 runtime Phase 1，下一批任务不应再回头追加 stub 时代需求
 
 ---
@@ -70,7 +70,8 @@
 | `task_v1_product_profile_confirmation_flow.md` | 补齐 ProductProfile `draft -> confirmed` 确认闭环 | `done` |
 | `task_v1_product_learning_interaction_baseline.md` | 冻结产品学习交互基线、最低完整度门槛与阶段状态 | `done` |
 | `task_v1_real_runtime_integration_phase1.md` | 以 backend-direct LangGraph 替换 analysis/report stub runtime | `done` |
-| `task_v1_product_learning_runtime_followup.md` | 接入真实 product learning runtime，并冻结 run object / readiness 归属 | `planned` |
+| `task_v1_product_learning_runtime_decision_freeze.md` | 冻结 product learning runtime 的对象边界、阶段判定与接口承载 | `done` |
+| `task_v1_product_learning_runtime_followup.md` | 以现有 public API 落地 product learning single-turn enrich 实现 | `planned` |
 
 ---
 

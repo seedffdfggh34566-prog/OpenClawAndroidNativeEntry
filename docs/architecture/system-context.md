@@ -628,7 +628,8 @@ Runtime execution layer 执行 product_learning_agent
 - `ready_for_confirmation`
 - `confirmed`
 
-当前是否独立冻结 `ProductLearningRun`，仍留给后续 follow-up task 决定。
+当前 product learning 执行继续复用 `AgentRun`，不新增独立正式 run 对象。
+阶段表达由 backend 计算并通过 `learning_stage` 对外暴露。
 ```
 
 ## 11.2 获客分析流程

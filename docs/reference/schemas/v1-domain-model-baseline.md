@@ -1,6 +1,6 @@
 # V1 领域对象与状态基线
 
-更新时间：2026-04-21
+更新时间：2026-04-24
 
 ## 1. 文档定位
 
@@ -62,6 +62,7 @@ AnalysisReport
 - `Lead`
 - `LeadResearchSnapshot`
 - 完整 CRM 类对象
+- 独立 product learning run 正式对象
 
 如需在 V1 中出现上述信息，应将其视为交互通道、运行态上下文或未来扩展，而不是当前必须冻结的正式对象。
 
@@ -143,6 +144,7 @@ draft → confirmed → superseded
 约束：
 
 - 只有 `confirmed` 状态可作为正式分析输入
+- `ready_for_confirmation` 通过 `learning_stage` 表达，而不是进入 `status`
 
 ### 5.2 `LeadAnalysisResult`
 
@@ -183,6 +185,7 @@ queued → running → succeeded | failed | cancelled
 约束：
 
 - `AgentRun` 负责记录执行过程，不承担正式业务真相
+- product learning 执行继续复用 `AgentRun`
 
 ---
 
@@ -210,8 +213,13 @@ queued → running → succeeded | failed | cancelled
 - 产品概述：`name`、`one_line_description`、`category`
 - 客户与场景：`target_customers`、`target_industries`、`typical_use_cases`
 - 销售线索：`pain_points_solved`、`core_advantages`、`delivery_model`、`price_range`、`sales_region`、`constraints`
-- 质量与版本：`status`、`confidence_score`、`version`
+- 质量与版本：`status`、`learning_stage`、`confidence_score`、`version`
 - 时间信息：`created_at`、`updated_at`
+
+说明：
+
+- `status` 表示正式对象生命周期
+- `learning_stage` 表示 backend 派生的产品学习阶段表达
 
 ### 读取与产出
 

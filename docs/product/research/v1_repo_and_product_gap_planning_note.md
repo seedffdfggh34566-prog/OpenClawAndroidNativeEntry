@@ -29,7 +29,7 @@
 - backend 最小正式 contract
 - Android 最小控制入口闭环
 - `ProductProfile -> LeadAnalysisResult -> AnalysisReport` 的对象流验证
-- 真实 runtime 默认方向与产品学习交互基线 decision
+- 真实 runtime 默认方向、产品学习交互基线与 product learning runtime boundary decision
 
 当前仓库还没有完成的，不再是“方向是什么”，而是：
 
@@ -44,8 +44,9 @@
 当前已经新增：
 
 - `docs/adr/ADR-002-v1-runtime-and-product-learning-baseline.md`
+- `docs/adr/ADR-003-v1-product-learning-runtime-boundary.md`
 
-但以下主文档还未完全把这些结论写回：
+本 note 形成时，以下主文档还未完全把这些结论写回：
 
 - `docs/product/prd/ai_sales_assistant_v1_prd.md`
 - `docs/architecture/system-context.md`
@@ -117,7 +118,7 @@
 - 结构化摘要辅助
 - 阶段门控确认
 
-但 PRD 主文尚未把这一点写成正式产品基线。
+但在本 note 形成时，PRD 主文尚未把这一点写成正式产品基线。
 
 ### 4.2 最低完整度门槛尚未变成正式对象规则
 
@@ -130,16 +131,16 @@
 - 至少一条 `pain_points_solved`
 - 至少一条 `core_advantages`
 
-但当前还没有正式定义：
+但在本 note 形成时，还没有正式定义：
 
 - backend 如何判断 `ready_for_confirmation`
 - 缺失字段列表如何与 `ProductProfile.missing_fields` 对齐
 
 ### 4.3 产品学习阶段对象仍未完全冻结
 
-当前正式对象主线已经明确，但当真实 product learning runtime 接入时，仍需决定：
+当前正式对象主线已经明确，但在这份 planning note 形成时，仍需要决定：
 
-- 是否需要显式 `ProductLearningRun`
+- 是否需要显式的独立 product learning run 正式对象
 - 是否只复用现有 `AgentRun`
 - 产品学习中的中间状态是否只停留在 runtime state，而不新增正式对象
 

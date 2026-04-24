@@ -313,10 +313,19 @@ Gateway / Dashboard / Logs
 - `analysis_running`
 - `report_ready`
 
+当前这些阶段状态默认由 backend 暴露，其中产品学习页读取 `learning_stage`，而不是端侧自行从 `status + missing_fields` 推断。
+
 进入确认页的条件当前固定为：
 
 - 达到最低完整度，或
 - 用户主动要求先生成草稿
+
+第一版 product learning runtime 默认采用：
+
+- 现有 `POST /product-profiles` 创建入口
+- 非空 `current_run` 承接 runtime 执行状态
+- `GET /analysis-runs/{id}` 轮询
+- `GET /product-profiles/{id}` 读取富化后的 draft
 
 最低完整度门槛：
 

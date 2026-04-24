@@ -47,7 +47,7 @@
 
 当前处于：
 
-> **方向已收敛，主路径与 runtime 方向已冻结，产品表达与 product learning follow-up 仍待补厚的阶段**
+> **方向已收敛，主路径、runtime 方向与 product learning runtime 边界已冻结，产品表达仍待补厚的阶段**
 
 ### 已经明确的内容
 
@@ -66,8 +66,6 @@
 - 首页信息结构细节
 - 分析结果页的具体展示结构
 - 报告页的最终格式与字段粒度
-- product learning 是否需要独立 `ProductLearningRun`
-- `ready_for_confirmation` 的正式判断归属
 - 更完整的 runtime 生命周期与可观测层
 
 这些细节将在后续的参考研究、PRD、spec 和 task 收敛过程中进一步明确。
@@ -267,10 +265,10 @@ OpenClaw 相关旧文档仅作参考，不应主导当前 V1 设计。
 
 当前最合理的下一步是：
 
-1. 回写 PRD、system-context 与 mobile IA，使其与 ADR-002 一致
-2. 在 `backend/runtime/` 内完成 LangGraph Phase 1，替换 `lead_analysis` / `report_generation` stub
-3. 为 product learning runtime 创建 follow-up task
-4. 再补首页、结果页与报告页的产品表达收口
+1. 按 `ADR-003` 进入 product learning runtime follow-up 实现
+2. 先用现有 public API 落地 single-turn enrich
+3. 再补首页、结果页与报告页的产品表达收口
+4. 最后按需要拆 observability 或更多交互 follow-up
 
 ---
 

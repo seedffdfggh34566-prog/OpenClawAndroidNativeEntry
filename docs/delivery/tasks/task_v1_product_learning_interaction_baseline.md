@@ -74,7 +74,7 @@ PRD 已明确 V1 必须覆盖：
 本任务 Out of Scope：
 
 - 真实 product learning runtime 编码实现
-- 新增正式 product learning API
+- 新增独立 product learning public endpoint
 - Android 页面重写与真机联调
 - CRM、联系人抓取、自动触达、完整工作台
 - 完整多轮记忆系统或长期 profile memory 机制
@@ -176,7 +176,7 @@ PRD 已明确 V1 必须覆盖：
 ## 12. 本次定稿边界
 
 - 只冻结产品学习交互与门控，不新增 API、不改 backend write path、不做 Android UI 重写
-- `ProductLearningRun` 是否独立冻结，明确留给后续 follow-up task
+- 运行对象、阶段判定与接口承载的冻结，明确留给后续 runtime boundary 决策任务
 
 ---
 

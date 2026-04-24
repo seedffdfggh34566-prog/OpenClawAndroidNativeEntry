@@ -23,6 +23,7 @@ captures/
 
 # Local tooling / agent workspace
 .codex/
+.claude/settings.json
 .tmp/
 backend/.venv/
 backend/data/*.db

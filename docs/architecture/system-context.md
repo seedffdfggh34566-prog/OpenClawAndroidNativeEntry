@@ -1,6 +1,6 @@
 # Agent Runtime 与数据架构说明
 
-更新时间：2026-04-21
+更新时间：2026-04-24
 
 ## 1. 文档定位
 
@@ -40,7 +40,7 @@
 
 1. **手机安卓端不是权威主存**，只承担控制入口、状态入口、结果查看与轻量编辑能力。
 2. **本地服务器/电脑承载第一阶段正式后端**，负责正式业务对象、任务编排、结果沉淀与服务接口。
-3. **OpenClaw 作为 agent runtime / execution layer**，负责模型调用、工具调用、任务执行与运行时上下文，不直接等于产品本体。
+3. **当前默认 runtime 为 `backend/runtime/` 内的 LangGraph direct orchestration**，负责执行编排、结构化 draft 生成与运行时上下文，不直接等于产品本体。
 4. **产品系统本身负责业务对象、状态管理、结果归档与后续协作扩展**，不把聊天会话直接视为业务真相。
 5. **架构从第一阶段开始按未来可迁云设计**，不允许为了当前本地部署而把业务逻辑耦合到本地文件路径、手工脚本或设备特定实现。
 
@@ -108,7 +108,7 @@ jianglab:/home/yulin/projects/OpenClawAndroidNativeEntry
     ↓
 产品层后端（正式业务系统）
     ↓
-OpenClaw Runtime（Agent 执行层）
+Runtime Execution Layer（当前默认：backend/runtime + LangGraph）
     ↓
 数据层（结构化主存 / 文件存储 / 向量检索 / 日志）
 ```
@@ -144,23 +144,23 @@ OpenClaw Runtime（Agent 执行层）
 - 用户/团队/权限预留
 - 统一 API 提供
 - 审计与运行记录预留
-- 调度 OpenClaw runtime 执行任务
+- 调度 runtime execution layer 执行任务
 
-### 4.3 OpenClaw Runtime（Agent 执行层）
+### 4.3 Runtime Execution Layer（当前默认：LangGraph）
 
-OpenClaw 在当前系统中扮演：
+当前默认 runtime 执行层扮演：
 
-- 模型调用 runtime
-- 工具调用 gateway
-- Agent 执行与流程推进器
+- graph-based execution orchestration
+- 结构化 draft payload 生成
 - 运行时上下文承载层
-- 部分工作流编排执行层
+- 受控模型与工具调用入口
 
-OpenClaw 不扮演：
+当前默认 runtime 不扮演：
 
 - 产品业务数据库
 - 正式权限系统
 - 最终业务主档存储
+- 正式对象写回裁决层
 - 最终产品 UI
 
 ### 4.4 数据层
@@ -224,7 +224,7 @@ OpenClaw 不扮演：
 - 启动正式产品后端服务
 - 承载正式数据库
 - 承载对象存储或本地文件主目录
-- 承载 OpenClaw runtime
+- 承载当前默认 runtime execution layer
 - 接收手机端发起的请求
 - 执行产品学习 / 获客分析 / 报告生成任务
 - 统一归档结果对象
@@ -245,19 +245,19 @@ OpenClaw 不扮演：
 
 ---
 
-## 5.3 OpenClaw Runtime 职责
+## 5.3 Runtime Execution Layer 职责
 
-### OpenClaw 应负责
+### Runtime 应负责
 
 - 统一执行 Agent 回合
-- 管理模型调用
+- 管理模型调用或其他受控生成逻辑
 - 调用工具
 - 调用外部数据源
 - 生成中间分析结果
 - 返回结构化输出
 - 提供 runtime 级运行日志
 
-### OpenClaw 不应负责
+### Runtime 不应负责
 
 - 直接定义 `ProductProfile` 的权威 schema
 - 直接决定业务对象生命周期
@@ -266,7 +266,7 @@ OpenClaw 不扮演：
 
 ### 当前建议定位
 
-> **OpenClaw = runtime / tool gateway / execution substrate**
+> **Runtime = execution substrate，backend = formal truth layer**
 
 不是产品本体，不是数据库，不是唯一状态系统。
 
@@ -574,7 +574,7 @@ schemas/
 - 获取报告
 - 获取任务状态
 
-## 10.2 产品后端 → OpenClaw Runtime
+## 10.2 产品后端 → Runtime Execution Layer
 
 产品后端调用 runtime：
 
@@ -583,7 +583,13 @@ schemas/
 - 获取结构化结果
 - 写回正式对象
 
-## 10.3 OpenClaw Runtime → 数据与工具
+当前默认实现方向为：
+
+- `backend/runtime/` 内直接接入 LangGraph
+- 不经由额外 OpenClaw 中间执行壳
+- 正式对象写回仍由 backend services 协调
+
+## 10.3 Runtime Execution Layer → 数据与工具
 
 runtime 只通过受控方式：
 
@@ -604,9 +610,9 @@ runtime 不应直接越过产品层随意写正式主对象。
 ```text
 手机端发起产品学习
     ↓
-产品后端创建 ProductLearningRun
+产品后端创建一次 product learning agent run
     ↓
-OpenClaw Runtime 执行 product_learning_agent
+Runtime execution layer 执行 product_learning_agent
     ↓
 生成 ProductProfileDraft 草稿形态
     ↓
@@ -615,6 +621,14 @@ OpenClaw Runtime 执行 product_learning_agent
 手机端展示草稿并请求用户确认
     ↓
 用户确认后升级为正式 ProductProfile
+
+产品学习阶段当前至少区分：
+
+- `collecting`
+- `ready_for_confirmation`
+- `confirmed`
+
+当前是否独立冻结 `ProductLearningRun`，仍留给后续 follow-up task 决定。
 ```
 
 ## 11.2 获客分析流程
@@ -624,7 +638,7 @@ OpenClaw Runtime 执行 product_learning_agent
     ↓
 产品后端读取已确认 ProductProfile
     ↓
-OpenClaw Runtime 执行 lead_analysis_agent
+Runtime execution layer 执行 lead_analysis_agent
     ↓
 生成 LeadAnalysisResultDraft 草稿形态
     ↓
@@ -640,7 +654,7 @@ OpenClaw Runtime 执行 lead_analysis_agent
     ↓
 产品后端读取 ProductProfile + LeadAnalysisResult
     ↓
-OpenClaw Runtime 执行 report_generation_agent
+Runtime execution layer 执行 report_generation_agent
     ↓
 生成 AnalysisReportDraft 草稿形态
     ↓
@@ -663,7 +677,7 @@ OpenClaw Runtime 执行 report_generation_agent
 - API 语义
 - agent contract
 - 手机端页面逻辑
-- OpenClaw runtime 的角色定位
+- runtime execution layer 的角色定位
 - 任务状态模型
 
 ## 12.2 可替换的部分
@@ -722,7 +736,7 @@ docs/adr/ADR-001-backend-deployment-baseline.md
 
 - 为什么当前采用本地服务器承载正式后端
 - 为什么手机端不做主存
-- 为什么 OpenClaw 只作为 runtime
+- 为什么 runtime 只作为 execution layer
 - 为什么架构要按未来可迁云设计
 
 ### 2）Task 文档
@@ -750,4 +764,4 @@ docs/adr/ADR-001-backend-deployment-baseline.md
 
 当前系统的正式技术基线是：
 
-> **手机端作为控制入口，本地服务器承载正式后端，OpenClaw 作为 agent runtime，业务对象以后端为权威真相，并从第一阶段开始按未来可迁云设计。**
+> **手机端作为控制入口，本地服务器承载正式后端，`backend/runtime/` 内的 LangGraph 作为当前默认 runtime 执行层，业务对象以后端为权威真相，并从第一阶段开始按未来可迁云设计。**

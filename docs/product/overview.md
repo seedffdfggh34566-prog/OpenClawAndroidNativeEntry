@@ -1,6 +1,6 @@
 # 项目总览（当前阶段）
 
-更新时间：2026-04-23
+更新时间：2026-04-24
 
 ## 1. 文档定位
 
@@ -38,7 +38,7 @@
 
 - 安卓端不是权威主存，只负责控制入口、状态查看、任务发起、结果查看和轻量编辑
 - 正式后端部署在本地服务器 / 电脑环境中，负责业务对象主存、任务执行编排、结果沉淀与后续协作能力预留
-- OpenClaw 在系统中扮演 **agent runtime / execution layer**，负责模型调用、工具调用与 agent 执行，不直接等于产品本体，也不直接承担业务主数据库角色
+- 当前默认 runtime 方向为 **`backend/runtime/` 内的 LangGraph direct orchestration**，负责执行编排与结构化 draft 生成；OpenClaw 不再是当前默认实现前提
 - 当前虽以后端本地部署为基线，但对象模型、API 边界和 agent contract 按未来可迁移到云端的方向设计
 
 ---
@@ -47,7 +47,7 @@
 
 当前处于：
 
-> **方向已收敛，系统基线已明确，细节仍在参考研究与定义中的阶段**
+> **方向已收敛，主路径与 runtime 方向已冻结，产品表达与 product learning follow-up 仍待补厚的阶段**
 
 ### 已经明确的内容
 
@@ -55,7 +55,8 @@
 - 核心闭环：产品学习 → 获客分析 → 结构化输出
 - 当前不优先推进：联系方式获取、自动触达、完整 CRM
 - 系统部署基线：本地服务器承载正式后端，手机端仅作控制入口
-- 系统分层：OpenClaw 作为 agent runtime，产品系统负责业务对象、任务状态与结果沉淀
+- 系统分层：backend 为 formal truth layer，`backend/runtime/` 内的 LangGraph 作为当前默认 runtime/orchestration 方向
+- 产品学习交互基线：聊天优先 + 结构化摘要辅助 + 阶段门控确认
 - 工程上：`jianglab` 已确定为唯一工作区
 - 工具上：Codex app 已可远程连接 `jianglab`
 - 文档上：`docs/` 已建立最小文档骨架，旧 OpenClaw 文档已归档
@@ -63,11 +64,11 @@
 ### 当前尚未完全冻结的内容
 
 - 首页信息结构细节
-- 产品学习流程的具体交互形式
 - 分析结果页的具体展示结构
 - 报告页的最终格式与字段粒度
-- agent 之间的具体状态流转细节
-- 本地服务器后端的第一版服务边界与接口颗粒度
+- product learning 是否需要独立 `ProductLearningRun`
+- `ready_for_confirmation` 的正式判断归属
+- 更完整的 runtime 生命周期与可观测层
 
 这些细节将在后续的参考研究、PRD、spec 和 task 收敛过程中进一步明确。
 
@@ -152,7 +153,7 @@ jianglab:/home/yulin/projects/OpenClawAndroidNativeEntry
 当前第一阶段系统基线如下：
 
 - **本地服务器 / 电脑**：承载正式后端、业务对象主存、任务编排和 agent 执行接入层
-- **OpenClaw**：作为 agent runtime / execution layer 运行在后端环境中
+- **LangGraph（当前默认）**：作为 `backend/runtime/` 内的 runtime / orchestration layer 运行在后端环境中
 - **手机安卓端**：作为控制入口，负责发起、查看、确认、轻量编辑与状态追踪
 - **未来迁移方向**：在不推翻对象模型、API 边界与 agent contract 的前提下，支持后续迁移到云端部署
 
@@ -160,7 +161,7 @@ jianglab:/home/yulin/projects/OpenClawAndroidNativeEntry
 
 当前系统边界应按以下方式理解：
 
-- OpenClaw 不是产品本体，而是 runtime 层
+- runtime 不是产品本体，而是执行层
 - 产品系统不是单纯聊天壳，而是销售场景的业务层与结果沉淀层
 - agent 运行结果必须沉淀为正式业务对象，而不是只停留在一次会话中
 - 本地部署不等于本地耦合；即使当前以后端本地部署为主，也应避免直接耦合到本地文件路径、手工脚本或端侧主存逻辑
@@ -209,7 +210,7 @@ jianglab:/home/yulin/projects/OpenClawAndroidNativeEntry
 
 ### P2：完成首批架构 spec
 
-- 明确 OpenClaw、产品后端、手机入口三者的关系
+- 明确 runtime、产品后端、手机入口三者的关系
 - 明确业务对象与 agent contract
 - 明确第一阶段本地服务器部署前提与未来迁云约束
 
@@ -266,10 +267,10 @@ OpenClaw 相关旧文档仅作参考，不应主导当前 V1 设计。
 
 当前最合理的下一步是：
 
-1. 按新入口继续收口 `docs/README.md`、`AGENTS.md` 与 `docs/delivery/tasks/_active.md`
-2. 在 `docs/delivery/tasks/` 中创建 Android 壳层最小真实数据对接 follow-up task
-3. 继续补强 `docs/architecture/` 与 `docs/reference/` 下的正式边界文档
-4. 再进入 Android 与真实后端的最小联调
+1. 回写 PRD、system-context 与 mobile IA，使其与 ADR-002 一致
+2. 在 `backend/runtime/` 内完成 LangGraph Phase 1，替换 `lead_analysis` / `report_generation` stub
+3. 为 product learning runtime 创建 follow-up task
+4. 再补首页、结果页与报告页的产品表达收口
 
 ---
 

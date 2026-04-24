@@ -1,8 +1,8 @@
 # AI 销售助手 V1 PRD
 
 - 文档路径建议：`docs/product/prd/ai_sales_assistant_v1_prd.md`
-- 文档状态：Draft v0.2
-- 更新日期：2026-04-23
+- 文档状态：Draft v0.3
+- 更新日期：2026-04-24
 - 关联文档：`docs/product/research/v1_reference_notes.md`
 - 用途：明确 **AI 销售助手 V1** 的产品范围、核心流程、系统分层、关键对象、验收标准，并为后续正式 task 拆分提供依据。
 
@@ -58,7 +58,7 @@
 
 ### 3.1 一句话定位
 
-AI 销售助手 V1 是一个面向中小企业老板、销售负责人和个人 BD 的轻量 AI 销售产品：用户通过手机端控制入口发起产品学习与获客分析，由正式后端与 agent runtime 生成结构化产品画像和分析报告。
+AI 销售助手 V1 是一个面向中小企业老板、销售负责人和个人 BD 的轻量 AI 销售产品：用户通过手机端控制入口发起产品学习与获客分析，由正式后端与当前默认 runtime 执行层生成结构化产品画像和分析报告。
 
 ### 3.2 当前版本目标
 
@@ -96,7 +96,7 @@ V1 不做以下内容：
 
 - **本地服务器承载正式后端**
 - **手机端仅作控制入口**
-- **OpenClaw 作为 agent runtime / execution layer**
+- **`backend/runtime/` 内的 LangGraph 作为当前默认 runtime / orchestration layer**
 - **架构按未来可迁云设计**
 
 ### 4.2 手机端的角色
@@ -127,20 +127,22 @@ V1 不做以下内容：
 - 结果复看与历史记录
 - 后续团队协作能力预留
 
-### 4.4 OpenClaw 的角色
+### 4.4 当前默认 runtime 的角色
 
-OpenClaw 在系统中扮演：
+当前默认 runtime 方向为：
 
-- agent runtime
-- 模型调用层
-- 工具调用层
-- 执行与编排层
+- `backend/runtime/` 内的 LangGraph direct orchestration
+- 结构化 draft payload 生成
+- 运行时上下文与 graph 状态管理
 
-OpenClaw 当前不直接承担：
+当前默认 runtime 不直接承担：
 
 - 产品业务主数据库
 - 产品对象模型定义中心
+- 正式对象写回裁决
 - 权限与协作中心
+
+OpenClaw 可继续保留为历史 runtime 参考或后续外部执行候选，但它不是当前 V1 的默认实现前提。
 
 ### 4.5 产品系统自身的角色
 
@@ -341,9 +343,21 @@ V1 范围内必须覆盖：
 建议呈现：
 - 用户输入区
 - AI 提问与总结区
-- 当前已收集关键信息的简要摘要或阶段提示
-- 当前处理状态提示
+- 当前产品理解摘要
+- 缺失字段提示
+- 当前处理状态提示（`collecting` / `ready_for_confirmation` / `confirmed`）
 - “进入下一步”按钮（当信息达到最低完整度时出现）
+
+当前默认交互基线为：
+
+- 聊天优先
+- 结构化摘要辅助
+- 阶段门控确认
+
+当前不采用：
+
+- 纯聊天自由流
+- 纯静态表单
 
 ### 10.3 产品画像确认页
 
@@ -520,6 +534,26 @@ AgentRun 是系统内部执行过程的记录对象。
 - AI 追问应围绕产品、客户、场景、优势、购买动因等关键维度展开
 - 多轮对话后，系统应能形成初版 ProductProfile
 - ProductProfile 草稿应写入后端对象，而不是停留在会话里
+- 产品学习页应持续显示结构化摘要与缺失字段
+- 只有达到最低完整度，或用户主动要求先生成草稿时，才进入确认页
+
+### 当前阶段状态
+- `collecting`：仍在补关键字段
+- `ready_for_confirmation`：最低完整度已满足，可进入确认页
+- `confirmed`：用户已确认 ProductProfile，可进入 analysis
+
+### 最低完整度门槛
+- `name`
+- `one_line_description`
+- `target_customers >= 1`
+- `typical_use_cases >= 1`
+- `pain_points_solved >= 1`
+- `core_advantages >= 1`
+
+以下字段当前允许缺省，但应显式保留在 missing 列表中：
+- `target_industries`
+- `delivery_model`
+- `constraints`
 
 ### 最低可用标准
 - 至少能从自由输入中提炼出 5~8 个关键字段
@@ -613,7 +647,7 @@ AgentRun 是系统内部执行过程的记录对象。
 ### 13.5 系统分层清晰
 - 手机端不是权威主存
 - 正式对象以后端为准
-- OpenClaw 是 runtime，不是产品本体
+- runtime 执行层不是产品本体
 - 产品层对象与执行层应区分
 
 ### 13.6 可迁移性
@@ -672,6 +706,8 @@ AgentRun 是系统内部执行过程的记录对象。
 - AI 至少发起若干关键追问
 - 对话结束后能生成初版 ProductProfile
 - ProductProfile 草稿对象被正式写入后端
+- 页面能显示结构化摘要、缺失字段和当前阶段状态
+- 达到最低完整度后才进入 `ready_for_confirmation`
 
 ### 16.2 产品画像任务验收
 - ProductProfile 以结构化方式呈现
@@ -722,7 +758,7 @@ AgentRun 是系统内部执行过程的记录对象。
 ### 17.5 风险五：当前本地服务器部署导致后续迁云困难
 应对：
 - 明确产品层对象与 API 边界
-- 明确 OpenClaw runtime 与业务主存分层
+- 明确 runtime 执行层与业务主存分层
 - 不做本地耦合型实现
 
 ---
@@ -762,11 +798,11 @@ AgentRun 是系统内部执行过程的记录对象。
 
 基于当前 PRD，建议后续推进顺序为：
 
-1. 固化本 PRD v0.2
-2. 补 `docs/architecture/system-context.md` 与相关架构文档
-3. 补 `docs/adr/` 中与部署基线相关的决策文档
-4. 再拆第一批正式 task
-5. 由 Codex 按单 task 小步推进
+1. 固化本 PRD v0.3
+2. 回写 `docs/architecture/system-context.md`、mobile IA 与相关架构文档
+3. 先完成真实 runtime Phase 1：`lead_analysis` / `report_generation` 从 stub 切到 LangGraph
+4. 再拆 product learning runtime follow-up task
+5. 由执行 agent 按单 task 小步推进
 6. 每个 task 完成后写 handoff
 7. 再进入第二轮 PRD 微调
 
@@ -776,4 +812,4 @@ AgentRun 是系统内部执行过程的记录对象。
 
 当前 AI 销售助手 V1 的最小产品目标不是做一个完整销售平台，而是：
 
-> **让用户通过手机端控制入口快速讲清产品，并由正式后端与 agent runtime 生成一份有优先级、有理由、可复看的获客分析报告。**
+> **让用户通过手机端控制入口快速讲清产品，并由正式后端与当前默认 runtime 执行层生成一份有优先级、有理由、可复看的获客分析报告。**

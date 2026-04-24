@@ -8,3 +8,7 @@
 - `prd/`
 - `research/`
 - `roadmap.md`
+
+当前与 V1 收口直接相关的补充文档：
+
+- `research/v1_repo_and_product_gap_planning_note.md`

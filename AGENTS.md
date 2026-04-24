@@ -84,6 +84,23 @@ Agents should keep these documents aligned with the current code and workflow re
 
 ## 5. Required Working Style
 
+### Agent roles
+
+This repository uses a layered agent workflow, but the rules are written against
+**responsibilities**, not tool identities.
+
+There are 3 default roles:
+
+- **Execution agent**: implements the current task, runs the lightest meaningful
+  validation, updates task status, writes handoff notes, and creates atomic commits
+- **Planning layer**: maintains direction, priorities, task queue, boundary rules,
+  and stop conditions in repo docs
+- **Human decision layer**: resolves product direction changes, major architecture
+  changes, deployment/release decisions, and other high-risk final calls
+
+Any agent may act as the execution agent if it follows these rules.
+Do not assume the workflow depends on a specific tool name.
+
 ### Before starting any implementation task
 An agent should first:
 
@@ -103,6 +120,24 @@ For non-trivial work, use this sequence:
 4. validate locally
 5. update affected docs
 6. produce a concise handoff summary
+
+### Default execution model
+
+The default execution model is **lightly-governed autonomy**:
+
+- the planning layer defines boundaries, priorities, task queue, and stop conditions
+- the execution agent may continue through the already-documented task queue without
+  asking for per-task approval
+- the execution agent must not invent new product goals or jump to undocumented
+  large tasks
+
+The next task must come from repository docs such as:
+
+- `docs/delivery/tasks/_active.md`
+- the current task's "next step" section
+- another already-created follow-up task explicitly referenced from current delivery docs
+
+When the queue is exhausted or unclear, stop and hand control back to the planning layer.
 
 ---
 
@@ -155,6 +190,20 @@ Use short, conventional, descriptive commit messages, for example:
 
 ### Push behavior
 Do not push automatically unless explicitly requested.
+
+### Default autonomous Git model
+
+For long-running autonomous development:
+
+- do not use `main` as the default execution branch
+- it is acceptable to continue multiple already-queued tasks on the same working branch
+- each completed task must still be closed out separately with:
+  - the lightest meaningful validation
+  - task status update
+  - handoff update
+  - one atomic commit
+
+Do not merge multiple tasks into one commit just because they were executed in one continuous run.
 
 ---
 
@@ -257,6 +306,32 @@ Suggested status values:
 - `in_progress`
 - `blocked`
 - `done`
+
+In addition, the current delivery entrypoint should preferably record:
+
+- current task
+- next queued tasks
+- auto-continue allowed conditions
+- stop conditions
+
+This is the minimum structure that allows an execution agent to continue safely
+without per-task manual scheduling.
+
+---
+
+## 14. Stop Conditions For Autonomous Execution
+
+The execution agent should stop and return control to the planning layer when:
+
+- a product direction change is needed
+- the next task is not already defined in repository docs
+- docs, contract, and implementation disagree in a way that changes task meaning
+- a new infrastructure dependency, migration, deployment change, or environment assumption is required
+- repeated validation failures suggest the task boundary is wrong
+- the work would cross a documented architecture or scope boundary
+- a release, push, merge, or other high-risk irreversible action is required
+
+The execution agent may continue without re-approval only while none of the stop conditions above are met.
 
 ---
 

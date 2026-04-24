@@ -1,6 +1,6 @@
 # 开发者工作流手册
 
-更新时间：2026-04-23
+更新时间：2026-04-24
 
 ## 1. 文档定位
 
@@ -10,7 +10,7 @@
 
 - 进入仓库后先看什么
 - 什么时候改方向文档，什么时候新建 task
-- 什么时候让 Codex 开工
+- 什么时候让执行 agent 开工
 - 一个任务做完后必须收口哪些文件
 
 本文档不是：
@@ -36,6 +36,14 @@
 
 当前不维护 Windows 本地的第二份主工作副本。
 
+当前默认采用轻约束自治模型：
+
+- **执行 agent**：连续推进已排定 task
+- **规划层**：维护方向、队列、边界和停止条件
+- **人工层**：只处理方向变化、重大风险和发布决策
+
+这里的规则不绑定具体工具名。任何 agent 只要遵守边界，都可以充当执行 agent。
+
 ---
 
 ## 3. 当前标准入口
@@ -56,7 +64,7 @@
 
 ## 4. 先把变化分成三类
 
-每次有新想法、新需求或新问题时，先不要直接让 Codex 改代码。先判断它属于哪一类：
+每次有新想法、新需求或新问题时，先不要直接让执行 agent 改代码。先判断它属于哪一类：
 
 ### A. 方向变化
 
@@ -100,23 +108,23 @@
 3. 必要时新增或更新 [docs/adr/](/home/yulin/projects/OpenClawAndroidNativeEntry/docs/adr)
 4. 明确哪些旧 task 失效或需要冻结
 5. 再拆新的 task
-6. 最后再让 Codex 开始执行
+6. 最后再让执行 agent 开始执行
 
 重要原则：
 
 > **方向变了，先改文档，不先改代码。**
 
-### 5.2 新任务：先写 task，再开线程
+### 5.2 新任务：先写 task，再开执行线程
 
 如果属于新任务，标准顺序是：
 
 1. 明确目标
 2. 在 [docs/delivery/tasks/](/home/yulin/projects/OpenClawAndroidNativeEntry/docs/delivery/tasks) 中新建 task
 3. 必要时更新 [_active.md](/home/yulin/projects/OpenClawAndroidNativeEntry/docs/delivery/tasks/_active.md)
-4. 再开一个 Codex 线程
-5. 让 Codex 只做这个 task
+4. 再开一个执行 agent 线程
+5. 让执行 agent 只做当前 task 或已排定 task 队列
 6. 做完后更新 task 状态与 handoff
-7. review 后再进入下一个任务
+7. review 后再进入下一个阶段
 
 一个合格 task 至少应说明：
 
@@ -128,7 +136,7 @@
 
 重要原则：
 
-> **没有 task，就不要直接让 Codex 做正式开发任务。**
+> **没有 task，就不要直接让执行 agent 做正式开发任务。**
 
 ### 5.3 细节修订：默认按 follow-up task 管
 
@@ -156,8 +164,9 @@
 
 - 当前主线是什么
 - 当前阶段是什么
-- 当前唯一推荐任务是什么
-- 是否已有正在进行中的正式 task
+- 当前推荐 task 是什么
+- next queued tasks 是什么
+- auto-continue 与 stop conditions 是否已写清
 
 优先参考：
 
@@ -183,25 +192,27 @@
 - 新任务：改 `delivery/tasks/`
 - 细节修订：新建 follow-up task，必要时补 `reference/` 或 `how-to/`
 
-### Step 4：再让 Codex 执行
+### Step 4：再让执行 agent 执行
 
-只有在任务边界清楚后，才开 Codex 线程。提示里至少要明确：
+只有在任务边界清楚后，才开执行线程。提示里至少要明确：
 
 - 先读 `AGENTS.md`
 - 先读 `docs/README.md`
 - 先读 `_active.md` 和当前 task
 - 不得超范围修改
 - 做完后更新 task 和 handoff
+- 若 next queued tasks 已写明且未命中 stop conditions，可自动继续
 
 ### Step 5：review
 
-Codex 做完后，你至少检查：
+执行 agent 做完后，你至少检查：
 
 - 改了哪些文件
 - 是否超出范围
 - 文档是否同步更新
 - 是否提供了 handoff
 - 是否做了最基本的验证
+- 是否按 task 粒度提交了 commit
 
 ### Step 6：收口
 
@@ -210,8 +221,8 @@ Codex 做完后，你至少检查：
 1. 更新 task 状态
 2. 更新或新增 handoff
 3. 必要时更新 `reference/`、`architecture/`、`how-to/`
-4. 再决定下一个任务
-5. 不在同一个线程里无限追加新需求
+4. 若 docs 中已排定 next queued tasks，则允许执行 agent 继续
+5. 若 task 队列耗尽或边界变化，则回到规划层重新排队
 
 ---
 
@@ -221,7 +232,7 @@ Codex 做完后，你至少检查：
 
 用途：
 
-- 给 Codex 的仓库级规则文件
+- 给所有 agent 的仓库级规则文件
 
 你怎么用：
 
@@ -323,7 +334,7 @@ Codex 做完后，你至少检查：
 你怎么用：
 
 - 正式开发任务都先写 task
-- `_active.md` 用来标识当前推荐任务
+- `_active.md` 用来标识当前任务、next queued tasks、auto-continue allowed when、stop conditions
 - `_template.md` 用于统一 task 结构
 
 ### 7.8 `docs/delivery/handoffs/`
@@ -350,16 +361,16 @@ Codex 做完后，你至少检查：
 
 ---
 
-## 8. 什么时候不应该直接让 Codex 开工
+## 8. 什么时候不应该直接让执行 agent 开工
 
-下面这些情况，不要一上来就让 Codex 改代码：
+下面这些情况，不要一上来就让执行 agent 改代码：
 
 1. 你自己还没想清楚这是方向变化还是细节修订
 2. 你只是在脑暴，还没有任务边界
 3. 这个变化会影响版本范围
 4. 你只是想参考市面产品
-5. 当前线程已经完成原任务，你又临时想加几个新需求
-6. `_active.md` 还没有明确当前唯一推荐任务
+5. 当前队列已经跑完，而下一个正式 task 还没写
+6. `_active.md` 还没有明确当前任务和 next queued tasks
 
 ---
 
@@ -373,26 +384,42 @@ Codex 做完后，你至少检查：
 4. handoff 已写
 5. 至少做了最小可行验证
 6. 若结构、contract 或运行方式变化，相关文档已同步
+7. 已形成一个原子 commit
 
 如果这些没做完，不要轻易把任务当成真正完成。
 
 ---
 
-## 10. 当前阶段最推荐的推进方式
+## 10. 队列驱动的自治执行
 
-当前阶段最推荐的方式不是并行铺很多功能，而是：
+当前默认不采用“每完成一个 task 就回到上层重新审批”的重流程。
 
-1. 用 [_active.md](/home/yulin/projects/OpenClawAndroidNativeEntry/docs/delivery/tasks/_active.md) 明确当前唯一推荐任务
-2. 让 Codex 只围绕该任务推进
-3. 任务结束后写 handoff
-4. 再切下一个任务
+更推荐的方式是：
 
-当前不建议：
+1. 规划层先写清当前任务与 next queued tasks
+2. 执行 agent 在边界内完成当前 task
+3. 完成一次最小验证、task 更新、handoff、原子 commit
+4. 若下一个 task 已写明，且未命中 stop conditions，则自动继续
 
-- 一开始就并行很多功能线程
-- 一开始就大改 Android 或 backend 架构
-- 一边改方向一边写实现
-- 一开始就扩到自动触达 / CRM
+执行 agent 可以自主做的事：
+
+- 在当前 task 内实现
+- 在已排定 task 队列中顺序继续
+- 更新 docs / handoff / commit
+
+执行 agent 不可以自主做的事：
+
+- 自行发明新的产品目标
+- 跳到 docs 中未排定的大任务
+- 越过未明确的架构、部署或范围决策
+
+需要停下并回到规划层的情况包括：
+
+- 方向变化
+- task 队列耗尽或不清楚
+- docs / contract / code 冲突
+- 需要新基础设施、迁移、部署调整
+- 连续验证失败说明边界判断可能错误
 
 ---
 
@@ -409,19 +436,19 @@ Codex 做完后，你至少检查：
 3. 必要时写 `docs/adr/`
 4. 暂停或冻结旧 task
 5. 重拆新 task
-6. 再让 Codex 开工
+6. 再让规划层安排新的任务队列
 
-### 场景 B：要做一个新功能
+### 场景 B：要做一组连续小任务
 
-例如：“让 Android 接真实 `/history`。”
+例如：“先补确认，再补 runtime 接入前的接口收口。”
 
 处理方式：
 
-1. 新建 task
+1. 新建或整理 task 队列
 2. 明确范围和验收标准
 3. 更新 `_active.md`
-4. 开 Codex 线程执行
-5. 完成后更新 handoff
+4. 开执行 agent 线程执行
+5. 每个 task 独立提交、独立 handoff
 
 ### 场景 C：功能做完了，但细节不满意
 
@@ -436,7 +463,7 @@ Codex 做完后，你至少检查：
 
 处理方式：
 
-1. 不急着让 Codex 改代码
+1. 不急着让执行 agent 改代码
 2. 先写研究笔记
 3. 提炼设计原则
 4. 再进入 PRD 和 task
@@ -451,7 +478,7 @@ Codex 做完后，你至少检查：
 
 ### 纪律 2
 
-**新功能先有 task，再开线程。**
+**新功能先有 task，再开执行线程。**
 
 ### 纪律 3
 
@@ -459,11 +486,11 @@ Codex 做完后，你至少检查：
 
 ### 纪律 4
 
-**一个线程尽量只做一个任务。**
+**执行 agent 可以连续推进已排定 task 队列。**
 
 ### 纪律 5
 
-**任务做完必须收口，不要无限续接。**
+**每个 task 都必须独立收口，不要把多个任务混成一个提交。**
 
 ---
 
@@ -471,4 +498,4 @@ Codex 做完后，你至少检查：
 
 当前项目的标准推进方式是：
 
-> **先判断是方向、任务还是细节，再更新对应层级文档，最后让 Codex 在明确 task 边界内执行，并用 handoff 收口。**
+> **先判断是方向、任务还是细节，再更新对应层级文档，然后让执行 agent 在已写 task 队列内自治推进，并用验证、handoff 和原子 commit 收口。**

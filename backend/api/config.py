@@ -13,7 +13,6 @@ class Settings(BaseSettings):
     app_name: str = "AI Sales Assistant Backend"
     database_url: str | None = None
     database_path: str = "data/app.db"
-    runtime_allow_draft_profiles: bool = True
     recent_items_limit: int = 5
     log_level: str = "INFO"
     log_json: bool = True

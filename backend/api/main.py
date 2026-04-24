@@ -22,6 +22,7 @@ from backend.api.schemas import (
     AnalysisRunDetailResponse,
     HistoryResponse,
     LeadAnalysisResultDetailResponse,
+    ProductProfileConfirmResponse,
     ProductProfileCreateRequest,
     ProductProfileCreateResponse,
     ProductProfileDetailResponse,
@@ -109,6 +110,16 @@ def create_app() -> FastAPI:
         product_profile = services.get_product_profile_or_404(session, product_profile_id)
         return ProductProfileDetailResponse(
             product_profile=serializers.product_profile_detail(product_profile)
+        )
+
+    @app.post("/product-profiles/{product_profile_id}/confirm", response_model=ProductProfileConfirmResponse)
+    def confirm_product_profile(
+        product_profile_id: str,
+        session: Session = Depends(get_db_session),
+    ) -> ProductProfileConfirmResponse:
+        product_profile = services.confirm_product_profile(session, product_profile_id)
+        return ProductProfileConfirmResponse(
+            product_profile=serializers.product_profile_summary(product_profile)
         )
 
     @app.post("/analysis-runs", response_model=AnalysisRunCreateResponse)

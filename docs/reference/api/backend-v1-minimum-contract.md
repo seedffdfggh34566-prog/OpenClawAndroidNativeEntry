@@ -32,9 +32,10 @@
 
 ## 2. 当前结论
 
-V1 当前只冻结以下 7 个最小接口：
+V1 当前只冻结以下 8 个最小接口：
 
 - `POST /product-profiles`
+- `POST /product-profiles/{id}/confirm`
 - `GET /product-profiles/{id}`
 - `POST /analysis-runs`
 - `GET /analysis-runs/{id}`
@@ -306,11 +307,37 @@ queued → running → succeeded | failed | cancelled
 
 ### 说明
 
-- 本轮不扩展 `PATCH /product-profiles/{id}`
-- 本轮不扩展确认接口
 - 创建成功后默认 `status = draft`
+- 需要通过 `POST /product-profiles/{id}/confirm` 将状态升级为 `confirmed`
 
-## 6.2 `GET /product-profiles/{id}`
+## 6.2 `POST /product-profiles/{id}/confirm`
+
+### 职责
+
+将 `ProductProfile` 从 `draft` 状态升级为 `confirmed`。
+
+### 最小响应字段
+
+```json
+{
+  "product_profile": {
+    "id": "pp_001",
+    "name": "AI 销售助手 V1",
+    "one_line_description": "帮助用户先讲清产品，再生成获客分析结果。",
+    "status": "confirmed",
+    "version": 2,
+    "updated_at": "2026-04-21T10:15:00Z"
+  }
+}
+```
+
+### 说明
+
+- 幂等：对已经是 `confirmed` 的状态再次调用仍返回成功
+- 确认后版本号 `version` 自动递增
+- 只有 `confirmed` 的 `ProductProfile` 才能作为 `lead_analysis` 的输入
+
+## 6.3 `GET /product-profiles/{id}`
 
 ### 职责
 
@@ -347,7 +374,7 @@ Android 产品画像确认页应依赖该接口作为主要读取入口。
 - 可返回 `draft` 或 `confirmed` 的正式对象形态
 - `missing_fields` 用于帮助 Android 确认页展示“仍待补充”的信息
 
-## 6.3 `POST /analysis-runs`
+## 6.4 `POST /analysis-runs`
 
 ### 职责
 
@@ -403,7 +430,7 @@ Android 产品画像确认页应依赖该接口作为主要读取入口。
 - `report_generation` 只能接受已有 `LeadAnalysisResult`
 - 创建成功后默认 `AgentRun.status = queued`
 
-## 6.4 `GET /analysis-runs/{id}`
+## 6.5 `GET /analysis-runs/{id}`
 
 ### 职责
 
@@ -483,7 +510,7 @@ Android 轮询状态页和 History 页应优先依赖该接口。
   - 不在同一 `AgentRun` 内复用状态
   - 建议重新创建新的 `AgentRun`
 
-## 6.5 `GET /lead-analysis-results/{id}`
+## 6.6 `GET /lead-analysis-results/{id}`
 
 ### 职责
 
@@ -523,7 +550,7 @@ Android 分析结果页应依赖该接口作为主要读取入口。
 - 字段列表与 `LeadAnalysisResult` 模型一一对应
 - Android 端使用该接口展示完整分析结果，不再仅依赖 `/history` 摘要
 
-## 6.6 `GET /reports/{id}`
+## 6.7 `GET /reports/{id}`
 
 ### 职责
 
@@ -560,7 +587,7 @@ Android 分析结果页应依赖该接口作为主要读取入口。
 }
 ```
 
-## 6.6 `GET /history`
+## 6.8 `GET /history`
 
 ### 职责
 

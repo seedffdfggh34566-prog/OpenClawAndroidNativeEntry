@@ -29,6 +29,8 @@ def test_create_analysis_run_queues_lead_analysis(db_session) -> None:
         ),
     )
 
+    services.confirm_product_profile(db_session, profile.id)
+
     run = services.create_analysis_run(
         db_session,
         schemas.AnalysisRunCreateRequest(

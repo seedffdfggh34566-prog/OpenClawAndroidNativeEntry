@@ -64,6 +64,10 @@ class ProductProfileDetailResponse(BaseModel):
     product_profile: ProductProfileDetail
 
 
+class ProductProfileConfirmResponse(BaseModel):
+    product_profile: ProductProfileSummary
+
+
 class AnalysisRunCreateRequest(BaseModel):
     run_type: RunType
     product_profile_id: str

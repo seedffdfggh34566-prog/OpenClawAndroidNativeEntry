@@ -54,6 +54,7 @@ class BackendApiTestCase(unittest.TestCase):
 
     def test_lead_analysis_result_detail(self) -> None:
         product_profile_id = self._create_product_profile()
+        self._confirm_product_profile(product_profile_id)
         lead_analysis_result_id = self._run_lead_analysis(product_profile_id)
 
         detail_response = self.client.get(f"/lead-analysis-results/{lead_analysis_result_id}")
@@ -74,8 +75,41 @@ class BackendApiTestCase(unittest.TestCase):
         not_found_response = self.client.get("/lead-analysis-results/lar_missing")
         self.assertEqual(not_found_response.status_code, 404)
 
+    def test_product_profile_confirm(self) -> None:
+        product_profile_id = self._create_product_profile()
+
+        confirm_response = self.client.post(f"/product-profiles/{product_profile_id}/confirm")
+        self.assertEqual(confirm_response.status_code, 200)
+        payload = confirm_response.json()["product_profile"]
+        self.assertEqual(payload["id"], product_profile_id)
+        self.assertEqual(payload["status"], "confirmed")
+        self.assertEqual(payload["version"], 2)
+
+        # Idempotent: confirming again should succeed
+        second_confirm = self.client.post(f"/product-profiles/{product_profile_id}/confirm")
+        self.assertEqual(second_confirm.status_code, 200)
+        self.assertEqual(second_confirm.json()["product_profile"]["status"], "confirmed")
+
+        not_found = self.client.post("/product-profiles/pp_missing/confirm")
+        self.assertEqual(not_found.status_code, 404)
+
+    def test_lead_analysis_rejects_draft_profile(self) -> None:
+        product_profile_id = self._create_product_profile()
+
+        run_response = self.client.post(
+            "/analysis-runs",
+            json={
+                "run_type": "lead_analysis",
+                "product_profile_id": product_profile_id,
+                "lead_analysis_result_id": None,
+                "trigger_source": "android_home",
+            },
+        )
+        self.assertEqual(run_response.status_code, 409)
+
     def test_lead_analysis_run_succeeds_and_returns_output_refs(self) -> None:
         product_profile_id = self._create_product_profile()
+        self._confirm_product_profile(product_profile_id)
 
         run_response = self.client.post(
             "/analysis-runs",
@@ -101,6 +135,7 @@ class BackendApiTestCase(unittest.TestCase):
 
     def test_report_generation_run_and_report_read(self) -> None:
         product_profile_id = self._create_product_profile()
+        self._confirm_product_profile(product_profile_id)
         lead_analysis_result_id = self._run_lead_analysis(product_profile_id)
 
         report_run_response = self.client.post(
@@ -137,6 +172,7 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertEqual(empty_payload["recent_items"], [])
 
         product_profile_id = self._create_product_profile()
+        self._confirm_product_profile(product_profile_id)
         lead_analysis_result_id = self._run_lead_analysis(product_profile_id)
         self._run_report_generation(product_profile_id, lead_analysis_result_id)
 
@@ -195,6 +231,10 @@ class BackendApiTestCase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         return response.json()["product_profile"]["id"]
+
+    def _confirm_product_profile(self, product_profile_id: str) -> None:
+        response = self.client.post(f"/product-profiles/{product_profile_id}/confirm")
+        self.assertEqual(response.status_code, 200)
 
     def _run_lead_analysis(self, product_profile_id: str) -> str:
         response = self.client.post(

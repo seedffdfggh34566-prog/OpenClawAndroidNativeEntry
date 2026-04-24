@@ -59,6 +59,24 @@ def get_product_profile_or_404(session: Session, product_profile_id: str) -> mod
     return product_profile
 
 
+def confirm_product_profile(session: Session, product_profile_id: str) -> models.ProductProfile:
+    product_profile = get_product_profile_or_404(session, product_profile_id)
+    if product_profile.status == "draft":
+        product_profile.status = "confirmed"
+        product_profile.version += 1
+        session.commit()
+        session.refresh(product_profile)
+        logger.info(
+            "product_profile.confirmed",
+            extra={
+                "event": "product_profile.confirmed",
+                "product_profile_id": product_profile.id,
+                "version": product_profile.version,
+            },
+        )
+    return product_profile
+
+
 def get_lead_analysis_result_or_404(
     session: Session,
     lead_analysis_result_id: str,
@@ -99,14 +117,10 @@ def create_analysis_run(
 
     if payload.run_type == "lead_analysis":
         if product_profile.status != "confirmed":
-            settings = get_settings()
-            if not (settings.runtime_allow_draft_profiles and product_profile.status == "draft"):
-                raise HTTPException(
-                    status_code=409,
-                    detail="lead_analysis_requires_confirmed_product_profile",
-                )
-        # Development-only relaxation: allow draft profiles so the stub chain can run
-        # before the dedicated confirmation endpoint exists.
+            raise HTTPException(
+                status_code=409,
+                detail="lead_analysis_requires_confirmed_product_profile",
+            )
 
     if payload.run_type == "report_generation":
         if not payload.lead_analysis_result_id:
@@ -235,10 +249,7 @@ def _process_lead_analysis(
     )
     product_profile = get_product_profile_or_404(session, str(profile_ref["object_id"]))
 
-    settings = get_settings()
-    if product_profile.status != "confirmed" and not (
-        settings.runtime_allow_draft_profiles and product_profile.status == "draft"
-    ):
+    if product_profile.status != "confirmed":
         raise ValueError("lead_analysis_requires_confirmed_product_profile")
 
     draft = adapter.generate_lead_analysis_draft(product_profile)

@@ -43,6 +43,7 @@ fun OpenClawNavHost(
     onSourceNotesChange: (String) -> Unit,
     onSubmitProductProfile: () -> Unit,
     onTriggerLeadAnalysis: () -> Unit,
+    onTriggerReportGeneration: () -> Unit,
     modifier: Modifier = Modifier,
     onStartOpenClawClick: () -> Unit,
     onOpenDashboardClick: () -> Unit,
@@ -120,6 +121,7 @@ fun OpenClawNavHost(
             AnalysisResultScreen(
                 backendState = backendState,
                 placeholderState = placeholderState,
+                onTriggerReportGenerationClick = onTriggerReportGeneration,
                 onContinueClick = { navController.navigate(OpenClawDestination.AnalysisReport.route) },
             )
         }

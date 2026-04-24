@@ -74,8 +74,8 @@
 
 - `docs/delivery/tasks/_active.md`
 - `docs/delivery/README.md`
-- `docs/delivery/tasks/task_v1_android_minimum_real_backend_integration.md`
-- `docs/delivery/tasks/task_v1_backend_minimum_implementation.md`
+- `docs/delivery/tasks/task_v1_analysis_result_detail_contract.md`
+- `docs/delivery/tasks/task_v1_android_report_generation_trigger_poll.md`
 
 ### 5.4 当前工作流
 
@@ -146,6 +146,6 @@ docs/
 
 当前最推荐的下一步执行顺序为：
 
-1. 为 report_generation 触发 / 轮询新建 follow-up task
-2. 决定是否补 `GET /lead-analysis-results/{id}` contract
-3. 在客户端运行链路稳定后，再拆真实 OpenClaw runtime 接入任务
+1. 执行 `task_v1_analysis_result_detail_contract.md`
+2. 冻结并实现 `GET /lead-analysis-results/{id}` contract
+3. 在客户端对象链路稳定后，再拆真实 OpenClaw runtime 接入任务

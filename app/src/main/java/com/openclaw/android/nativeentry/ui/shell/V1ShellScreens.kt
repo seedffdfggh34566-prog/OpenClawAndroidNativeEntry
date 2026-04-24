@@ -276,9 +276,15 @@ fun ProductProfileScreen(
 fun AnalysisResultScreen(
     backendState: V1BackendUiState,
     placeholderState: V1ShellPlaceholderState,
+    onTriggerReportGenerationClick: () -> Unit,
     onContinueClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val canTriggerReportGeneration = (backendState.history as? V1SectionState.Loaded)
+        ?.value
+        ?.latestAnalysisResult != null &&
+        backendState.reportRun !is V1SectionState.Loading
+
     ScreenFrame(modifier = modifier) {
         Text(
             text = "分析结果",
@@ -324,6 +330,55 @@ fun AnalysisResultScreen(
 
         if (backendState.isDebugFallbackEnabled) {
             PlaceholderAnalysisResultSection(placeholderState)
+        }
+
+        ScreenSection(title = "报告生成运行") {
+            when (val runState = backendState.reportRun) {
+                V1SectionState.Idle -> {
+                    Text(
+                        text = "点击后会创建 report_generation AgentRun，并轮询运行状态。",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                V1SectionState.Loading -> {
+                    Text(text = "正在创建并轮询 report_generation。", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                V1SectionState.Empty -> {
+                    Text(text = "没有可用于生成报告的 LeadAnalysisResult。", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                is V1SectionState.Failed -> {
+                    Text(text = runState.error.title, style = MaterialTheme.typography.bodyLarge)
+                    Text(text = runState.error.detail, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                is V1SectionState.Loaded -> {
+                    val run = runState.value.agentRun
+                    Text(text = "运行：${run.runType}", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "状态：${run.status}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "Run ID：${run.id}", style = MaterialTheme.typography.bodyMedium)
+                    run.errorMessage?.let {
+                        Text(text = "错误：$it", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+
+            Button(
+                onClick = onTriggerReportGenerationClick,
+                enabled = canTriggerReportGeneration,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = if (backendState.reportRun is V1SectionState.Loading) {
+                        "运行中"
+                    } else {
+                        "生成分析报告"
+                    },
+                )
+            }
         }
 
         Button(

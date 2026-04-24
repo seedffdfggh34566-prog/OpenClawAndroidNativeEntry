@@ -7,3 +7,4 @@
 - `android-real-backend-read-path.md`：Android 控制壳层读取 V1 本地后端的联调步骤。
 - `android-product-profile-write-path.md`：Android 控制壳层创建 ProductProfile 草稿的联调步骤。
 - `android-analysis-run-trigger-poll.md`：Android 控制壳层触发 lead_analysis 并轮询 AgentRun 的联调步骤。
+- `android-report-generation-trigger-poll.md`：Android 控制壳层触发 report_generation 并打开 AnalysisReport 的联调步骤。

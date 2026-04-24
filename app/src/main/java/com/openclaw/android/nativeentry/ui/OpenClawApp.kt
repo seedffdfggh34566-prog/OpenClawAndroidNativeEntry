@@ -31,6 +31,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.openclaw.android.nativeentry.data.backend.AnalysisRunCreateRequestDto
+import com.openclaw.android.nativeentry.data.backend.BackendReadError
 import com.openclaw.android.nativeentry.data.backend.BackendReadResult
 import com.openclaw.android.nativeentry.data.backend.HistoryResponseDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileCreateRequestDto
@@ -91,6 +92,7 @@ fun OpenClawApp() {
     var productProfileLoadJob by remember { mutableStateOf<Job?>(null) }
     var productProfileCreateJob by remember { mutableStateOf<Job?>(null) }
     var analysisRunJob by remember { mutableStateOf<Job?>(null) }
+    var reportRunJob by remember { mutableStateOf<Job?>(null) }
     var reportLoadJob by remember { mutableStateOf<Job?>(null) }
     var launchPollingJob by remember { mutableStateOf<Job?>(null) }
     val loadedHistory = backendState.loadedHistory()
@@ -361,6 +363,121 @@ fun OpenClawApp() {
             }
 
             navController.navigate(OpenClawDestination.AnalysisResult.route) {
+                launchSingleTop = true
+            }
+        }
+    }
+
+    fun triggerReportGeneration() {
+        val history = backendState.loadedHistory()
+        val profileId = history?.latestProductProfile?.id
+        val analysisResultId = history?.latestAnalysisResult?.id
+
+        if (profileId.isNullOrBlank() || analysisResultId.isNullOrBlank()) {
+            backendState = backendState.copy(reportRun = V1SectionState.Empty)
+            return
+        }
+
+        reportRunJob?.cancel()
+        backendState = backendState.copy(reportRun = V1SectionState.Loading)
+        reportRunJob = scope.launch {
+            val createResult = backendClient.createAnalysisRun(
+                AnalysisRunCreateRequestDto(
+                    runType = "report_generation",
+                    productProfileId = profileId,
+                    leadAnalysisResultId = analysisResultId,
+                    triggerSource = "android_analysis_result",
+                ),
+            )
+
+            val runId = when (createResult) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(reportRun = V1SectionState.Failed(createResult.error))
+                    return@launch
+                }
+
+                is BackendReadResult.Success -> createResult.value.agentRun.id
+            }
+
+            var finalReportId: String? = null
+            var attempt = 0
+            while (attempt < AnalysisRunPollAttempts && finalReportId == null) {
+                val detailResult = backendClient.getAnalysisRun(runId)
+                when (detailResult) {
+                    is BackendReadResult.Failure -> {
+                        backendState = backendState.copy(reportRun = V1SectionState.Failed(detailResult.error))
+                        return@launch
+                    }
+
+                    is BackendReadResult.Success -> {
+                        backendState = backendState.copy(reportRun = V1SectionState.Loaded(detailResult.value))
+
+                        val run = detailResult.value.agentRun
+                        if (run.status == "succeeded") {
+                            finalReportId = detailResult.value.resultSummary["report_id"]
+                        } else if (run.status == "failed" || run.status == "cancelled") {
+                            backendState = backendState.copy(
+                                reportRun = V1SectionState.Failed(
+                                    BackendReadError(
+                                        title = "报告生成未成功",
+                                        detail = run.errorMessage ?: "report_generation 已进入 ${run.status} 状态。",
+                                    ),
+                                ),
+                            )
+                            return@launch
+                        }
+                    }
+                }
+
+                attempt += 1
+                if (attempt < AnalysisRunPollAttempts && finalReportId == null) {
+                    delay(AnalysisRunPollIntervalMillis)
+                }
+            }
+
+            val reportId = finalReportId
+            if (reportId.isNullOrBlank()) {
+                backendState = backendState.copy(
+                    reportRun = V1SectionState.Failed(
+                        BackendReadError(
+                            title = "报告生成未返回报告 ID",
+                            detail = "report_generation 未在轮询窗口内返回 result_summary.report_id。",
+                        ),
+                    ),
+                )
+                return@launch
+            }
+
+            backendState = backendState.copy(report = V1SectionState.Loading)
+            when (val reportResult = backendClient.getReport(reportId)) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(report = V1SectionState.Failed(reportResult.error))
+                    return@launch
+                }
+
+                is BackendReadResult.Success -> {
+                    backendState = backendState.copy(report = V1SectionState.Loaded(reportResult.value))
+                }
+            }
+
+            when (val historyResult = backendClient.getHistory()) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(history = V1SectionState.Failed(historyResult.error))
+                }
+
+                is BackendReadResult.Success -> {
+                    backendState = backendState.copy(
+                        history = if (historyResult.value.isEmpty) {
+                            V1SectionState.Empty
+                        } else {
+                            V1SectionState.Loaded(historyResult.value)
+                        },
+                        isDebugFallbackEnabled = false,
+                    )
+                }
+            }
+
+            navController.navigate(OpenClawDestination.AnalysisReport.route) {
                 launchSingleTop = true
             }
         }
@@ -682,6 +799,7 @@ fun OpenClawApp() {
             onSourceNotesChange = { sourceNotes = it },
             onSubmitProductProfile = ::submitProductProfile,
             onTriggerLeadAnalysis = ::triggerLeadAnalysis,
+            onTriggerReportGeneration = ::triggerReportGeneration,
             modifier = Modifier.padding(innerPadding),
             onStartOpenClawClick = ::startOpenClaw,
             onOpenDashboardClick = ::loadChatEntry,

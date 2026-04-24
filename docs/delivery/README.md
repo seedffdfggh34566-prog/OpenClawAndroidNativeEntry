@@ -34,9 +34,9 @@
 
 建议按以下顺序进入下一批任务：
 
-1. report_generation 触发 / 轮询 follow-up task
-2. AnalysisResult 详情 contract / 页面 follow-up task
-3. 真实 OpenClaw runtime 接入 follow-up task
+1. AnalysisResult 详情 contract / 页面 follow-up task
+2. 真实 OpenClaw runtime 接入 follow-up task
+3. 报告导出 / 分享 follow-up task
 
 原因如下：
 
@@ -44,8 +44,9 @@
 - Android 已完成从占位数据切到真实 `/history` 与对象详情读取
 - Android 已完成最小 ProductProfile 创建
 - Android 已完成 `lead_analysis` 触发与轮询
-- 当前最有价值的是补齐报告生成或 AnalysisResult 详情链路
-- runtime 真实接入应在客户端运行链路稳定后继续推进
+- Android 已完成 `report_generation` 触发与轮询
+- 当前最有价值的是补齐 AnalysisResult 详情 contract 与页面读取
+- runtime 真实接入应在对象读写与详情链路稳定后继续推进
 
 ---
 
@@ -64,6 +65,8 @@
 | `task_v1_android_minimum_real_backend_integration.md` | 让 Android 壳层切到真实 `/history`、`ProductProfile` 与报告读取 | `done` |
 | `task_v1_android_minimum_product_profile_write_path.md` | 让 Android 壳层创建第一版 ProductProfile 草稿 | `done` |
 | `task_v1_android_analysis_run_trigger_poll.md` | 让 Android 壳层触发 lead_analysis 并轮询 AgentRun | `done` |
+| `task_v1_android_report_generation_trigger_poll.md` | 让 Android 壳层触发 report_generation 并打开 AnalysisReport | `done` |
+| `task_v1_analysis_result_detail_contract.md` | 补齐 AnalysisResult 详情 contract 与页面读取 | `planned` |
 
 ---
 

@@ -52,6 +52,28 @@ class BackendApiTestCase(unittest.TestCase):
         not_found_response = self.client.get("/product-profiles/pp_missing")
         self.assertEqual(not_found_response.status_code, 404)
 
+    def test_lead_analysis_result_detail(self) -> None:
+        product_profile_id = self._create_product_profile()
+        lead_analysis_result_id = self._run_lead_analysis(product_profile_id)
+
+        detail_response = self.client.get(f"/lead-analysis-results/{lead_analysis_result_id}")
+        self.assertEqual(detail_response.status_code, 200)
+        payload = detail_response.json()["lead_analysis_result"]
+        self.assertEqual(payload["id"], lead_analysis_result_id)
+        self.assertEqual(payload["product_profile_id"], product_profile_id)
+        self.assertIn("summary", payload)
+        self.assertIn("priority_industries", payload)
+        self.assertIsInstance(payload["priority_industries"], list)
+        self.assertIn("priority_customer_types", payload)
+        self.assertIn("scenario_opportunities", payload)
+        self.assertIn("ranking_explanations", payload)
+        self.assertIn("recommendations", payload)
+        self.assertIn("risks", payload)
+        self.assertIn("limitations", payload)
+
+        not_found_response = self.client.get("/lead-analysis-results/lar_missing")
+        self.assertEqual(not_found_response.status_code, 404)
+
     def test_lead_analysis_run_succeeds_and_returns_output_refs(self) -> None:
         product_profile_id = self._create_product_profile()
 

@@ -35,6 +35,7 @@ fun OpenClawNavHost(
     onUseDebugFallback: () -> Unit,
     onLoadLatestProductProfile: () -> Unit,
     onLoadLatestReport: () -> Unit,
+    onLoadLatestAnalysisResult: () -> Unit,
     productName: String,
     productDescription: String,
     sourceNotes: String,
@@ -123,6 +124,7 @@ fun OpenClawNavHost(
                 placeholderState = placeholderState,
                 onTriggerReportGenerationClick = onTriggerReportGeneration,
                 onContinueClick = { navController.navigate(OpenClawDestination.AnalysisReport.route) },
+                onRefreshClick = onLoadLatestAnalysisResult,
             )
         }
         composable(OpenClawDestination.AnalysisReport.route) {

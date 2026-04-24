@@ -278,6 +278,7 @@ fun AnalysisResultScreen(
     placeholderState: V1ShellPlaceholderState,
     onTriggerReportGenerationClick: () -> Unit,
     onContinueClick: () -> Unit,
+    onRefreshClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val canTriggerReportGeneration = (backendState.history as? V1SectionState.Loaded)
@@ -292,37 +293,74 @@ fun AnalysisResultScreen(
             fontWeight = FontWeight.SemiBold,
         )
         Text(
-            text = "本轮不新增 LeadAnalysisResult 详情接口；该页只展示 /history.latest_analysis_result 摘要。",
+            text = "该页面读取真实 GET /lead-analysis-results/{id}，展示完整获客分析详情。",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        when (val history = backendState.history) {
+        when (val resultState = backendState.analysisResult) {
             V1SectionState.Idle,
-            V1SectionState.Loading -> StateNotice("正在读取 /history 中的最新分析结果摘要。")
+            V1SectionState.Loading -> StateNotice("正在读取最新 LeadAnalysisResult 详情。")
 
             V1SectionState.Empty -> StateNotice("真实后端当前没有 LeadAnalysisResult。")
 
             is V1SectionState.Failed -> FailureNotice(
-                title = history.error.title,
-                detail = history.error.detail,
+                title = resultState.error.title,
+                detail = resultState.error.detail,
             )
 
             is V1SectionState.Loaded -> {
-                val result = history.value.latestAnalysisResult
-                if (result == null) {
-                    StateNotice("真实后端当前没有 LeadAnalysisResult。")
-                } else {
-                    ScreenSection(title = "结果摘要") {
-                        Text(text = result.title, style = MaterialTheme.typography.titleMedium)
-                        Text(text = "状态：${result.status}", style = MaterialTheme.typography.bodyMedium)
-                        Text(text = "更新时间：${result.updatedAt}", style = MaterialTheme.typography.bodyMedium)
+                val result = resultState.value
+                ScreenSection(title = "结果概要") {
+                    Text(text = result.title, style = MaterialTheme.typography.titleMedium)
+                    Text(text = "状态：${result.status} · v${result.version}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "分析范围：${result.analysisScope}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "更新时间：${result.updatedAt}", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                ScreenSection(title = "分析摘要") {
+                    Text(text = result.summary, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                if (result.priorityIndustries.isNotEmpty()) {
+                    ScreenSection(title = "优先行业") {
+                        result.priorityIndustries.forEach { BulletText(text = it) }
                     }
-                    ScreenSection(title = "接口边界") {
-                        Text(
-                            text = "当前后端最小 contract 未冻结 GET /lead-analysis-results/{id}，因此这里不展示详情字段。",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
+                }
+
+                if (result.priorityCustomerTypes.isNotEmpty()) {
+                    ScreenSection(title = "优先客户类型") {
+                        result.priorityCustomerTypes.forEach { BulletText(text = it) }
+                    }
+                }
+
+                if (result.scenarioOpportunities.isNotEmpty()) {
+                    ScreenSection(title = "场景机会") {
+                        result.scenarioOpportunities.forEach { BulletText(text = it) }
+                    }
+                }
+
+                if (result.rankingExplanations.isNotEmpty()) {
+                    ScreenSection(title = "排序说明") {
+                        result.rankingExplanations.forEach { BulletText(text = it) }
+                    }
+                }
+
+                if (result.recommendations.isNotEmpty()) {
+                    ScreenSection(title = "建议") {
+                        result.recommendations.forEach { BulletText(text = it) }
+                    }
+                }
+
+                if (result.risks.isNotEmpty()) {
+                    ScreenSection(title = "风险") {
+                        result.risks.forEach { BulletText(text = it) }
+                    }
+                }
+
+                if (result.limitations.isNotEmpty()) {
+                    ScreenSection(title = "限制") {
+                        result.limitations.forEach { BulletText(text = it) }
                     }
                 }
             }
@@ -330,6 +368,13 @@ fun AnalysisResultScreen(
 
         if (backendState.isDebugFallbackEnabled) {
             PlaceholderAnalysisResultSection(placeholderState)
+        }
+
+        OutlinedButton(
+            onClick = onRefreshClick,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(text = "刷新真实详情")
         }
 
         ScreenSection(title = "报告生成运行") {

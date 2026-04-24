@@ -87,6 +87,26 @@ data class LatestAnalysisResultSummaryDto(
     val updatedAt: String,
 )
 
+data class LeadAnalysisResultDetailDto(
+    val id: String,
+    val productProfileId: String,
+    val createdByAgentRunId: String,
+    val title: String,
+    val analysisScope: String,
+    val summary: String,
+    val priorityIndustries: List<String>,
+    val priorityCustomerTypes: List<String>,
+    val scenarioOpportunities: List<String>,
+    val rankingExplanations: List<String>,
+    val recommendations: List<String>,
+    val risks: List<String>,
+    val limitations: List<String>,
+    val status: String,
+    val version: Int,
+    val createdAt: String,
+    val updatedAt: String,
+)
+
 data class LatestReportSummaryDto(
     val id: String,
     val status: String,

@@ -78,6 +78,30 @@ def latest_analysis_result_summary(
     )
 
 
+def lead_analysis_result_detail(
+    model: models.LeadAnalysisResult,
+) -> schemas.LeadAnalysisResultDetail:
+    return schemas.LeadAnalysisResultDetail(
+        id=model.id,
+        product_profile_id=model.product_profile_id,
+        created_by_agent_run_id=model.created_by_agent_run_id,
+        title=model.title,
+        analysis_scope=model.analysis_scope,
+        summary=model.summary,
+        priority_industries=model.priority_industries,
+        priority_customer_types=model.priority_customer_types,
+        scenario_opportunities=model.scenario_opportunities,
+        ranking_explanations=model.ranking_explanations,
+        recommendations=model.recommendations,
+        risks=model.risks,
+        limitations=model.limitations,
+        status=model.status,
+        version=model.version,
+        created_at=model.created_at,
+        updated_at=model.updated_at,
+    )
+
+
 def latest_report_summary(model: models.AnalysisReport) -> schemas.LatestReportSummary:
     return schemas.LatestReportSummary(
         id=model.id,

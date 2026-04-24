@@ -32,12 +32,13 @@
 
 ## 2. 当前结论
 
-V1 当前只冻结以下 6 个最小接口：
+V1 当前只冻结以下 7 个最小接口：
 
 - `POST /product-profiles`
 - `GET /product-profiles/{id}`
 - `POST /analysis-runs`
 - `GET /analysis-runs/{id}`
+- `GET /lead-analysis-results/{id}`
 - `GET /reports/{id}`
 - `GET /history`
 
@@ -482,7 +483,47 @@ Android 轮询状态页和 History 页应优先依赖该接口。
   - 不在同一 `AgentRun` 内复用状态
   - 建议重新创建新的 `AgentRun`
 
-## 6.5 `GET /reports/{id}`
+## 6.5 `GET /lead-analysis-results/{id}`
+
+### 职责
+
+读取单个 `LeadAnalysisResult` 详情。
+
+Android 分析结果页应依赖该接口作为主要读取入口。
+
+### 最小响应字段
+
+```json
+{
+  "lead_analysis_result": {
+    "id": "lar_001",
+    "product_profile_id": "pp_001",
+    "created_by_agent_run_id": "run_001",
+    "title": "第一版获客分析结果",
+    "analysis_scope": "v1_stub",
+    "summary": "基于 AI 销售助手 V1 的最小占位获客分析结果...",
+    "priority_industries": ["企业服务", "教育培训"],
+    "priority_customer_types": ["中小企业老板", "销售负责人"],
+    "scenario_opportunities": ["产品定位梳理", "获客方向澄清"],
+    "ranking_explanations": ["优先选择更容易快速说明产品价值的行业方向。"],
+    "recommendations": ["先验证企业服务方向的需求表达是否足够清晰。"],
+    "risks": ["当前为 stub 结果，尚未接入真实 OpenClaw runtime。"],
+    "limitations": ["分析深度受限于固定模板与本地占位逻辑。"],
+    "status": "published",
+    "version": 1,
+    "created_at": "2026-04-21T10:18:00Z",
+    "updated_at": "2026-04-21T10:18:00Z"
+  }
+}
+```
+
+### 说明
+
+- 可返回 `draft` 或 `published` 的正式对象形态
+- 字段列表与 `LeadAnalysisResult` 模型一一对应
+- Android 端使用该接口展示完整分析结果，不再仅依赖 `/history` 摘要
+
+## 6.6 `GET /reports/{id}`
 
 ### 职责
 
@@ -639,6 +680,7 @@ Android 壳层最小依赖关系如下：
 - 产品画像页：依赖 `GET /product-profiles/{id}`
 - 发起获客分析：依赖 `POST /analysis-runs`
 - 轮询执行状态：依赖 `GET /analysis-runs/{id}`
+- 分析结果详情页：依赖 `GET /lead-analysis-results/{id}`
 - 报告详情页：依赖 `GET /reports/{id}`
 
 当前不要求 Android 直接读取 runtime 草稿对象。
@@ -652,7 +694,6 @@ Android 应依赖后端已经校验并正式写回的对象和聚合结果。
 本次最小 contract 明确保留以下限制：
 
 - 不包含确认 `ProductProfile` 的接口
-- 不包含读取 `LeadAnalysisResult` 详情的接口
 - 不包含 `PATCH`、删除、搜索、分页
 - 不包含鉴权实现方案
 - 不包含完整错误码体系

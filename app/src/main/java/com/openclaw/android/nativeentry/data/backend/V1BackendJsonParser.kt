@@ -102,6 +102,29 @@ fun parseReportDetail(rawJson: String): ReportDetailDto {
     )
 }
 
+fun parseLeadAnalysisResultDetail(rawJson: String): LeadAnalysisResultDetailDto {
+    val result = JSONObject(rawJson).getJSONObject("lead_analysis_result")
+    return LeadAnalysisResultDetailDto(
+        id = result.getString("id"),
+        productProfileId = result.getString("product_profile_id"),
+        createdByAgentRunId = result.getString("created_by_agent_run_id"),
+        title = result.getString("title"),
+        analysisScope = result.getString("analysis_scope"),
+        summary = result.getString("summary"),
+        priorityIndustries = result.optJSONArray("priority_industries").toStringList(),
+        priorityCustomerTypes = result.optJSONArray("priority_customer_types").toStringList(),
+        scenarioOpportunities = result.optJSONArray("scenario_opportunities").toStringList(),
+        rankingExplanations = result.optJSONArray("ranking_explanations").toStringList(),
+        recommendations = result.optJSONArray("recommendations").toStringList(),
+        risks = result.optJSONArray("risks").toStringList(),
+        limitations = result.optJSONArray("limitations").toStringList(),
+        status = result.getString("status"),
+        version = result.getInt("version"),
+        createdAt = result.getString("created_at"),
+        updatedAt = result.getString("updated_at"),
+    )
+}
+
 private fun JSONObject.toCurrentRunDto(): CurrentRunDto =
     CurrentRunDto(
         id = getString("id"),

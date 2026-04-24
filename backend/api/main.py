@@ -21,6 +21,7 @@ from backend.api.schemas import (
     AnalysisRunCreateResponse,
     AnalysisRunDetailResponse,
     HistoryResponse,
+    LeadAnalysisResultDetailResponse,
     ProductProfileCreateRequest,
     ProductProfileCreateResponse,
     ProductProfileDetailResponse,
@@ -138,6 +139,21 @@ def create_app() -> FastAPI:
     ) -> ReportDetailResponse:
         report = services.get_report_or_404(session, report_id)
         return ReportDetailResponse(report=serializers.report_payload(report))
+
+    @app.get(
+        "/lead-analysis-results/{lead_analysis_result_id}",
+        response_model=LeadAnalysisResultDetailResponse,
+    )
+    def get_lead_analysis_result(
+        lead_analysis_result_id: str,
+        session: Session = Depends(get_db_session),
+    ) -> LeadAnalysisResultDetailResponse:
+        lead_analysis_result = services.get_lead_analysis_result_or_404(
+            session, lead_analysis_result_id
+        )
+        return LeadAnalysisResultDetailResponse(
+            lead_analysis_result=serializers.lead_analysis_result_detail(lead_analysis_result)
+        )
 
     @app.get("/history", response_model=HistoryResponse)
     def get_history(

@@ -94,10 +94,12 @@ fun OpenClawApp() {
     var analysisRunJob by remember { mutableStateOf<Job?>(null) }
     var reportRunJob by remember { mutableStateOf<Job?>(null) }
     var reportLoadJob by remember { mutableStateOf<Job?>(null) }
+    var analysisResultLoadJob by remember { mutableStateOf<Job?>(null) }
     var launchPollingJob by remember { mutableStateOf<Job?>(null) }
     val loadedHistory = backendState.loadedHistory()
     val latestProductProfileId = loadedHistory?.latestProductProfile?.id
     val latestReportId = loadedHistory?.latestReport?.id
+    val latestAnalysisResultId = loadedHistory?.latestAnalysisResult?.id
 
     fun updateGatewaySnapshot(status: GatewayStatus) {
         gatewaySnapshot = gatewaySnapshot.copy(
@@ -193,6 +195,28 @@ fun OpenClawApp() {
 
                 is BackendReadResult.Success -> {
                     backendState = backendState.copy(report = V1SectionState.Loaded(result.value))
+                }
+            }
+        }
+    }
+
+    fun loadLatestAnalysisResult() {
+        val analysisResultId = backendState.loadedHistory()?.latestAnalysisResult?.id
+        if (analysisResultId.isNullOrBlank()) {
+            backendState = backendState.copy(analysisResult = V1SectionState.Empty)
+            return
+        }
+
+        analysisResultLoadJob?.cancel()
+        backendState = backendState.copy(analysisResult = V1SectionState.Loading)
+        analysisResultLoadJob = scope.launch {
+            when (val result = backendClient.getLeadAnalysisResult(analysisResultId)) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(analysisResult = V1SectionState.Failed(result.error))
+                }
+
+                is BackendReadResult.Success -> {
+                    backendState = backendState.copy(analysisResult = V1SectionState.Loaded(result.value))
                 }
             }
         }
@@ -730,6 +754,12 @@ fun OpenClawApp() {
         }
     }
 
+    LaunchedEffect(currentScreen, latestAnalysisResultId) {
+        if (currentScreen == OpenClawDestination.AnalysisResult) {
+            loadLatestAnalysisResult()
+        }
+    }
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -791,6 +821,7 @@ fun OpenClawApp() {
             onUseDebugFallback = ::useDebugFallback,
             onLoadLatestProductProfile = ::loadLatestProductProfile,
             onLoadLatestReport = ::loadLatestReport,
+            onLoadLatestAnalysisResult = ::loadLatestAnalysisResult,
             productName = productName,
             productDescription = productDescription,
             sourceNotes = sourceNotes,

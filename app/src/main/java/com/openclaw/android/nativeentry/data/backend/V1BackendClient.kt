@@ -61,6 +61,13 @@ class V1BackendClient(
             parser = ::parseReportDetail,
         )
 
+    suspend fun getLeadAnalysisResult(id: String): BackendReadResult<LeadAnalysisResultDetailDto> =
+        requestJson(
+            method = "GET",
+            path = "/lead-analysis-results/${id.encodePathSegment()}",
+            parser = ::parseLeadAnalysisResultDetail,
+        )
+
     private suspend fun <T> requestJson(
         method: String,
         path: String,

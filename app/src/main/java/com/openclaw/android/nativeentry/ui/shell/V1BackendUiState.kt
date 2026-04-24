@@ -3,6 +3,7 @@ package com.openclaw.android.nativeentry.ui.shell
 import com.openclaw.android.nativeentry.data.backend.BackendReadError
 import com.openclaw.android.nativeentry.data.backend.AnalysisRunDetailResponseDto
 import com.openclaw.android.nativeentry.data.backend.HistoryResponseDto
+import com.openclaw.android.nativeentry.data.backend.LeadAnalysisResultDetailDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileCreateResponseDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileDetailDto
 import com.openclaw.android.nativeentry.data.backend.ReportDetailDto
@@ -12,6 +13,7 @@ data class V1BackendUiState(
     val history: V1SectionState<HistoryResponseDto> = V1SectionState.Loading,
     val productProfile: V1SectionState<ProductProfileDetailDto> = V1SectionState.Idle,
     val report: V1SectionState<ReportDetailDto> = V1SectionState.Idle,
+    val analysisResult: V1SectionState<LeadAnalysisResultDetailDto> = V1SectionState.Idle,
     val productProfileCreate: V1SectionState<ProductProfileCreateResponseDto> = V1SectionState.Idle,
     val analysisRun: V1SectionState<AnalysisRunDetailResponseDto> = V1SectionState.Idle,
     val reportRun: V1SectionState<AnalysisRunDetailResponseDto> = V1SectionState.Idle,

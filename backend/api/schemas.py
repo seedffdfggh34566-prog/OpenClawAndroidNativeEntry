@@ -147,6 +147,30 @@ class LatestReportSummary(BaseModel):
     updated_at: datetime
 
 
+class LeadAnalysisResultDetail(BaseModel):
+    id: str
+    product_profile_id: str
+    created_by_agent_run_id: str
+    title: str
+    analysis_scope: str
+    summary: str
+    priority_industries: list[str]
+    priority_customer_types: list[str]
+    scenario_opportunities: list[str]
+    ranking_explanations: list[str]
+    recommendations: list[str]
+    risks: list[str]
+    limitations: list[str]
+    status: str
+    version: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class LeadAnalysisResultDetailResponse(BaseModel):
+    lead_analysis_result: LeadAnalysisResultDetail
+
+
 class HistoryResponse(BaseModel):
     current_run: CurrentRunSummary | None
     latest_product_profile: ProductProfileSummary | None

@@ -6,4 +6,5 @@
 
 - `api/`
 - `schemas/`
+- `runtime-v1-observability-eval-baseline.md`
 - `glossary.md`

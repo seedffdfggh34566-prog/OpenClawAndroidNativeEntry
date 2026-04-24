@@ -6,7 +6,7 @@
 
 - 任务名称：V1 Runtime Observability And Eval Baseline
 - 建议路径：`docs/delivery/tasks/task_v1_runtime_observability_eval_baseline.md`
-- 当前状态：`planned`
+- 当前状态：`done`
 - 优先级：P1
 
 本任务用于在 product learning 接入真实 LLM 前，先建立最小可观测性和最小评估基线，避免后续只有“能跑通”而没有“能判断质量是否更好”。
@@ -148,22 +148,39 @@
 
 ## 11. 实际产出
 
-任务执行完成后补充。
+- `docs/reference/runtime-v1-observability-eval-baseline.md`
+- `docs/reference/README.md`
+- `docs/architecture/runtime/langgraph-runtime-architecture.md`
+- `docs/delivery/handoffs/handoff_2026_04_24_runtime_observability_eval_baseline.md`
+- `docs/delivery/tasks/_active.md`
 
 ---
 
 ## 12. 本次定稿边界
 
-任务执行完成后补充。
+- runtime metadata baseline 固定包含：
+  - `provider`
+  - `mode`
+  - `phase`
+  - `graph_name`
+  - `run_type`
+  - `trace_id`
+  - `prompt_version`
+  - `round_index`
+- product learning 样例集当前固定为 3 组
+- 人工 eval 当前固定为 4 个维度
+- 当前不引入 Langfuse、OTEL、自动评分器或外部 eval 平台
 
 ---
 
 ## 13. 已做验证
 
-任务执行完成后补充。
+- `git diff --check`
+- 交叉检查 runtime architecture、reference 与 `_active.md` 已前移到同一套 baseline
 
 ---
 
 ## 14. 实际结果说明
 
-任务执行完成后补充。
+- 仓库已形成最小 runtime observability / eval baseline
+- 下一条 queued task 已切到 `task_v1_product_learning_llm_phase1.md`

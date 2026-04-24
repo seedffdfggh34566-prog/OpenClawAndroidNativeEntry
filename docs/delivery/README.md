@@ -21,7 +21,7 @@
 
 当前项目尚未完成：
 
-- runtime observability / eval baseline
+- product learning LLM phase 1
 - 首页、结果页和报告页的最终产品表达收口
 
 因此，当前阶段的重点是：
@@ -34,9 +34,8 @@
 
 建议按以下顺序进入下一批任务：
 
-1. runtime observability / eval baseline
-2. product learning LLM phase 1
-3. Android product learning iteration UI
+1. product learning LLM phase 1
+2. Android product learning iteration UI
 
 原因如下：
 
@@ -45,7 +44,7 @@
 - Android 已完成最小 ProductProfile 创建
 - Android 已完成 `lead_analysis` 触发与轮询
 - Android 已完成 `report_generation` 触发与轮询
-- product learning iteration contract 已冻结，下一步应先补 runtime observability / eval baseline
+- runtime observability / eval baseline 已冻结，下一步应先做 product learning LLM phase 1
 - `lead_analysis` / `report_generation` 已完成 runtime Phase 1，下一批任务应转向 iteration、observability 与真实 LLM
 
 ---
@@ -73,7 +72,7 @@
 | `task_v1_product_learning_runtime_decision_freeze.md` | 冻结 product learning runtime 的对象边界、阶段判定与接口承载 | `done` |
 | `task_v1_product_learning_runtime_followup.md` | 以现有 public API 落地 product learning single-turn enrich 实现 | `done` |
 | `task_v1_product_learning_iteration_contract.md` | 冻结下一轮 product learning enrich endpoint 与写回 contract | `done` |
-| `task_v1_runtime_observability_eval_baseline.md` | 冻结 runtime metadata、样例集与最小评估基线 | `planned` |
+| `task_v1_runtime_observability_eval_baseline.md` | 冻结 runtime metadata、样例集与最小评估基线 | `done` |
 | `task_v1_product_learning_llm_phase1.md` | 将 heuristic product learning 切换到真实 LLM draft 生成 | `planned` |
 | `task_v1_android_product_learning_iteration_ui.md` | 让 Android 学习页支持继续补充一轮信息 | `planned` |
 

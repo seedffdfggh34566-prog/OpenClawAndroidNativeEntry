@@ -49,12 +49,12 @@
 
 ### Next queued tasks
 
-- `task_v1_runtime_observability_eval_baseline.md`
 - `task_v1_product_learning_llm_phase1.md`
 - `task_v1_android_product_learning_iteration_ui.md`
 
 最近完成：
 
+- `task_v1_runtime_observability_eval_baseline.md`
 - `task_v1_product_learning_iteration_contract.md`
 - `task_v1_product_learning_runtime_decision_freeze.md`
 - `task_v1_product_learning_runtime_followup.md`
@@ -71,13 +71,12 @@
 
 - product learning runtime follow-up 已完成最小 backend + Android 闭环
 - 当前下一阶段的核心风险不再是“能否跑通”，而是：
-  - runtime observability / eval baseline 是否足够支撑真实 LLM 接入
-  - LLM 接入是否能被样例集和 metadata baseline 约束
-  - Android 是否会在 runtime 与 contract 未稳定时被过早拉进交互重写
+  - product learning LLM 是否能在现有 contract 与 eval baseline 下稳定输出
+  - heuristic 与真实 LLM 的差异是否可被样例集约束
+  - Android 是否会在 runtime 未稳定时被过早拉进交互重写
 - 因此新队列改为：
-  1. 先补 observability / eval baseline
-  2. 再做 product learning LLM Phase 1
-  3. 最后做 Android iteration UI
+  1. 先做 product learning LLM Phase 1
+  2. 最后做 Android iteration UI
 
 ### Auto-continue allowed when
 

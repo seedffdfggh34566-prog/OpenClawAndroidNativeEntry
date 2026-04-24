@@ -265,9 +265,9 @@ OpenClaw 相关旧文档仅作参考，不应主导当前 V1 设计。
 
 当前最合理的下一步是：
 
-1. 已按 `ADR-004` 冻结 product learning iteration contract
-2. 下一步先补 runtime observability / eval baseline
-3. 然后进入 product learning LLM Phase 1
+1. 已补 runtime observability / eval baseline
+2. 下一步进入 product learning LLM Phase 1
+3. 先完成 heuristic vs LLM 的最小样例对比
 4. 最后按 contract 做 Android iteration UI
 
 ---

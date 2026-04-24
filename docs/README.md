@@ -72,6 +72,7 @@
 
 - `docs/architecture/system-context.md`
 - `docs/reference/api/backend-v1-minimum-contract.md`
+- `docs/reference/runtime-v1-observability-eval-baseline.md`
 - `docs/architecture/repository-layout.md`
 - `docs/architecture/backend/backend-agent-stack-phased-adoption.md`
 - `docs/architecture/runtime/langgraph-runtime-architecture.md`
@@ -154,9 +155,9 @@ docs/
 
 当前最推荐的下一步执行顺序为：
 
-1. 参考 `ADR-004` 与 `task_v1_runtime_observability_eval_baseline.md`
-2. 先冻结 runtime metadata、样例集与最小评估基线
-3. 然后进入 product learning LLM Phase 1
+1. 参考 `task_v1_product_learning_llm_phase1.md`
+2. 在 `runtime-v1-observability-eval-baseline.md` 约束下接入 product learning LLM
+3. 先完成 heuristic vs LLM 最小对比
 4. 最后再做 Android iteration UI
 
 当前补充建议阅读：

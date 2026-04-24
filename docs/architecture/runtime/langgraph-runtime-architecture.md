@@ -273,10 +273,21 @@ LangGraph 对外输出应是：
 - 最小 trace / call id
 - 节点失败信息
 
+当前 baseline 还应补齐：
+
+- `prompt_version`
+- `round_index`
+
 这些信息建议写入：
 
 - `AgentRun.runtime_metadata`
 - 结构化日志
+
+具体 baseline 以：
+
+- `docs/reference/runtime-v1-observability-eval-baseline.md`
+
+为准。
 
 ---
 

@@ -48,7 +48,10 @@
 
 ### Next queued tasks
 
-- 暂无已排定的下一 implementation task
+- `task_v1_product_learning_iteration_contract.md`
+- `task_v1_runtime_observability_eval_baseline.md`
+- `task_v1_product_learning_llm_phase1.md`
+- `task_v1_android_product_learning_iteration_ui.md`
 
 最近完成：
 
@@ -66,8 +69,15 @@
 当前切换原因：
 
 - product learning runtime follow-up 已完成最小 backend + Android 闭环
-- 当前已不存在新的已排队 implementation task
-- 下一步应回到规划层，决定是继续做多轮产品学习、observability，还是新的产品表达任务
+- 当前下一阶段的核心风险不再是“能否跑通”，而是：
+  - product learning 下一轮 contract 是否清楚
+  - LLM 接入前是否有最小 observability / eval baseline
+  - Android 是否会在 contract 未定时被过早拉进交互重写
+- 因此新队列改为：
+  1. 先冻结 iteration contract
+  2. 再补 observability / eval baseline
+  3. 再做 product learning LLM Phase 1
+  4. 最后做 Android iteration UI
 
 ### Auto-continue allowed when
 

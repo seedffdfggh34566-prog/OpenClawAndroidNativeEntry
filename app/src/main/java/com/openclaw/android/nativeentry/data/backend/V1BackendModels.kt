@@ -48,6 +48,10 @@ data class ProductProfileCreateResponseDto(
     val links: Map<String, String>,
 )
 
+data class ProductProfileConfirmResponseDto(
+    val productProfile: ProductProfileSummaryDto,
+)
+
 data class AnalysisRunCreateRequestDto(
     val runType: String,
     val productProfileId: String,

@@ -68,6 +68,13 @@ class V1BackendClient(
             parser = ::parseLeadAnalysisResultDetail,
         )
 
+    suspend fun confirmProductProfile(id: String): BackendReadResult<ProductProfileConfirmResponseDto> =
+        requestJson(
+            method = "POST",
+            path = "/product-profiles/${id.encodePathSegment()}/confirm",
+            parser = ::parseProductProfileConfirmResponse,
+        )
+
     private suspend fun <T> requestJson(
         method: String,
         path: String,

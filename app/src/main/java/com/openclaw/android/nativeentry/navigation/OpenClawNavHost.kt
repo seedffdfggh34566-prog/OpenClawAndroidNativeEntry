@@ -36,6 +36,7 @@ fun OpenClawNavHost(
     onLoadLatestProductProfile: () -> Unit,
     onLoadLatestReport: () -> Unit,
     onLoadLatestAnalysisResult: () -> Unit,
+    onConfirmProductProfile: () -> Unit,
     productName: String,
     productDescription: String,
     sourceNotes: String,
@@ -115,6 +116,7 @@ fun OpenClawNavHost(
                 placeholderState = placeholderState,
                 onContinueClick = { navController.navigate(OpenClawDestination.AnalysisResult.route) },
                 onRefreshClick = onLoadLatestProductProfile,
+                onConfirmProductProfileClick = onConfirmProductProfile,
                 onTriggerLeadAnalysisClick = onTriggerLeadAnalysis,
             )
         }

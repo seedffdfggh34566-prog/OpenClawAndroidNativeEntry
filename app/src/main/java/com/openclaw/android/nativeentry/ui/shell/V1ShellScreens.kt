@@ -149,11 +149,21 @@ fun ProductProfileScreen(
     placeholderState: V1ShellPlaceholderState,
     onContinueClick: () -> Unit,
     onRefreshClick: () -> Unit,
+    onConfirmProductProfileClick: () -> Unit,
     onTriggerLeadAnalysisClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val canTriggerLeadAnalysis = backendState.productProfile is V1SectionState.Loaded &&
+    val profileIsConfirmed = (backendState.productProfile as? V1SectionState.Loaded)
+        ?.value
+        ?.status == "confirmed"
+
+    val canTriggerLeadAnalysis = profileIsConfirmed &&
         backendState.analysisRun !is V1SectionState.Loading
+
+    val canConfirm = (backendState.productProfile as? V1SectionState.Loaded)
+        ?.value
+        ?.status == "draft" &&
+        backendState.productProfileConfirm !is V1SectionState.Loading
 
     ScreenFrame(modifier = modifier) {
         Text(
@@ -162,7 +172,7 @@ fun ProductProfileScreen(
             fontWeight = FontWeight.SemiBold,
         )
         Text(
-            text = "该页面读取真实 GET /product-profiles/{id}。当前仍不做编辑与提交。",
+            text = "该页面读取真实 GET /product-profiles/{id}。确认后可触发获客分析。",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -208,11 +218,64 @@ fun ProductProfileScreen(
             PlaceholderProductProfileSection(placeholderState)
         }
 
+        ScreenSection(title = "产品画像确认") {
+            when (val confirmState = backendState.productProfileConfirm) {
+                V1SectionState.Idle -> {
+                    Text(
+                        text = if (profileIsConfirmed) {
+                            "当前产品画像已确认，可直接触发获客分析。"
+                        } else {
+                            "确认后产品画像将从 draft 升级为 confirmed，并允许触发获客分析。"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                V1SectionState.Loading -> {
+                    Text(text = "正在提交确认请求。", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                V1SectionState.Empty -> {
+                    Text(text = "没有可确认的产品画像。", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                is V1SectionState.Failed -> {
+                    Text(text = confirmState.error.title, style = MaterialTheme.typography.bodyLarge)
+                    Text(text = confirmState.error.detail, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                is V1SectionState.Loaded -> {
+                    val profile = confirmState.value.productProfile
+                    Text(text = "确认成功：${profile.name}", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "新状态：${profile.status} · v${profile.version}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            Button(
+                onClick = onConfirmProductProfileClick,
+                enabled = canConfirm,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = when {
+                        backendState.productProfileConfirm is V1SectionState.Loading -> "确认中"
+                        profileIsConfirmed -> "已确认"
+                        else -> "确认产品画像"
+                    },
+                )
+            }
+        }
+
         ScreenSection(title = "获客分析运行") {
             when (val runState = backendState.analysisRun) {
                 V1SectionState.Idle -> {
                     Text(
-                        text = "点击后会创建 lead_analysis AgentRun，并轮询运行状态。",
+                        text = if (profileIsConfirmed) {
+                            "点击后会创建 lead_analysis AgentRun，并轮询运行状态。"
+                        } else {
+                            "请先确认产品画像，再触发获客分析。"
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

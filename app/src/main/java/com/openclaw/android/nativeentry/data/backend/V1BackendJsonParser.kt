@@ -43,6 +43,13 @@ fun parseProductProfileCreateResponse(rawJson: String): ProductProfileCreateResp
     )
 }
 
+fun parseProductProfileConfirmResponse(rawJson: String): ProductProfileConfirmResponseDto {
+    val json = JSONObject(rawJson)
+    return ProductProfileConfirmResponseDto(
+        productProfile = json.getJSONObject("product_profile").toProductProfileSummaryDto(),
+    )
+}
+
 fun ProductProfileCreateRequestDto.toJsonBody(): String {
     val json = JSONObject()
         .put("name", name)

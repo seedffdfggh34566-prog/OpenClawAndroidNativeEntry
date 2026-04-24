@@ -297,6 +297,47 @@ fun OpenClawApp() {
         }
     }
 
+    fun confirmProductProfile() {
+        val profileId = when (val profileState = backendState.productProfile) {
+            is V1SectionState.Loaded -> profileState.value.id
+            else -> backendState.loadedHistory()?.latestProductProfile?.id
+        }
+
+        if (profileId.isNullOrBlank()) {
+            backendState = backendState.copy(productProfileConfirm = V1SectionState.Empty)
+            return
+        }
+
+        backendState = backendState.copy(productProfileConfirm = V1SectionState.Loading)
+        scope.launch {
+            when (val result = backendClient.confirmProductProfile(profileId)) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(productProfileConfirm = V1SectionState.Failed(result.error))
+                }
+
+                is BackendReadResult.Success -> {
+                    backendState = backendState.copy(
+                        productProfileConfirm = V1SectionState.Loaded(result.value),
+                        productProfile = V1SectionState.Loading,
+                    )
+                    when (val profileResult = backendClient.getProductProfile(profileId)) {
+                        is BackendReadResult.Failure -> {
+                            backendState = backendState.copy(
+                                productProfile = V1SectionState.Failed(profileResult.error),
+                            )
+                        }
+
+                        is BackendReadResult.Success -> {
+                            backendState = backendState.copy(
+                                productProfile = V1SectionState.Loaded(profileResult.value),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fun triggerLeadAnalysis() {
         val profileId = when (val profileState = backendState.productProfile) {
             is V1SectionState.Loaded -> profileState.value.id
@@ -822,6 +863,7 @@ fun OpenClawApp() {
             onLoadLatestProductProfile = ::loadLatestProductProfile,
             onLoadLatestReport = ::loadLatestReport,
             onLoadLatestAnalysisResult = ::loadLatestAnalysisResult,
+            onConfirmProductProfile = ::confirmProductProfile,
             productName = productName,
             productDescription = productDescription,
             sourceNotes = sourceNotes,

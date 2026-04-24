@@ -48,11 +48,12 @@
 
 ### Next queued tasks
 
-- `task_v1_product_learning_runtime_followup.md`
+- 暂无已排定的下一 implementation task
 
 最近完成：
 
 - `task_v1_product_learning_runtime_decision_freeze.md`
+- `task_v1_product_learning_runtime_followup.md`
 - `task_v1_real_runtime_integration_phase1.md`
 - `task_v1_product_learning_interaction_baseline.md`
 - `task_v1_product_profile_confirmation_flow.md`
@@ -64,10 +65,9 @@
 
 当前切换原因：
 
-- 产品学习交互基线已冻结并回写到主文档
-- `lead_analysis` / `report_generation` 已完成 backend-direct LangGraph Phase 1
-- product learning runtime 的对象边界、阶段判定与接口承载已通过 ADR-003 冻结
-- 当前剩余的最大空缺已收敛为 product learning runtime 实现本身
+- product learning runtime follow-up 已完成最小 backend + Android 闭环
+- 当前已不存在新的已排队 implementation task
+- 下一步应回到规划层，决定是继续做多轮产品学习、observability，还是新的产品表达任务
 
 ### Auto-continue allowed when
 

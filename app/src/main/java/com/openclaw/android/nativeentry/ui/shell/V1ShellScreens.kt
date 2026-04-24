@@ -49,7 +49,7 @@ fun ProductLearningScreen(
             fontWeight = FontWeight.SemiBold,
         )
         Text(
-            text = "填写最小产品信息后创建 ProductProfile 草稿。当前只创建画像，不触发分析。",
+            text = "填写最小产品信息后创建 ProductProfile 草稿，并立即触发一次产品学习富化。",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -80,7 +80,7 @@ fun ProductLearningScreen(
             when (val createState = backendState.productProfileCreate) {
                 V1SectionState.Idle -> {
                     Text(
-                        text = "提交后会调用真实 POST /product-profiles，创建 draft 状态 ProductProfile。",
+                        text = "提交后会调用真实 POST /product-profiles，并启动 product_learning AgentRun。",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -102,7 +102,35 @@ fun ProductLearningScreen(
                 is V1SectionState.Loaded -> {
                     val profile = createState.value.productProfile
                     Text(text = "已创建：${profile.name}", style = MaterialTheme.typography.bodyLarge)
-                    Text(text = "状态：${profile.status} · v${profile.version}", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "状态：${profile.status} · ${profile.learningStage} · v${profile.version}",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+
+            when (val runState = backendState.productLearningRun) {
+                V1SectionState.Idle -> Unit
+                V1SectionState.Loading -> {
+                    Text(
+                        text = "正在富化产品画像，请稍候。",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+
+                V1SectionState.Empty -> {
+                    Text(text = "当前没有 product_learning 运行。", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                is V1SectionState.Failed -> {
+                    Text(text = runState.error.title, style = MaterialTheme.typography.bodyLarge)
+                    Text(text = runState.error.detail, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                is V1SectionState.Loaded -> {
+                    val run = runState.value.agentRun
+                    Text(text = "运行：${run.runType}", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "状态：${run.status}", style = MaterialTheme.typography.bodyMedium)
                 }
             }
 
@@ -115,7 +143,7 @@ fun ProductLearningScreen(
                     text = if (backendState.productProfileCreate is V1SectionState.Loading) {
                         "提交中"
                     } else {
-                        "创建 ProductProfile 草稿"
+                        "创建并富化 ProductProfile"
                     },
                 )
             }
@@ -162,8 +190,11 @@ fun ProductProfileScreen(
 
     val canConfirm = (backendState.productProfile as? V1SectionState.Loaded)
         ?.value
-        ?.status == "draft" &&
-        backendState.productProfileConfirm !is V1SectionState.Loading
+        ?.let { profile ->
+            profile.status == "draft" &&
+                profile.learningStage == "ready_for_confirmation" &&
+                backendState.productProfileConfirm !is V1SectionState.Loading
+        } == true
 
     ScreenFrame(modifier = modifier) {
         Text(
@@ -192,7 +223,10 @@ fun ProductProfileScreen(
                 val profile = profileState.value
                 ScreenSection(title = "概要") {
                     Text(text = "名称：${profile.name}", style = MaterialTheme.typography.bodyLarge)
-                    Text(text = "状态：${profile.status} · v${profile.version}", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "状态：${profile.status} · ${profile.learningStage} · v${profile.version}",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                     Text(text = "一句话描述：${profile.oneLineDescription}", style = MaterialTheme.typography.bodyMedium)
                     Text(text = "更新时间：${profile.updatedAt}", style = MaterialTheme.typography.bodyMedium)
                 }
@@ -221,11 +255,14 @@ fun ProductProfileScreen(
         ScreenSection(title = "产品画像确认") {
             when (val confirmState = backendState.productProfileConfirm) {
                 V1SectionState.Idle -> {
+                    val profile = (backendState.productProfile as? V1SectionState.Loaded)?.value
                     Text(
                         text = if (profileIsConfirmed) {
                             "当前产品画像已确认，可直接触发获客分析。"
+                        } else if (profile?.learningStage == "ready_for_confirmation") {
+                            "当前画像已达到 ready_for_confirmation，可继续确认。"
                         } else {
-                            "确认后产品画像将从 draft 升级为 confirmed，并允许触发获客分析。"
+                            "当前仍处于 collecting，需先补齐关键信息后才能确认。"
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -248,7 +285,10 @@ fun ProductProfileScreen(
                 is V1SectionState.Loaded -> {
                     val profile = confirmState.value.productProfile
                     Text(text = "确认成功：${profile.name}", style = MaterialTheme.typography.bodyLarge)
-                    Text(text = "新状态：${profile.status} · v${profile.version}", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "新状态：${profile.status} · ${profile.learningStage} · v${profile.version}",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                 }
             }
 

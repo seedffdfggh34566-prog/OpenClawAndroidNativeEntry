@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, model_validator
 
 
 ObjectType = Literal["product_profile", "lead_analysis_result", "analysis_report"]
-RunType = Literal["lead_analysis", "report_generation"]
+RunType = Literal["product_learning", "lead_analysis", "report_generation"]
 
 
 class ObjectRef(BaseModel):
@@ -32,6 +32,7 @@ class ProductProfileSummary(BaseModel):
     name: str
     one_line_description: str
     status: str
+    learning_stage: str
     version: int
     updated_at: datetime
 
@@ -41,6 +42,7 @@ class ProductProfileDetail(BaseModel):
     name: str
     one_line_description: str
     status: str
+    learning_stage: str
     version: int
     target_customers: list[str]
     target_industries: list[str]
@@ -56,7 +58,7 @@ class ProductProfileDetail(BaseModel):
 
 class ProductProfileCreateResponse(BaseModel):
     product_profile: ProductProfileSummary
-    current_run: None = None
+    current_run: AgentRunPayload | None = None
     links: dict[str, str]
 
 

@@ -17,6 +17,7 @@ data class V1BackendUiState(
     val analysisResult: V1SectionState<LeadAnalysisResultDetailDto> = V1SectionState.Idle,
     val productProfileCreate: V1SectionState<ProductProfileCreateResponseDto> = V1SectionState.Idle,
     val productProfileConfirm: V1SectionState<ProductProfileConfirmResponseDto> = V1SectionState.Idle,
+    val productLearningRun: V1SectionState<AnalysisRunDetailResponseDto> = V1SectionState.Idle,
     val analysisRun: V1SectionState<AnalysisRunDetailResponseDto> = V1SectionState.Idle,
     val reportRun: V1SectionState<AnalysisRunDetailResponseDto> = V1SectionState.Idle,
     val isDebugFallbackEnabled: Boolean = false,

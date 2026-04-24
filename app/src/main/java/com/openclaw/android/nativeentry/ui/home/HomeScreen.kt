@@ -176,7 +176,10 @@ private fun CurrentWorkCard(
                     val profile = history.value.latestProductProfile
                     if (profile != null) {
                         Text(text = "最新产品画像：${profile.name}", style = MaterialTheme.typography.bodyMedium)
-                        Text(text = "状态：${profile.status} · v${profile.version}", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = "状态：${profile.status} · ${profile.learningStage} · v${profile.version}",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
                     }
                 }
             }

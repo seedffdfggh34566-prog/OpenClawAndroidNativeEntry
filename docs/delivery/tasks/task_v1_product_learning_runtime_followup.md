@@ -6,7 +6,7 @@
 
 - 任务名称：V1 Product Learning Runtime Follow-up
 - 建议路径：`docs/delivery/tasks/task_v1_product_learning_runtime_followup.md`
-- 当前状态：`planned`
+- 当前状态：`done`
 - 优先级：P1
 
 本任务用于在产品学习交互基线、runtime Phase 1 与 product learning runtime 决策冻结完成后，继续把 product learning 从“页面与对象门控”推进到“真实 runtime 驱动的产品学习流程”。
@@ -120,3 +120,47 @@
 - `/product-learning/*`
 - `waiting_for_user / paused / resumed`
 - 独立聊天消息对象
+
+---
+
+## 9. 实际完成情况（2026-04-24）
+
+本任务已完成，实际落地结果如下：
+
+- backend 在 `POST /product-profiles` 创建后立即创建 `run_type = product_learning` 的 `AgentRun`
+- backend 通过 LangGraph `product_learning_graph` 执行 single-turn enrich
+- runtime 输出结构化 draft，backend 写回同一个 `ProductProfile`
+- `learning_stage` 以派生字段方式暴露到：
+  - `ProductProfileSummary`
+  - `ProductProfileDetail`
+  - `/history.latest_product_profile`
+- `POST /product-profiles/{id}/confirm` 已收紧：
+  - `ready_for_confirmation` 才允许确认
+  - collecting draft 返回 `409`
+- Android 已接上：
+  - create response `current_run`
+  - product learning run 轮询
+  - `learningStage` 展示
+  - confirm 按钮门控
+
+## 10. 验证记录
+
+- `backend/.venv/bin/python -m pytest backend/tests`
+- `backend/.venv/bin/alembic upgrade head`
+- backend startup + `/health`
+- 手工 API smoke：
+  - `POST /product-profiles`
+  - `GET /analysis-runs/{id}`
+  - `GET /product-profiles/{id}`
+  - `POST /product-profiles/{id}/confirm`
+  - `POST /analysis-runs` (`lead_analysis`)
+- `./gradlew :app:assembleDebug`
+- `adb devices`
+- `adb install -r app/build/outputs/apk/debug/app-debug.apk`
+- `adb shell monkey -p com.openclaw.android.nativeentry -c android.intent.category.LAUNCHER 1`
+
+## 11. 残留限制
+
+- 当前 product learning 仍使用受控 Python heuristic，不接真实 LLM
+- 当前 Android 只完成最小轮询与门控接线，未扩展成完整聊天式产品学习页
+- `learning_stage` 仍为 backend 派生字段，不持久化入库

@@ -93,13 +93,15 @@ def create_app() -> FastAPI:
     @app.post("/product-profiles", response_model=ProductProfileCreateResponse)
     def create_product_profile(
         payload: ProductProfileCreateRequest,
+        background_tasks: BackgroundTasks,
         session: Session = Depends(get_db_session),
     ) -> ProductProfileCreateResponse:
-        product_profile = services.create_product_profile(session, payload)
+        created = services.create_product_profile(session, payload)
+        background_tasks.add_task(services.process_agent_run, created.current_run.id)
         return ProductProfileCreateResponse(
-            product_profile=serializers.product_profile_summary(product_profile),
-            current_run=None,
-            links={"self": f"/product-profiles/{product_profile.id}"},
+            product_profile=serializers.product_profile_summary(created.product_profile),
+            current_run=serializers.agent_run_payload(created.current_run),
+            links={"self": f"/product-profiles/{created.product_profile.id}"},
         )
 
     @app.get("/product-profiles/{product_profile_id}", response_model=ProductProfileDetailResponse)

@@ -134,6 +134,8 @@ fun OpenClawApp() {
         backendState = backendState.copy(
             history = V1SectionState.Loading,
             productProfile = V1SectionState.Idle,
+            productProfileConfirm = V1SectionState.Idle,
+            productLearningRun = V1SectionState.Idle,
             report = V1SectionState.Idle,
             isDebugFallbackEnabled = false,
         )
@@ -232,7 +234,10 @@ fun OpenClawApp() {
         }
 
         productProfileCreateJob?.cancel()
-        backendState = backendState.copy(productProfileCreate = V1SectionState.Loading)
+        backendState = backendState.copy(
+            productProfileCreate = V1SectionState.Loading,
+            productLearningRun = V1SectionState.Idle,
+        )
         productProfileCreateJob = scope.launch {
             val createResult = backendClient.createProductProfile(
                 ProductProfileCreateRequestDto(
@@ -250,17 +255,79 @@ fun OpenClawApp() {
                 }
 
                 is BackendReadResult.Success -> {
-                    val createdProfile = createResult.value.productProfile
+                    val createPayload = createResult.value
+                    val createdProfile = createPayload.productProfile
                     backendState = backendState.copy(
-                        productProfileCreate = V1SectionState.Loaded(createResult.value),
+                        productProfileCreate = V1SectionState.Loaded(createPayload),
                         productProfile = V1SectionState.Loading,
+                        productProfileConfirm = V1SectionState.Idle,
+                        productLearningRun = if (createPayload.currentRun != null) {
+                            V1SectionState.Loading
+                        } else {
+                            V1SectionState.Idle
+                        },
                     )
+
+                    val currentRun = createPayload.currentRun
+                    if (currentRun != null) {
+                        var finalSucceeded = false
+                        var attempt = 0
+                        while (attempt < AnalysisRunPollAttempts && !finalSucceeded) {
+                            when (val detailResult = backendClient.getAnalysisRun(currentRun.id)) {
+                                is BackendReadResult.Failure -> {
+                                    backendState = backendState.copy(
+                                        productLearningRun = V1SectionState.Failed(detailResult.error),
+                                    )
+                                    return@launch
+                                }
+
+                                is BackendReadResult.Success -> {
+                                    backendState = backendState.copy(
+                                        productLearningRun = V1SectionState.Loaded(detailResult.value),
+                                    )
+                                    val run = detailResult.value.agentRun
+                                    if (run.status == "succeeded") {
+                                        finalSucceeded = true
+                                    } else if (run.status == "failed" || run.status == "cancelled") {
+                                        backendState = backendState.copy(
+                                            productLearningRun = V1SectionState.Failed(
+                                                BackendReadError(
+                                                    title = "产品学习运行未成功",
+                                                    detail = run.errorMessage
+                                                        ?: "product_learning 已进入 ${run.status} 状态。",
+                                                ),
+                                            ),
+                                        )
+                                        return@launch
+                                    }
+                                }
+                            }
+
+                            attempt += 1
+                            if (attempt < AnalysisRunPollAttempts && !finalSucceeded) {
+                                delay(AnalysisRunPollIntervalMillis)
+                            }
+                        }
+
+                        if (!finalSucceeded) {
+                            backendState = backendState.copy(
+                                productLearningRun = V1SectionState.Failed(
+                                    BackendReadError(
+                                        title = "产品学习运行未在轮询窗口内完成",
+                                        detail = "请稍后重新进入产品画像页查看最新状态。",
+                                    ),
+                                ),
+                            )
+                            return@launch
+                        }
+                    }
 
                     when (val profileResult = backendClient.getProductProfile(createdProfile.id)) {
                         is BackendReadResult.Failure -> {
                             backendState = backendState.copy(
                                 productProfile = V1SectionState.Failed(profileResult.error),
                             )
+                            return@launch
                         }
 
                         is BackendReadResult.Success -> {
@@ -330,6 +397,25 @@ fun OpenClawApp() {
                         is BackendReadResult.Success -> {
                             backendState = backendState.copy(
                                 productProfile = V1SectionState.Loaded(profileResult.value),
+                            )
+                        }
+                    }
+
+                    when (val historyResult = backendClient.getHistory()) {
+                        is BackendReadResult.Failure -> {
+                            backendState = backendState.copy(
+                                history = V1SectionState.Failed(historyResult.error),
+                            )
+                        }
+
+                        is BackendReadResult.Success -> {
+                            backendState = backendState.copy(
+                                history = if (historyResult.value.isEmpty) {
+                                    V1SectionState.Empty
+                                } else {
+                                    V1SectionState.Loaded(historyResult.value)
+                                },
+                                isDebugFallbackEnabled = false,
                             )
                         }
                     }

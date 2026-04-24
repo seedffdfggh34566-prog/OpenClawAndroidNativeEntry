@@ -287,7 +287,7 @@ product learning 第一版默认流程为：
 1. `POST /product-profiles` 创建初始 draft
 2. backend 创建 `run_type = product_learning` 的 `AgentRun`
 3. LangGraph 执行单轮富化
-4. runtime 输出 `ProductProfileDraft`、`missing_fields`、`confidence_score`
+4. runtime 输出 `ProductLearningDraft`、候选 `missing_fields` 与 `confidence_score`
 5. backend 写回同一个 `ProductProfile`
 6. backend 计算 `learning_stage`
 7. 客户端通过现有轮询与详情接口读取结果
@@ -317,6 +317,17 @@ LangGraph runtime 接入 Phase 1 的最低验证应包括：
 5. 至少一条 `report_generation` 手动 API 流验证
 
 若 graph state、writeback boundary 或 `AgentRun` 处理方式变化，应按 runtime boundary 风险处理，而不是只跑 schema 单测。
+
+## 12. 当前落地事实（2026-04-24）
+
+当前已经落地：
+
+- `POST /product-profiles` 创建后同步返回 `current_run`
+- `product_learning` 继续复用 `AgentRun`
+- `product_learning_graph` 已在 `backend/runtime/graphs/product_learning.py` 实现
+- backend 对 `ProductProfile` 执行同对象写回、`version += 1`
+- `learning_stage` 作为派生字段暴露到 summary/detail/history
+- `confirm` 已按 `ready_for_confirmation` 收紧，未达标 draft 返回 `409`
 
 ---
 

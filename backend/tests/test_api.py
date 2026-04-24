@@ -41,13 +41,26 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertEqual(create_response.status_code, 200)
         created_payload = create_response.json()
         product_profile_id = created_payload["product_profile"]["id"]
+        current_run = created_payload["current_run"]
+        self.assertIsNotNone(current_run)
+        self.assertEqual(current_run["run_type"], "product_learning")
 
         get_response = self.client.get(f"/product-profiles/{product_profile_id}")
         self.assertEqual(get_response.status_code, 200)
         payload = get_response.json()["product_profile"]
         self.assertEqual(payload["id"], product_profile_id)
         self.assertEqual(payload["status"], "draft")
+        self.assertIn(payload["learning_stage"], ["collecting", "ready_for_confirmation"])
         self.assertIn("missing_fields", payload)
+
+        run_detail = self.client.get(f"/analysis-runs/{current_run['id']}")
+        self.assertEqual(run_detail.status_code, 200)
+        run_payload = run_detail.json()
+        self.assertEqual(run_payload["agent_run"]["status"], "succeeded")
+        self.assertEqual(
+            run_payload["result_summary"]["product_profile_id"],
+            product_profile_id,
+        )
 
         not_found_response = self.client.get("/product-profiles/pp_missing")
         self.assertEqual(not_found_response.status_code, 404)
@@ -84,7 +97,7 @@ class BackendApiTestCase(unittest.TestCase):
         payload = confirm_response.json()["product_profile"]
         self.assertEqual(payload["id"], product_profile_id)
         self.assertEqual(payload["status"], "confirmed")
-        self.assertEqual(payload["version"], 2)
+        self.assertEqual(payload["version"], 3)
 
         # Idempotent: confirming again should succeed
         second_confirm = self.client.post(f"/product-profiles/{product_profile_id}/confirm")
@@ -93,6 +106,37 @@ class BackendApiTestCase(unittest.TestCase):
 
         not_found = self.client.post("/product-profiles/pp_missing/confirm")
         self.assertEqual(not_found.status_code, 404)
+
+    def test_product_profile_confirm_rejects_collecting_draft(self) -> None:
+        create_response = self.client.post(
+            "/product-profiles",
+            json={
+                "name": "仅有名称的画像",
+                "one_line_description": "先建一个画像。",
+                "source_notes": "",
+            },
+        )
+        self.assertEqual(create_response.status_code, 200)
+        product_profile_id = create_response.json()["product_profile"]["id"]
+
+        # Force a collecting draft through the service boundary assumptions.
+        from backend.api.database import get_session_factory
+        from backend.api import services
+
+        session = get_session_factory()()
+        try:
+            profile = services.get_product_profile_or_404(session, product_profile_id)
+            profile.target_customers = []
+            profile.typical_use_cases = []
+            profile.pain_points_solved = []
+            profile.core_advantages = []
+            profile.missing_fields = ["目标客户", "典型场景", "解决痛点", "核心优势"]
+            session.commit()
+        finally:
+            session.close()
+
+        confirm_response = self.client.post(f"/product-profiles/{product_profile_id}/confirm")
+        self.assertEqual(confirm_response.status_code, 409)
 
     def test_lead_analysis_rejects_draft_profile(self) -> None:
         product_profile_id = self._create_product_profile()
@@ -182,6 +226,10 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertEqual(history_response.status_code, 200)
         payload = history_response.json()
         self.assertIsNotNone(payload["latest_product_profile"])
+        self.assertIn(
+            payload["latest_product_profile"]["learning_stage"],
+            ["ready_for_confirmation", "confirmed"],
+        )
         self.assertIsNotNone(payload["latest_analysis_result"])
         self.assertIsNotNone(payload["latest_report"])
         self.assertGreaterEqual(len(payload["recent_items"]), 3)

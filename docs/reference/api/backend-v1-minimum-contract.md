@@ -326,11 +326,20 @@ queued → running → succeeded | failed | cancelled
     "version": 1,
     "updated_at": "2026-04-21T10:00:00Z"
   },
-  "current_run": {
+ "current_run": {
     "id": "run_001",
     "run_type": "product_learning",
     "status": "queued",
-    "trigger_source": "product_profile_create",
+    "triggered_by": "user",
+    "trigger_source": "android_product_learning",
+    "input_refs": [
+      {
+        "object_type": "product_profile",
+        "object_id": "pp_001",
+        "version": 1
+      }
+    ],
+    "output_refs": [],
     "started_at": null,
     "ended_at": null,
     "error_message": null
@@ -344,7 +353,7 @@ queued → running → succeeded | failed | cancelled
 ### 说明
 
 - 创建成功后默认 `status = draft`
-- 第一版 product learning runtime 接入后，`current_run` 允许非空
+- 当前已实现：创建成功后会同步返回一个 `run_type = product_learning` 的 `AgentRunPayload`
 - 需要通过 `POST /product-profiles/{id}/confirm` 将状态升级为 `confirmed`
 
 ## 6.2 `POST /product-profiles/{id}/confirm`
@@ -372,6 +381,7 @@ queued → running → succeeded | failed | cancelled
 
 - 幂等：对已经是 `confirmed` 的状态再次调用仍返回成功
 - 确认后版本号 `version` 自动递增
+- 若 `learning_stage != ready_for_confirmation`，backend 返回 `409`
 - 只有 `confirmed` 的 `ProductProfile` 才能作为 `lead_analysis` 的输入
 
 ## 6.3 `GET /product-profiles/{id}`
@@ -400,7 +410,7 @@ Android 产品画像确认页应依赖该接口作为主要读取入口。
     "core_advantages": ["对话式澄清", "结构化沉淀"],
     "delivery_model": "移动端控制入口 + 本地后端处理",
     "constraints": ["当前仍是 V1 最小闭环"],
-    "missing_fields": ["价格区间", "销售区域"],
+    "missing_fields": ["目标行业", "限制条件"],
     "created_at": "2026-04-21T10:00:00Z",
     "updated_at": "2026-04-21T10:12:00Z"
   }
@@ -651,6 +661,7 @@ Android 分析结果页应依赖该接口作为主要读取入口。
     "id": "pp_001",
     "name": "AI 销售助手 V1",
     "one_line_description": "帮助用户先讲清产品，再生成获客分析结果。",
+    "learning_stage": "confirmed",
     "status": "confirmed",
     "version": 1,
     "updated_at": "2026-04-21T10:12:00Z"

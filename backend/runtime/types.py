@@ -20,6 +20,7 @@ class ProductProfileRuntimePayload(BaseModel):
     delivery_model: str
     constraints: list[str] = Field(default_factory=list)
     missing_fields: list[str] = Field(default_factory=list)
+    confidence_score: int | None = None
     status: str
     version: int
 
@@ -38,6 +39,7 @@ class ProductProfileRuntimePayload(BaseModel):
             delivery_model=profile.delivery_model,
             constraints=profile.constraints,
             missing_fields=profile.missing_fields,
+            confidence_score=profile.confidence_score,
             status=profile.status,
             version=profile.version,
         )
@@ -101,6 +103,18 @@ class AnalysisReportDraft(BaseModel):
     sections: list[dict[str, str]]
 
 
+class ProductLearningDraft(BaseModel):
+    target_customers: list[str] = Field(default_factory=list)
+    target_industries: list[str] = Field(default_factory=list)
+    typical_use_cases: list[str] = Field(default_factory=list)
+    pain_points_solved: list[str] = Field(default_factory=list)
+    core_advantages: list[str] = Field(default_factory=list)
+    delivery_model: str | None = None
+    constraints: list[str] = Field(default_factory=list)
+    missing_fields: list[str] = Field(default_factory=list)
+    confidence_score: int = 0
+
+
 class LeadAnalysisGraphState(TypedDict, total=False):
     run_id: str
     run_type: str
@@ -121,5 +135,16 @@ class ReportGenerationGraphState(TypedDict, total=False):
     lead_analysis_result_payload: LeadAnalysisResultRuntimePayload
     normalized_context: dict[str, Any]
     draft_output: AnalysisReportDraft
+    error: str | None
+    runtime_metadata: dict[str, Any]
+
+
+class ProductLearningGraphState(TypedDict, total=False):
+    run_id: str
+    run_type: str
+    product_profile_id: str
+    product_profile_payload: ProductProfileRuntimePayload
+    normalized_context: dict[str, Any]
+    draft_output: ProductLearningDraft
     error: str | None
     runtime_metadata: dict[str, Any]

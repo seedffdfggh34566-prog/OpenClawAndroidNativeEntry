@@ -6,11 +6,13 @@ from uuid import uuid4
 
 from backend.api import models
 from backend.runtime.graphs.lead_analysis import invoke_lead_analysis_graph
+from backend.runtime.graphs.product_learning import invoke_product_learning_graph
 from backend.runtime.graphs.report_generation import invoke_report_generation_graph
 from backend.runtime.types import (
     AnalysisReportDraft,
     LeadAnalysisDraft,
     LeadAnalysisResultRuntimePayload,
+    ProductLearningDraft,
     ProductProfileRuntimePayload,
 )
 
@@ -41,20 +43,31 @@ class RuntimeProvider(ABC):
     ) -> AnalysisReportDraft:
         raise NotImplementedError
 
+    @abstractmethod
+    def generate_product_learning_draft(
+        self,
+        profile: models.ProductProfile,
+        *,
+        run_id: str,
+    ) -> ProductLearningDraft:
+        raise NotImplementedError
+
 
 class LangGraphRuntimeProvider(RuntimeProvider):
     provider_name = "langgraph"
 
     def runtime_metadata(self, run_type: str) -> dict[str, Any]:
-        graph_name = (
-            "lead_analysis_graph"
-            if run_type == "lead_analysis"
-            else "report_generation_graph"
-        )
+        graph_name = {
+            "product_learning": "product_learning_graph",
+            "lead_analysis": "lead_analysis_graph",
+            "report_generation": "report_generation_graph",
+        }.get(run_type, "unknown_graph")
         return {
             "provider": self.provider_name,
             "mode": "backend_direct_langgraph",
-            "phase": "phase1",
+            "phase": "product_learning_followup"
+            if run_type == "product_learning"
+            else "phase1",
             "graph_name": graph_name,
             "run_type": run_type,
             "trace_id": uuid4().hex,
@@ -84,6 +97,17 @@ class LangGraphRuntimeProvider(RuntimeProvider):
             lead_analysis_result_payload=LeadAnalysisResultRuntimePayload.from_model(
                 analysis_result
             ),
+        )
+
+    def generate_product_learning_draft(
+        self,
+        profile: models.ProductProfile,
+        *,
+        run_id: str,
+    ) -> ProductLearningDraft:
+        return invoke_product_learning_graph(
+            run_id=run_id,
+            product_profile_payload=ProductProfileRuntimePayload.from_model(profile),
         )
 
 

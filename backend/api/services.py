@@ -11,9 +11,12 @@ from sqlalchemy.orm import Session
 from backend.api import models, schemas
 from backend.api.config import get_settings
 from backend.api.database import get_session_factory
-from backend.runtime.adapter import StubRuntimeAdapter
+from backend.runtime.adapter import RuntimeProvider, get_runtime_provider
 
 logger = logging.getLogger(__name__)
+
+
+DEFAULT_RUNTIME_PROVIDER = get_runtime_provider()
 
 
 def generate_prefixed_id(prefix: str) -> str:
@@ -145,8 +148,13 @@ def create_analysis_run(
         input_refs=input_refs,
         output_refs=[],
         status="queued",
-        runtime_provider="stub",
-        runtime_metadata={"adapter": "stub", "phase": "pre-openclaw"},
+        runtime_provider=DEFAULT_RUNTIME_PROVIDER.provider_name,
+        runtime_metadata={
+            "provider": DEFAULT_RUNTIME_PROVIDER.provider_name,
+            "mode": "backend_direct_langgraph",
+            "phase": "phase1",
+            "status": "queued",
+        },
     )
     session.add(agent_run)
     session.commit()
@@ -165,7 +173,7 @@ def create_analysis_run(
 
 
 def process_agent_run(run_id: str) -> None:
-    adapter = StubRuntimeAdapter()
+    runtime_provider = get_runtime_provider()
     session = get_session_factory()()
 
     try:
@@ -175,8 +183,8 @@ def process_agent_run(run_id: str) -> None:
 
         agent_run.status = "running"
         agent_run.started_at = models.utcnow()
-        agent_run.runtime_provider = adapter.provider_name
-        agent_run.runtime_metadata = adapter.runtime_metadata()
+        agent_run.runtime_provider = runtime_provider.provider_name
+        agent_run.runtime_metadata = runtime_provider.runtime_metadata(agent_run.run_type)
         session.commit()
         logger.info(
             "analysis_run.started",
@@ -191,9 +199,9 @@ def process_agent_run(run_id: str) -> None:
         )
 
         if agent_run.run_type == "lead_analysis":
-            _process_lead_analysis(session, agent_run, adapter)
+            _process_lead_analysis(session, agent_run, runtime_provider)
         elif agent_run.run_type == "report_generation":
-            _process_report_generation(session, agent_run, adapter)
+            _process_report_generation(session, agent_run, runtime_provider)
         else:
             raise ValueError(f"unsupported_run_type: {agent_run.run_type}")
 
@@ -215,8 +223,11 @@ def process_agent_run(run_id: str) -> None:
         session.rollback()
         failed_run = session.get(models.AgentRun, run_id)
         if failed_run is not None:
+            runtime_metadata = dict(failed_run.runtime_metadata or {})
+            runtime_metadata["error_type"] = type(exc).__name__
             failed_run.status = "failed"
             failed_run.error_message = str(exc)
+            failed_run.runtime_metadata = runtime_metadata
             if failed_run.started_at is None:
                 failed_run.started_at = models.utcnow()
             failed_run.ended_at = models.utcnow()
@@ -242,7 +253,7 @@ def process_agent_run(run_id: str) -> None:
 def _process_lead_analysis(
     session: Session,
     agent_run: models.AgentRun,
-    adapter: StubRuntimeAdapter,
+    runtime_provider: RuntimeProvider,
 ) -> None:
     profile_ref = next(
         ref for ref in agent_run.input_refs if ref["object_type"] == "product_profile"
@@ -252,7 +263,10 @@ def _process_lead_analysis(
     if product_profile.status != "confirmed":
         raise ValueError("lead_analysis_requires_confirmed_product_profile")
 
-    draft = adapter.generate_lead_analysis_draft(product_profile)
+    draft = runtime_provider.generate_lead_analysis_draft(
+        product_profile,
+        run_id=agent_run.id,
+    )
     analysis_result = models.LeadAnalysisResult(
         id=generate_prefixed_id("lar"),
         product_profile_id=product_profile.id,
@@ -284,7 +298,7 @@ def _process_lead_analysis(
 def _process_report_generation(
     session: Session,
     agent_run: models.AgentRun,
-    adapter: StubRuntimeAdapter,
+    runtime_provider: RuntimeProvider,
 ) -> None:
     profile_ref = next(
         ref for ref in agent_run.input_refs if ref["object_type"] == "product_profile"
@@ -296,7 +310,11 @@ def _process_report_generation(
     product_profile = get_product_profile_or_404(session, str(profile_ref["object_id"]))
     analysis_result = get_lead_analysis_result_or_404(session, str(analysis_ref["object_id"]))
 
-    draft = adapter.generate_report_draft(product_profile, analysis_result)
+    draft = runtime_provider.generate_report_draft(
+        product_profile,
+        analysis_result,
+        run_id=agent_run.id,
+    )
     report = models.AnalysisReport(
         id=generate_prefixed_id("rep"),
         product_profile_id=product_profile.id,

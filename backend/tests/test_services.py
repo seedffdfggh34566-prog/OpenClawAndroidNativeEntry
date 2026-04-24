@@ -42,8 +42,33 @@ def test_create_analysis_run_queues_lead_analysis(db_session) -> None:
 
     assert run.id.startswith("run_")
     assert run.status == "queued"
-    assert run.runtime_provider == "stub"
+    assert run.runtime_provider == "langgraph"
     assert run.output_refs == []
+    assert run.runtime_metadata["provider"] == "langgraph"
+
+
+def test_process_agent_run_marks_failed_for_unsupported_run_type(db_session) -> None:
+    agent_run = models.AgentRun(
+        id="run_invalid",
+        run_type="invalid_runtime_path",
+        triggered_by="user",
+        trigger_source="test",
+        input_refs=[],
+        output_refs=[],
+        status="queued",
+        runtime_provider="langgraph",
+        runtime_metadata={"provider": "langgraph"},
+    )
+    db_session.add(agent_run)
+    db_session.commit()
+
+    services.process_agent_run(agent_run.id)
+    db_session.expire_all()
+
+    refreshed = services.get_agent_run_or_404(db_session, agent_run.id)
+    assert refreshed.status == "failed"
+    assert "unsupported_run_type" in str(refreshed.error_message)
+    assert refreshed.runtime_metadata["error_type"] == "ValueError"
 
 
 def test_build_result_summary_returns_none_for_non_succeeded_run(db_session) -> None:
@@ -55,8 +80,8 @@ def test_build_result_summary_returns_none_for_non_succeeded_run(db_session) -> 
         input_refs=[],
         output_refs=[],
         status="queued",
-        runtime_provider="stub",
-        runtime_metadata={"adapter": "stub"},
+        runtime_provider="langgraph",
+        runtime_metadata={"provider": "langgraph"},
     )
     db_session.add(agent_run)
     db_session.commit()

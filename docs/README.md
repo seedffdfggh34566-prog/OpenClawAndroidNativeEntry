@@ -1,6 +1,6 @@
 # 文档导航
 
-更新时间：2026-04-23
+更新时间：2026-04-24
 
 ## 1. 文档定位
 
@@ -33,8 +33,9 @@
 2. `docs/product/overview.md`
 3. `docs/product/prd/ai_sales_assistant_v1_prd.md`
 4. `docs/adr/ADR-001-backend-deployment-baseline.md`
-5. `docs/delivery/tasks/_active.md`
-6. 当前 task 引用的 spec / runbook / handoff
+5. `docs/adr/ADR-002-v1-runtime-and-product-learning-baseline.md`
+6. `docs/delivery/tasks/_active.md`
+7. 当前 task 引用的 spec / runbook / handoff
 
 ---
 
@@ -61,6 +62,7 @@
 - `docs/product/overview.md`
 - `docs/product/prd/ai_sales_assistant_v1_prd.md`
 - `docs/adr/ADR-001-backend-deployment-baseline.md`
+- `docs/adr/ADR-002-v1-runtime-and-product-learning-baseline.md`
 
 ### 5.2 当前架构与后端方向
 
@@ -68,14 +70,15 @@
 - `docs/reference/api/backend-v1-minimum-contract.md`
 - `docs/architecture/repository-layout.md`
 - `docs/architecture/backend/backend-agent-stack-phased-adoption.md`
+- `docs/architecture/runtime/langgraph-runtime-architecture.md`
 - `docs/architecture/clients/android-client-implementation-constraints.md`
 
 ### 5.3 当前执行入口
 
 - `docs/delivery/tasks/_active.md`
 - `docs/delivery/README.md`
-- `docs/delivery/tasks/task_v1_analysis_result_detail_contract.md`
-- `docs/delivery/tasks/task_v1_android_report_generation_trigger_poll.md`
+- `docs/delivery/tasks/task_v1_product_learning_runtime_followup.md`
+- `docs/delivery/handoffs/handoff_2026_04_24_real_runtime_integration_phase1.md`
 
 ### 5.4 当前工作流
 
@@ -146,6 +149,12 @@ docs/
 
 当前最推荐的下一步执行顺序为：
 
-1. 执行 `task_v1_analysis_result_detail_contract.md`
-2. 冻结并实现 `GET /lead-analysis-results/{id}` contract
-3. 在客户端对象链路稳定后，再拆真实 OpenClaw runtime 接入任务
+1. 执行 `task_v1_product_learning_runtime_followup.md`
+2. 冻结 `ready_for_confirmation` 的正式判断归属与 product learning run object 方案
+3. 在已完成的 runtime Phase 1 基础上，把 product learning 接入正式 runtime
+4. 再补首页、结果页、报告页的产品表达收口
+
+当前补充建议阅读：
+
+- `docs/product/research/v1_repo_and_product_gap_planning_note.md`
+- `docs/architecture/runtime/langgraph-runtime-architecture.md`

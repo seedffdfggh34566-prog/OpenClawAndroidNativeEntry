@@ -1,6 +1,6 @@
 # 任务目录说明
 
-更新时间：2026-04-23
+更新时间：2026-04-24
 
 ## 1. 目录定位
 
@@ -21,8 +21,8 @@
 
 当前项目尚未完成：
 
-- 第一批正式开发任务的连续推进
-- 真实 OpenClaw runtime 与正式后端的最小接入
+- product learning runtime 的正式接入
+- 首页、结果页和报告页的最终产品表达收口
 
 因此，当前阶段的重点是：
 
@@ -34,9 +34,9 @@
 
 建议按以下顺序进入下一批任务：
 
-1. AnalysisResult 详情 contract / 页面 follow-up task
-2. 真实 OpenClaw runtime 接入 follow-up task
-3. 报告导出 / 分享 follow-up task
+1. product learning runtime follow-up task
+2. 首页 / 结果页 / 报告页的产品表达收口
+3. 视需要再拆 observability 或导出 follow-up task
 
 原因如下：
 
@@ -45,8 +45,8 @@
 - Android 已完成最小 ProductProfile 创建
 - Android 已完成 `lead_analysis` 触发与轮询
 - Android 已完成 `report_generation` 触发与轮询
-- 当前最有价值的是补齐 AnalysisResult 详情 contract 与页面读取
-- runtime 真实接入应在对象读写与详情链路稳定后继续推进
+- 产品学习交互基线已经冻结，下一步应转向 product learning runtime
+- `lead_analysis` / `report_generation` 已完成 runtime Phase 1，下一批任务不应再回头追加 stub 时代需求
 
 ---
 
@@ -66,7 +66,11 @@
 | `task_v1_android_minimum_product_profile_write_path.md` | 让 Android 壳层创建第一版 ProductProfile 草稿 | `done` |
 | `task_v1_android_analysis_run_trigger_poll.md` | 让 Android 壳层触发 lead_analysis 并轮询 AgentRun | `done` |
 | `task_v1_android_report_generation_trigger_poll.md` | 让 Android 壳层触发 report_generation 并打开 AnalysisReport | `done` |
-| `task_v1_analysis_result_detail_contract.md` | 补齐 AnalysisResult 详情 contract 与页面读取 | `planned` |
+| `task_v1_analysis_result_detail_contract.md` | 补齐 AnalysisResult 详情 contract 与页面读取 | `done` |
+| `task_v1_product_profile_confirmation_flow.md` | 补齐 ProductProfile `draft -> confirmed` 确认闭环 | `done` |
+| `task_v1_product_learning_interaction_baseline.md` | 冻结产品学习交互基线、最低完整度门槛与阶段状态 | `done` |
+| `task_v1_real_runtime_integration_phase1.md` | 以 backend-direct LangGraph 替换 analysis/report stub runtime | `done` |
+| `task_v1_product_learning_runtime_followup.md` | 接入真实 product learning runtime，并冻结 run object / readiness 归属 | `planned` |
 
 ---
 

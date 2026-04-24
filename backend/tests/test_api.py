@@ -63,6 +63,7 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertEqual(payload["id"], lead_analysis_result_id)
         self.assertEqual(payload["product_profile_id"], product_profile_id)
         self.assertIn("summary", payload)
+        self.assertEqual(payload["analysis_scope"], "v1_langgraph_phase1")
         self.assertIn("priority_industries", payload)
         self.assertIsInstance(payload["priority_industries"], list)
         self.assertIn("priority_customer_types", payload)
@@ -162,6 +163,7 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertEqual(report_payload["id"], report_id)
         self.assertEqual(report_payload["status"], "published")
         self.assertGreaterEqual(len(report_payload["sections"]), 1)
+        self.assertIn("下一步建议", [section["title"] for section in report_payload["sections"]])
 
     def test_history_empty_and_populated(self) -> None:
         empty_history_response = self.client.get("/history")

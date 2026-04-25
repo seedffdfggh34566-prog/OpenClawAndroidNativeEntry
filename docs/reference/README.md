@@ -7,4 +7,5 @@
 - `api/`
 - `schemas/`
 - `runtime-v1-observability-eval-baseline.md`
+- `runtime-v1-llm-provider-selection.md`
 - `glossary.md`

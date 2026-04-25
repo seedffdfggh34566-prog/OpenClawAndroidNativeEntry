@@ -164,3 +164,4 @@ docs/
 
 - `docs/product/research/v1_repo_and_product_gap_planning_note.md`
 - `docs/architecture/runtime/langgraph-runtime-architecture.md`
+- `docs/reference/runtime-v1-llm-provider-selection.md`

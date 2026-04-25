@@ -86,8 +86,8 @@
 | `task_v1_full_sales_flow_device_smoke.md` | 真机从空库验证 V1 主闭环完整跑通 | `done` |
 | `task_android_chinese_input_smoke_mechanism.md` | 记录 Android 真机中文自动化输入机制与测试 IME 方案 | `done` |
 | `task_v1_product_learning_eval_prompt_tuning_followup.md` | 扩展真实 product learning 样例评估并按阈值决定是否调 prompt | `done` |
-| `task_v1_product_learning_ui_polish_real_chinese_smoke.md` | 收口 ProductLearning 页面表达并执行真实中文 smoke | `blocked` |
-| `task_android_chinese_input_device_preflight.md` | 一次性准备 jianglab 真机中文输入测试 IME | `planned` |
+| `task_v1_product_learning_ui_polish_real_chinese_smoke.md` | 收口 ProductLearning 页面表达并执行真实中文 smoke | `in_progress` |
+| `task_android_chinese_input_device_preflight.md` | 一次性准备 jianglab 真机中文输入测试 IME | `done` |
 
 ---
 

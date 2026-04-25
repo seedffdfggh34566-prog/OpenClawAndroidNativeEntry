@@ -6,7 +6,7 @@
 
 - 任务名称：V1 ProductLearning UI Polish + Real Chinese Device Smoke
 - 建议路径：`docs/delivery/tasks/task_v1_product_learning_ui_polish_real_chinese_smoke.md`
-- 当前状态：`blocked`
+- 当前状态：`in_progress`
 - 优先级：P1
 
 本任务用于把 Android 产品学习页从工程流程页收口成 V1 用户入口，并用真实中文输入跑通 create / enrich smoke。
@@ -145,7 +145,7 @@
   - 缺失字段区改为“还差哪些关键信息”。
   - 补充区按钮改为“提交补充并刷新产品画像”。
 - 未修改 backend contract、Android DTO / parser、navigation、LLM prompt 或 provider。
-- 真实中文 smoke 尚未完成，原因是当前设备未预装 `ADBKeyBoard`，重新安装时触发 OnePlus / OPlus 未知来源安全页与拼图验证。
+- 真实中文 smoke 曾被当前设备未预装 `ADBKeyBoard` 阻塞；现已通过 `task_android_chinese_input_device_preflight.md` 完成设备预检，可恢复执行。
 
 ---
 
@@ -153,7 +153,7 @@
 
 - 本次 UI polish 可独立保留。
 - 中文 smoke 不应通过自动破解厂商拼图继续推进。
-- 后续先执行 `task_android_chinese_input_device_preflight.md`，把当前设备准备成中文 smoke ready 状态，再恢复本任务。
+- 当前设备已完成 `task_android_chinese_input_device_preflight.md`，后续日常 smoke 只切换测试 IME，不卸载。
 
 ---
 
@@ -175,13 +175,12 @@
    - 结果：产品学习页可见 `先讲清楚你要卖什么`、`产品名称`、`一句话描述`、`客户、场景、痛点和优势`。
 7. 设备中文输入工具检查
    - 当前默认输入法：`com.baidu.input_oppo/.ImeService`。
-   - `com.android.adbkeyboard` 当前未安装。
-   - 重新安装测试 IME 触发 OPlus 安全验证和拼图，无法稳定自动化通过。
+   - 重新安装测试 IME 曾触发 OPlus 安全验证和拼图，无法稳定自动化通过。
+8. `task_android_chinese_input_device_preflight.md`
+   - 结果：完成，`com.android.adbkeyboard` 已保留安装，`ADB_INPUT_B64` 中文输入已验证。
 
 ---
 
 ## 14. 实际结果说明
 
-当前任务因设备安全验证阻塞真实中文 create / enrich smoke，状态标记为 `blocked`。该阻塞不是 OpenClaw Android UI 或 backend 逻辑问题。
-
-下一步应先完成 `task_android_chinese_input_device_preflight.md`：人工一次性安装并保留测试 IME，后续日常 smoke 只切换输入法，不再重复安装和卸载。
+当前任务已解除设备输入法阻塞，可继续执行真实中文 create / enrich smoke。

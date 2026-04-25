@@ -6,7 +6,7 @@
 
 - 任务名称：Android Chinese Input Device Preflight
 - 建议路径：`docs/delivery/tasks/task_android_chinese_input_device_preflight.md`
-- 当前状态：`planned`
+- 当前状态：`done`
 - 优先级：P1
 
 本任务用于把 jianglab 当前真机准备成“中文 smoke ready”状态，避免每次 smoke 都重新安装测试 IME 并触发 OnePlus / OPlus 未知来源安全验证。
@@ -126,22 +126,48 @@
 
 ## 11. 实际产出
 
-任务执行完成后补充。
+- 已确认当前真机 `f3b59f04` 在线。
+- 已安装并保留 `com.android.adbkeyboard`。
+- 已启用并切换到 `com.android.adbkeyboard/.AdbIME`。
+- 已通过 `ADB_INPUT_B64` 在 OpenClaw Android 产品学习页输入中文 `工厂设备巡检助手`。
+- 已恢复默认输入法为 `com.baidu.input_oppo/.ImeService`。
+- 未卸载 `com.android.adbkeyboard`，后续日常 smoke 可直接切换 IME。
 
 ---
 
 ## 12. 本次定稿边界
 
-任务执行完成后补充。
+- 本任务只完成 jianglab 当前测试设备的中文输入预检。
+- 不修改 Android 产品代码。
+- 不修改 backend。
+- 不把测试 APK 提交到 Git。
+- 不自动绕过或破解厂商安全验证。
 
 ---
 
 ## 13. 已做验证
 
-任务执行完成后补充。
+已完成：
+
+1. `adb devices`
+   - 结果：检测到真机 `f3b59f04`。
+2. `adb shell settings get secure default_input_method`
+   - 预检前：`com.baidu.input_oppo/.ImeService`。
+   - 切换测试 IME 后：`com.android.adbkeyboard/.AdbIME`。
+   - 预检结束后：`com.baidu.input_oppo/.ImeService`。
+3. `adb shell pm list packages com.android.adbkeyboard`
+   - 结果：`package:com.android.adbkeyboard`。
+4. `adb shell ime enable com.android.adbkeyboard/.AdbIME`
+   - 结果：enabled。
+5. `adb shell ime set com.android.adbkeyboard/.AdbIME`
+   - 结果：selected。
+6. `adb shell am broadcast -a ADB_INPUT_B64 --es msg "$MSG_B64"`
+   - 结果：broadcast `result=0`。
+7. `adb exec-out cat /sdcard/window.xml | rg "工厂设备巡检助手"`
+   - 结果：UIAutomator XML 中出现 `text="工厂设备巡检助手"`。
 
 ---
 
 ## 14. 实际结果说明
 
-任务执行完成后补充。
+当前设备已经进入中文 smoke ready 状态。后续不应在日常 smoke 中卸载 `com.android.adbkeyboard`；只需要临时切换到 `com.android.adbkeyboard/.AdbIME`，完成后恢复 `com.baidu.input_oppo/.ImeService`。

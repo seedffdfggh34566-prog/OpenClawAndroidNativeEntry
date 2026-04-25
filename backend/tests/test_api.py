@@ -1,18 +1,42 @@
 from __future__ import annotations
 
+import json
 import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
 from backend.api.config import reset_settings_cache
 from backend.api.database import reset_database_state
+from backend.runtime.llm_client import TokenHubCompletion
 
 
 class BackendApiTestCase(unittest.TestCase):
     def setUp(self) -> None:
+        self.llm_patcher = patch(
+            "backend.runtime.graphs.product_learning.TokenHubClient.complete",
+            return_value=TokenHubCompletion(
+                content=json.dumps(
+                    {
+                        "target_customers": ["销售负责人", "创始人"],
+                        "target_industries": ["企业服务"],
+                        "typical_use_cases": ["梳理产品表达", "生成获客分析输入"],
+                        "pain_points_solved": ["产品价值表达不清"],
+                        "core_advantages": ["先讲清产品再做销售分析"],
+                        "delivery_model": "mobile_control_entry + local_backend",
+                        "constraints": ["当前仍需人工确认"],
+                        "missing_fields": [],
+                        "confidence_score": 82,
+                    },
+                    ensure_ascii=False,
+                ),
+                usage={"total_tokens": 128},
+            ),
+        )
+        self.llm_patcher.start()
         self.temp_dir = tempfile.TemporaryDirectory()
         database_path = Path(self.temp_dir.name) / "test.db"
         os.environ["OPENCLAW_BACKEND_DATABASE_PATH"] = str(database_path)
@@ -28,6 +52,7 @@ class BackendApiTestCase(unittest.TestCase):
         reset_settings_cache()
         os.environ.pop("OPENCLAW_BACKEND_DATABASE_PATH", None)
         self.temp_dir.cleanup()
+        self.llm_patcher.stop()
 
     def test_product_profile_create_and_get(self) -> None:
         create_response = self.client.post(

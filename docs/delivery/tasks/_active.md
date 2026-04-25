@@ -46,11 +46,10 @@
 
 ### Current task
 
-- 暂无正在执行中的正式 implementation task
+- `task_v1_product_learning_llm_phase1.md`
 
 ### Next queued tasks
 
-- `task_v1_product_learning_llm_phase1.md`
 - `task_v1_android_product_learning_iteration_ui.md`
 
 最近完成：

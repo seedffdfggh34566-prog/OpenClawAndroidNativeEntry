@@ -6,7 +6,7 @@
 
 - 任务名称：V1 Product Learning LLM Phase 1
 - 建议路径：`docs/delivery/tasks/task_v1_product_learning_llm_phase1.md`
-- 当前状态：`planned`
+- 当前状态：`in_progress`
 - 优先级：P1
 
 本任务用于在 iteration contract 和 observability baseline 明确后，把当前 heuristic `product_learning_graph` 切换到真实 LLM 驱动，实现 V1 product learning 的第一轮真实能力验证。
@@ -207,22 +207,53 @@ Token Plan 企业版不作为本阶段默认方案，只作为后续用量稳定
 
 ## 11. 实际产出
 
-任务执行完成后补充。
+- 新增腾讯云 TokenHub 普通按量 API 最小 client，使用现有 `httpx`，不引入 OpenAI SDK。
+- `product_learning_graph` 已从 heuristic draft 生成切到 LLM prompt + JSON 解析 + `ProductLearningDraft` typed validation。
+- 支持剥离 MiniMax 可能返回的 `<think>...</think>` 与 markdown code fence，再提取 JSON object。
+- Runtime metadata 对 `product_learning` 写入：
+  - `prompt_version=product_learning_llm_v1`
+  - `llm_provider=tencent_tokenhub`
+  - `llm_model=minimax-m2.5`
+  - `llm_base_url=https://tokenhub.tencentmaas.com/v1`
+- `.gitignore` 已忽略 `backend/.env` 与 `backend/.env.*`，避免误提交 API key。
+- Backend tests 已通过 mock TokenHub completion 覆盖成功路径和失败路径。
 
 ---
 
 ## 12. 本次定稿边界
 
-任务执行完成后补充。
+- 未新增 public endpoint。
+- 未新增 AgentRun lifecycle 状态。
+- 未改变 ProductProfile 正式写回所有权：runtime 仍只返回 typed draft，`backend/api/services.py` 继续负责正式对象写回、版本递增、`missing_fields` 与 `learning_stage`。
+- 未接入 Token Plan；当前仍按普通 TokenHub 按量 API 配置。
+- 未做 `kimi-k2.5` / `glm-5` 自动路由。
 
 ---
 
 ## 13. 已做验证
 
-任务执行完成后补充。
+已完成：
+
+1. `backend/.venv/bin/python -m compileall backend/api backend/runtime backend/tests`
+2. `backend/.venv/bin/python -m pytest backend/tests`
+   - 结果：`35 passed`
+3. `OPENCLAW_BACKEND_DATABASE_URL=sqlite:////tmp/openclaw_llm_phase1_verify.db backend/.venv/bin/alembic upgrade head`
+4. `OPENCLAW_BACKEND_DATABASE_URL=sqlite:////tmp/openclaw_llm_phase1_smoke.db backend/.venv/bin/python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8013`
+5. `curl -sS http://127.0.0.1:8013/health`
+   - 结果：`{"status":"ok"}`
+6. 本地 mock TokenHub API flow：
+   - mock TokenHub：`http://127.0.0.1:18081/v1/chat/completions`
+   - backend：`OPENCLAW_BACKEND_LLM_BASE_URL=http://127.0.0.1:18081/v1 ... uvicorn ... --port 8014`
+   - `POST /product-profiles` -> `GET /analysis-runs/{id}`
+   - 结果：`AgentRun.status=succeeded`、`learning_stage=ready_for_confirmation`、metadata 包含 `prompt_version=product_learning_llm_v1` 与 `llm_model=minimax-m2.5`
+
+未完成：
+
+- Codex 当前 shell 中没有 `OPENCLAW_BACKEND_LLM_API_KEY`，且 `backend/.env` 不存在，因此未运行真实 product profile create -> process run -> get run detail 的 TokenHub smoke。
+- 真实 3 样例 heuristic vs `minimax-m2.5` 人工 eval 尚待 API key 注入 backend 运行环境后执行。
 
 ---
 
 ## 14. 实际结果说明
 
-任务执行完成后补充。
+代码实现已完成并通过本地 mock 验证；任务当前保持 `in_progress`，剩余 closeout 是真实 TokenHub 样例 eval 与人工质量记录。

@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None
     langfuse_host: str = "https://cloud.langfuse.com"
+    llm_provider: str = "tencent_tokenhub"
+    llm_base_url: str = "https://tokenhub.tencentmaas.com/v1"
+    llm_model: str = "minimax-m2.5"
+    llm_api_key: str | None = None
+    llm_prompt_version: str = "product_learning_llm_v1"
+    llm_timeout_seconds: float = 30.0
 
     model_config = SettingsConfigDict(
         env_prefix="OPENCLAW_BACKEND_",

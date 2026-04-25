@@ -297,7 +297,7 @@ product learning 第一版默认流程为：
 
 1. `POST /product-profiles` 创建初始 draft
 2. backend 创建 `run_type = product_learning` 的 `AgentRun`
-3. LangGraph 执行单轮富化
+3. LangGraph 执行单轮富化，并在 LLM Phase 1 中通过 TokenHub `minimax-m2.5` 生成 typed draft
 4. runtime 输出 `ProductLearningDraft`、候选 `missing_fields` 与 `confidence_score`
 5. backend 写回同一个 `ProductProfile`
 6. backend 计算 `learning_stage`

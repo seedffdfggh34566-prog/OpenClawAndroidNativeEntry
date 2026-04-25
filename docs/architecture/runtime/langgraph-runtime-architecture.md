@@ -1,6 +1,6 @@
 # LangGraph Runtime Architecture Spec
 
-更新时间：2026-04-24
+更新时间：2026-04-25
 
 ## 1. 文档定位
 
@@ -166,7 +166,7 @@ product learning follow-up 默认应新增：
 当前 product learning follow-up 已固定：
 
 - 继续复用 `AgentRun`
-- 第一版继续复用现有 8 个 public API
+- 第一版 create 继续复用原有 public API，iteration 使用已落地的 `POST /product-profiles/{id}/enrich`
 - 采用 single-turn enrich
 - 由 backend 负责 `learning_stage` 判定与写回
 
@@ -273,7 +273,7 @@ LangGraph 对外输出应是：
 - 最小 trace / call id
 - 节点失败信息
 
-当前 baseline 还应补齐：
+当前 baseline 已补齐：
 
 - `prompt_version`
 - `round_index`

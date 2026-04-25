@@ -1,6 +1,6 @@
 # V1 后端最小 API contract
 
-更新时间：2026-04-24
+更新时间：2026-04-25
 
 ## 1. 文档定位
 
@@ -32,9 +32,10 @@
 
 ## 2. 当前结论
 
-V1 当前已实现以下 8 个最小接口：
+V1 当前已实现以下 9 个最小接口：
 
 - `POST /product-profiles`
+- `POST /product-profiles/{id}/enrich`
 - `POST /product-profiles/{id}/confirm`
 - `GET /product-profiles/{id}`
 - `POST /analysis-runs`
@@ -42,10 +43,6 @@ V1 当前已实现以下 8 个最小接口：
 - `GET /lead-analysis-results/{id}`
 - `GET /reports/{id}`
 - `GET /history`
-
-在已实现 8 个接口的基础上，下一轮 product learning iteration contract 默认新增第 9 个接口：
-
-- `POST /product-profiles/{id}/enrich`
 
 当前采用以下关键 contract 决策：
 
@@ -417,6 +414,8 @@ queued → running → succeeded | failed | cancelled
 
 - backend 先将 `supplemental_notes` 追加到同一个 `ProductProfile.source_notes`
 - backend 再创建新的 `run_type = product_learning` `AgentRun`
+- 首次 create 对应 `round_index = 0`，enrich 轮次从 `1` 开始递增
+- 当前仅允许 `draft` `ProductProfile` 调用，非 draft 返回 `409`
 - 客户端继续使用 `GET /analysis-runs/{id}` 轮询
 - 富化结果继续通过 `GET /product-profiles/{id}` 读取
 - 当前不引入消息持久化与新的 public `/product-learning/*` 路径

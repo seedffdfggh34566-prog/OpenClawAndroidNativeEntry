@@ -65,6 +65,62 @@ class BackendApiTestCase(unittest.TestCase):
         not_found_response = self.client.get("/product-profiles/pp_missing")
         self.assertEqual(not_found_response.status_code, 404)
 
+    def test_product_profile_enrich_queues_learning_run(self) -> None:
+        product_profile_id = self._create_product_profile()
+
+        enrich_response = self.client.post(
+            f"/product-profiles/{product_profile_id}/enrich",
+            json={
+                "supplemental_notes": "补充目标客户是销售负责人，典型场景是首轮获客分析。",
+                "trigger_source": "android_product_learning_iteration",
+            },
+        )
+        self.assertEqual(enrich_response.status_code, 200)
+        enrich_payload = enrich_response.json()["agent_run"]
+        self.assertEqual(enrich_payload["run_type"], "product_learning")
+        self.assertEqual(enrich_payload["trigger_source"], "android_product_learning_iteration")
+
+        run_detail = self.client.get(f"/analysis-runs/{enrich_payload['id']}")
+        self.assertEqual(run_detail.status_code, 200)
+        run_payload = run_detail.json()
+        self.assertEqual(run_payload["agent_run"]["status"], "succeeded")
+        self.assertEqual(
+            run_payload["result_summary"]["product_profile_id"],
+            product_profile_id,
+        )
+
+        from backend.api import services
+        from backend.api.database import get_session_factory
+
+        session = get_session_factory()()
+        try:
+            profile = services.get_product_profile_or_404(session, product_profile_id)
+            self.assertIn("用于集成测试。", profile.source_notes or "")
+            self.assertIn("补充目标客户是销售负责人", profile.source_notes or "")
+        finally:
+            session.close()
+
+    def test_product_profile_enrich_rejects_invalid_requests(self) -> None:
+        product_profile_id = self._create_product_profile()
+
+        blank_response = self.client.post(
+            f"/product-profiles/{product_profile_id}/enrich",
+            json={
+                "supplemental_notes": "   ",
+                "trigger_source": "android_product_learning_iteration",
+            },
+        )
+        self.assertEqual(blank_response.status_code, 422)
+
+        not_found_response = self.client.post(
+            "/product-profiles/pp_missing/enrich",
+            json={
+                "supplemental_notes": "补充信息。",
+                "trigger_source": "android_product_learning_iteration",
+            },
+        )
+        self.assertEqual(not_found_response.status_code, 404)
+
     def test_lead_analysis_result_detail(self) -> None:
         product_profile_id = self._create_product_profile()
         self._confirm_product_profile(product_profile_id)

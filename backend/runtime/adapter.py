@@ -21,7 +21,13 @@ class RuntimeProvider(ABC):
     provider_name: str
 
     @abstractmethod
-    def runtime_metadata(self, run_type: str) -> dict[str, Any]:
+    def runtime_metadata(
+        self,
+        run_type: str,
+        *,
+        round_index: int = 0,
+        trace_id: str | None = None,
+    ) -> dict[str, Any]:
         raise NotImplementedError
 
     @abstractmethod
@@ -56,7 +62,13 @@ class RuntimeProvider(ABC):
 class LangGraphRuntimeProvider(RuntimeProvider):
     provider_name = "langgraph"
 
-    def runtime_metadata(self, run_type: str) -> dict[str, Any]:
+    def runtime_metadata(
+        self,
+        run_type: str,
+        *,
+        round_index: int = 0,
+        trace_id: str | None = None,
+    ) -> dict[str, Any]:
         graph_name = {
             "product_learning": "product_learning_graph",
             "lead_analysis": "lead_analysis_graph",
@@ -70,7 +82,9 @@ class LangGraphRuntimeProvider(RuntimeProvider):
             else "phase1",
             "graph_name": graph_name,
             "run_type": run_type,
-            "trace_id": uuid4().hex,
+            "trace_id": trace_id or uuid4().hex,
+            "prompt_version": "heuristic_v1",
+            "round_index": round_index,
         }
 
     def generate_lead_analysis_draft(

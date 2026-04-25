@@ -1,6 +1,6 @@
 # 当前活跃任务
 
-更新时间：2026-04-24
+更新时间：2026-04-25
 
 ## 1. 使用说明
 
@@ -36,6 +36,7 @@
 - `task_v1_real_runtime_integration_phase1.md`
 - `task_v1_product_learning_runtime_decision_freeze.md`
 - `task_v1_product_learning_iteration_contract.md`
+- `task_v1_product_learning_backend_preflight.md`
 
 这些任务当前应视为：
 
@@ -54,6 +55,7 @@
 
 最近完成：
 
+- `task_v1_product_learning_backend_preflight.md`
 - `task_v1_runtime_observability_eval_baseline.md`
 - `task_v1_product_learning_iteration_contract.md`
 - `task_v1_product_learning_runtime_decision_freeze.md`
@@ -70,6 +72,7 @@
 当前切换原因：
 
 - product learning runtime follow-up 已完成最小 backend + Android 闭环
+- product learning backend preflight 已补齐 enrich endpoint 与 runtime metadata baseline
 - 当前下一阶段的核心风险不再是“能否跑通”，而是：
   - product learning LLM 是否能在现有 contract 与 eval baseline 下稳定输出
   - heuristic 与真实 LLM 的差异是否可被样例集约束

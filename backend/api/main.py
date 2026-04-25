@@ -26,6 +26,8 @@ from backend.api.schemas import (
     ProductProfileCreateRequest,
     ProductProfileCreateResponse,
     ProductProfileDetailResponse,
+    ProductProfileEnrichRequest,
+    ProductProfileEnrichResponse,
     ReportDetailResponse,
 )
 
@@ -113,6 +115,20 @@ def create_app() -> FastAPI:
         return ProductProfileDetailResponse(
             product_profile=serializers.product_profile_detail(product_profile)
         )
+
+    @app.post(
+        "/product-profiles/{product_profile_id}/enrich",
+        response_model=ProductProfileEnrichResponse,
+    )
+    def enrich_product_profile(
+        product_profile_id: str,
+        payload: ProductProfileEnrichRequest,
+        background_tasks: BackgroundTasks,
+        session: Session = Depends(get_db_session),
+    ) -> ProductProfileEnrichResponse:
+        agent_run = services.enrich_product_profile(session, product_profile_id, payload)
+        background_tasks.add_task(services.process_agent_run, agent_run.id)
+        return ProductProfileEnrichResponse(agent_run=serializers.agent_run_payload(agent_run))
 
     @app.post("/product-profiles/{product_profile_id}/confirm", response_model=ProductProfileConfirmResponse)
     def confirm_product_profile(

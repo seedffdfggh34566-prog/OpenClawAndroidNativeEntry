@@ -23,6 +23,9 @@ def test_create_product_profile_sets_expected_defaults(db_session) -> None:
     assert profile.version == 1
     assert current_run.run_type == "product_learning"
     assert current_run.status == "queued"
+    assert current_run.runtime_metadata["graph_name"] == "product_learning_graph"
+    assert current_run.runtime_metadata["prompt_version"] == "heuristic_v1"
+    assert current_run.runtime_metadata["round_index"] == 0
     assert profile.missing_fields
     assert services.derive_learning_stage(profile) == "collecting"
 
@@ -60,6 +63,9 @@ def test_create_analysis_run_queues_lead_analysis(db_session) -> None:
     assert run.runtime_provider == "langgraph"
     assert run.output_refs == []
     assert run.runtime_metadata["provider"] == "langgraph"
+    assert run.runtime_metadata["graph_name"] == "lead_analysis_graph"
+    assert run.runtime_metadata["prompt_version"] == "heuristic_v1"
+    assert run.runtime_metadata["round_index"] == 0
 
 
 def test_process_agent_run_marks_failed_for_unsupported_run_type(db_session) -> None:
@@ -120,6 +126,8 @@ def test_process_product_learning_run_updates_same_profile(db_session) -> None:
     refreshed_profile = services.get_product_profile_or_404(db_session, created.product_profile.id)
     refreshed_run = services.get_agent_run_or_404(db_session, created.current_run.id)
     assert refreshed_run.status == "succeeded"
+    assert refreshed_run.runtime_metadata["prompt_version"] == "heuristic_v1"
+    assert refreshed_run.runtime_metadata["round_index"] == 0
     assert refreshed_profile.version == 2
     assert refreshed_profile.target_customers
     assert refreshed_profile.typical_use_cases
@@ -164,3 +172,83 @@ def test_build_result_summary_supports_product_learning(db_session) -> None:
     assert summary is not None
     assert summary["product_profile_id"] == created.product_profile.id
     assert summary["learning_stage"] == "ready_for_confirmation"
+
+
+def test_enrich_product_profile_appends_notes_and_increments_round_index(db_session) -> None:
+    created = services.create_product_profile(
+        db_session,
+        schemas.ProductProfileCreateRequest(
+            name="AI 销售助手 V1",
+            one_line_description="帮助用户先讲清产品，再生成获客分析结果。",
+            source_notes="第一轮说明。",
+        ),
+    )
+    services.process_agent_run(created.current_run.id)
+    db_session.expire_all()
+
+    first_enrich = services.enrich_product_profile(
+        db_session,
+        created.product_profile.id,
+        schemas.ProductProfileEnrichRequest(
+            supplemental_notes="补充目标客户和典型场景。",
+            trigger_source="android_product_learning_iteration",
+        ),
+    )
+    second_enrich = services.enrich_product_profile(
+        db_session,
+        created.product_profile.id,
+        schemas.ProductProfileEnrichRequest(
+            supplemental_notes="继续补充限制条件。",
+            trigger_source="android_product_learning_iteration",
+        ),
+    )
+    db_session.expire_all()
+
+    refreshed_profile = services.get_product_profile_or_404(db_session, created.product_profile.id)
+    assert refreshed_profile.source_notes == (
+        "第一轮说明。\n补充目标客户和典型场景。\n继续补充限制条件。"
+    )
+    assert first_enrich.run_type == "product_learning"
+    assert first_enrich.runtime_metadata["round_index"] == 1
+    assert second_enrich.runtime_metadata["round_index"] == 2
+    assert second_enrich.runtime_metadata["prompt_version"] == "heuristic_v1"
+
+
+def test_enrich_product_profile_rejects_missing_profile(db_session) -> None:
+    with pytest.raises(HTTPException) as exc_info:
+        services.enrich_product_profile(
+            db_session,
+            "pp_missing",
+            schemas.ProductProfileEnrichRequest(
+                supplemental_notes="补充信息。",
+                trigger_source="android_product_learning_iteration",
+            ),
+        )
+
+    assert exc_info.value.status_code == 404
+
+
+def test_enrich_product_profile_requires_draft(db_session) -> None:
+    created = services.create_product_profile(
+        db_session,
+        schemas.ProductProfileCreateRequest(
+            name="AI 销售助手 V1",
+            one_line_description="帮助用户先讲清产品，再生成获客分析结果。",
+            source_notes="适合企业服务团队做产品学习。",
+        ),
+    )
+    services.process_agent_run(created.current_run.id)
+    db_session.expire_all()
+    services.confirm_product_profile(db_session, created.product_profile.id)
+
+    with pytest.raises(HTTPException) as exc_info:
+        services.enrich_product_profile(
+            db_session,
+            created.product_profile.id,
+            schemas.ProductProfileEnrichRequest(
+                supplemental_notes="确认后不再通过 enrich 修改。",
+                trigger_source="android_product_learning_iteration",
+            ),
+        )
+
+    assert exc_info.value.status_code == 409

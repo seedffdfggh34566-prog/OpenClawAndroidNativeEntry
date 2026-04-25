@@ -35,6 +35,56 @@ def generate_prefixed_id(prefix: str) -> str:
     return f"{prefix}_{uuid4().hex[:8]}"
 
 
+def _build_runtime_metadata(run_type: str, *, round_index: int = 0) -> dict[str, object]:
+    return DEFAULT_RUNTIME_PROVIDER.runtime_metadata(run_type, round_index=round_index)
+
+
+def _product_learning_round_index(
+    session: Session,
+    product_profile_id: str,
+) -> int:
+    product_learning_runs = session.scalars(
+        select(models.AgentRun).where(models.AgentRun.run_type == "product_learning")
+    ).all()
+    return sum(
+        1
+        for run in product_learning_runs
+        if any(
+            ref.get("object_type") == "product_profile"
+            and ref.get("object_id") == product_profile_id
+            for ref in run.input_refs
+        )
+    )
+
+
+def _create_product_learning_agent_run(
+    session: Session,
+    product_profile: models.ProductProfile,
+    *,
+    trigger_source: str,
+    round_index: int,
+) -> models.AgentRun:
+    agent_run = models.AgentRun(
+        id=generate_prefixed_id("run"),
+        run_type="product_learning",
+        triggered_by="user",
+        trigger_source=trigger_source,
+        input_refs=[
+            {
+                "object_type": "product_profile",
+                "object_id": product_profile.id,
+                "version": product_profile.version,
+            }
+        ],
+        output_refs=[],
+        status="queued",
+        runtime_provider=DEFAULT_RUNTIME_PROVIDER.provider_name,
+        runtime_metadata=_build_runtime_metadata("product_learning", round_index=round_index),
+    )
+    session.add(agent_run)
+    return agent_run
+
+
 def create_product_profile(
     session: Session,
     payload: schemas.ProductProfileCreateRequest,
@@ -61,31 +111,12 @@ def create_product_profile(
 
     profile.missing_fields = canonical_missing_fields(profile)
 
-    agent_run = models.AgentRun(
-        id=generate_prefixed_id("run"),
-        run_type="product_learning",
-        triggered_by="user",
+    agent_run = _create_product_learning_agent_run(
+        session,
+        profile,
         trigger_source="android_product_learning",
-        input_refs=[
-            {
-                "object_type": "product_profile",
-                "object_id": profile.id,
-                "version": profile.version,
-            }
-        ],
-        output_refs=[],
-        status="queued",
-        runtime_provider=DEFAULT_RUNTIME_PROVIDER.provider_name,
-        runtime_metadata={
-            "provider": DEFAULT_RUNTIME_PROVIDER.provider_name,
-            "mode": "backend_direct_langgraph",
-            "phase": "product_learning_followup",
-            "status": "queued",
-            "graph_name": "product_learning_graph",
-            "run_type": "product_learning",
-        },
+        round_index=0,
     )
-    session.add(agent_run)
     session.commit()
     session.refresh(profile)
     session.refresh(agent_run)
@@ -100,6 +131,42 @@ def create_product_profile(
         },
     )
     return ProductProfileCreationResult(product_profile=profile, current_run=agent_run)
+
+
+def enrich_product_profile(
+    session: Session,
+    product_profile_id: str,
+    payload: schemas.ProductProfileEnrichRequest,
+) -> models.AgentRun:
+    product_profile = get_product_profile_or_404(session, product_profile_id)
+    if product_profile.status != "draft":
+        raise HTTPException(status_code=409, detail="product_profile_enrich_requires_draft")
+
+    existing_notes = (product_profile.source_notes or "").strip()
+    supplemental_notes = payload.supplemental_notes.strip()
+    product_profile.source_notes = (
+        f"{existing_notes}\n{supplemental_notes}" if existing_notes else supplemental_notes
+    )
+
+    round_index = _product_learning_round_index(session, product_profile.id)
+    agent_run = _create_product_learning_agent_run(
+        session,
+        product_profile,
+        trigger_source=payload.trigger_source,
+        round_index=round_index,
+    )
+    session.commit()
+    session.refresh(agent_run)
+    logger.info(
+        "product_profile.enrich_queued",
+        extra={
+            "event": "product_profile.enrich_queued",
+            "product_profile_id": product_profile.id,
+            "agent_run_id": agent_run.id,
+            "round_index": round_index,
+        },
+    )
+    return agent_run
 
 
 def get_product_profile_or_404(session: Session, product_profile_id: str) -> models.ProductProfile:
@@ -202,12 +269,7 @@ def create_analysis_run(
         output_refs=[],
         status="queued",
         runtime_provider=DEFAULT_RUNTIME_PROVIDER.provider_name,
-        runtime_metadata={
-            "provider": DEFAULT_RUNTIME_PROVIDER.provider_name,
-            "mode": "backend_direct_langgraph",
-            "phase": "phase1",
-            "status": "queued",
-        },
+        runtime_metadata=_build_runtime_metadata(payload.run_type, round_index=0),
     )
     session.add(agent_run)
     session.commit()
@@ -237,7 +299,12 @@ def process_agent_run(run_id: str) -> None:
         agent_run.status = "running"
         agent_run.started_at = models.utcnow()
         agent_run.runtime_provider = runtime_provider.provider_name
-        agent_run.runtime_metadata = runtime_provider.runtime_metadata(agent_run.run_type)
+        existing_metadata = dict(agent_run.runtime_metadata or {})
+        agent_run.runtime_metadata = runtime_provider.runtime_metadata(
+            agent_run.run_type,
+            round_index=int(existing_metadata.get("round_index", 0)),
+            trace_id=existing_metadata.get("trace_id"),
+        )
         session.commit()
         logger.info(
             "analysis_run.started",

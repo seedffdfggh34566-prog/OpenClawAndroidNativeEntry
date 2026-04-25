@@ -60,6 +60,7 @@
 - 真机 demo smoke after LLM lead analysis 已完成，真实中文 demo 路径已跑通；过程中修复了 lead_analysis LLM JSON 解析稳定性问题
 - LLM latency / fallback follow-up 已收口为 conditional not triggered，当前未实现 fallback
 - V1 demo release candidate hardening 已完成，RC demo 能力、验收标准、固定样例和已知限制已冻结
+- report readability postprocess 已完成，报告 summary 和 section bullet 可读性已做轻量收口
 
 ---
 
@@ -105,6 +106,7 @@
 | `task_v1_demo_device_smoke_after_llm_lead_analysis.md` | 真机验证 LeadAnalysis LLM 后的完整 demo 路径 | `done` |
 | `task_v1_llm_latency_and_fallback_followup.md` | 仅在 LLM timeout 阻断 demo 时执行延迟 / fallback 最小修复 | `conditional_not_triggered` |
 | `task_v1_demo_release_candidate_hardening.md` | 冻结 V1 RC demo 验收标准和后续 hardening 顺序 | `done` |
+| `task_v1_report_readability_postprocess_followup.md` | 收口最终报告 summary 与 bullet 可读性 | `done` |
 
 ---
 

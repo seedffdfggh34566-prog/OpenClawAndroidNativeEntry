@@ -368,6 +368,19 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertIn("邻近机会", report_text)
         self.assertIn("不建议优先", report_text)
         self.assertIn("目标客户", report_text)
+        self.assertLessEqual(len(report_payload["summary"]), 120)
+        section_bodies = {section["title"]: section["body"] for section in report_payload["sections"]}
+        self.assertIn(
+            "- 首轮销售验证建议：访谈 5 到 10 个销售负责人，确认当前表达和分析结果是否能支持真实跟进",
+            section_bodies["首轮销售验证计划"],
+        )
+        self.assertIn(
+            "- 先验证企业服务团队的反馈质量",
+            section_bodies["不建议优先方向"],
+        )
+        for section in report_payload["sections"]:
+            for line in section["body"].splitlines():
+                self.assertLessEqual(len(line), 130)
         for blocked_word in ["Phase 1", "LangGraph", "runtime", "v1_langgraph_phase1"]:
             self.assertNotIn(blocked_word, report_text)
 

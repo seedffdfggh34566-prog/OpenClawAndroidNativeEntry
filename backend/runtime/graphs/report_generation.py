@@ -9,6 +9,8 @@ from backend.runtime.types import (
     ReportGenerationGraphState,
 )
 
+_SPLIT_PUNCTUATION = ("；", ";", "。")
+
 
 def _compact(values: list[str]) -> list[str]:
     seen: set[str] = set()
@@ -22,8 +24,43 @@ def _compact(values: list[str]) -> list[str]:
     return result
 
 
-def _join_points(values: list[str], *, fallback: str) -> str:
-    compacted = _compact(values)
+def _shorten_text(value: str, *, max_chars: int) -> str:
+    text = value.strip()
+    if len(text) <= max_chars:
+        return text
+    return f"{text[: max_chars - 1].rstrip()}…"
+
+
+def _split_long_point(value: str, *, max_chars: int = 90) -> list[str]:
+    text = value.strip()
+    should_split = len(text) > max_chars or any(
+        punctuation in text for punctuation in ("；", ";")
+    )
+    if not should_split:
+        return [text] if text else []
+
+    pieces = [text]
+    for punctuation in _SPLIT_PUNCTUATION:
+        next_pieces: list[str] = []
+        for piece in pieces:
+            next_pieces.extend(part.strip() for part in piece.split(punctuation))
+        pieces = next_pieces
+
+    result = [piece for piece in pieces if piece]
+    if len(result) <= 1:
+        return [_shorten_text(text, max_chars=max_chars)]
+    return result
+
+
+def _readability_points(values: list[str], *, max_chars: int = 90) -> list[str]:
+    points: list[str] = []
+    for value in _compact(values):
+        points.extend(_split_long_point(value, max_chars=max_chars))
+    return _compact(points)
+
+
+def _join_points(values: list[str], *, fallback: str, max_chars: int = 90) -> str:
+    compacted = _readability_points(values, max_chars=max_chars)
     if not compacted:
         return fallback
     return "\n".join(f"- {value}" for value in compacted)
@@ -136,8 +173,11 @@ def generate_report_draft(
     draft = AnalysisReportDraft(
         title=f"{profile.name} 获客分析报告",
         summary=(
-            f"当前建议优先围绕 {context['top_industry']} 的 {context['top_customer']} 推进，"
-            f"先用“{context['top_scenario']}”验证购买动因、触达难度和销售表达。"
+            _shorten_text(
+                f"建议优先面向 {context['top_industry']} 的 {context['top_customer']}，"
+                f"用“{context['top_scenario']}”验证购买动因、触达难度和销售表达。",
+                max_chars=120,
+            )
         ),
         sections=[
             {
@@ -145,6 +185,7 @@ def generate_report_draft(
                 "body": _join_points(
                     product_understanding,
                     fallback="当前产品理解仍需继续补齐。",
+                    max_chars=120,
                 ),
             },
             {
@@ -156,6 +197,7 @@ def generate_report_draft(
                     ]
                     + [f"判断依据：{item}" for item in ranking_explanations],
                     fallback="当前仍需继续补齐行业和客户优先级判断。",
+                    max_chars=110,
                 ),
             },
             {
@@ -163,6 +205,7 @@ def generate_report_draft(
                 "body": _join_points(
                     core_scenarios,
                     fallback="当前仍需继续补齐场景信息。",
+                    max_chars=90,
                 ),
             },
             {
@@ -170,6 +213,7 @@ def generate_report_draft(
                 "body": _join_points(
                     neighbor_opportunities,
                     fallback="当前暂未识别出明确的上下游或邻近机会。",
+                    max_chars=90,
                 ),
             },
             {
@@ -177,6 +221,7 @@ def generate_report_draft(
                 "body": _join_points(
                     validation_recommendations,
                     fallback="先选取 5 到 10 个目标客户访谈，验证痛点强度、决策角色和替代方案。",
+                    max_chars=90,
                 ),
             },
             {
@@ -184,6 +229,7 @@ def generate_report_draft(
                 "body": _join_points(
                     not_priority_recommendations,
                     fallback="暂不建议同时铺开过多行业、客户角色或销售叙事。",
+                    max_chars=90,
                 ),
             },
             {
@@ -191,6 +237,7 @@ def generate_report_draft(
                 "body": _join_points(
                     risks,
                     fallback="当前未发现新的高优先级风险。",
+                    max_chars=90,
                 ),
             },
             {
@@ -198,6 +245,7 @@ def generate_report_draft(
                 "body": _join_points(
                     action_items,
                     fallback="继续积累真实客户反馈，验证优先方向。",
+                    max_chars=90,
                 ),
             },
         ],

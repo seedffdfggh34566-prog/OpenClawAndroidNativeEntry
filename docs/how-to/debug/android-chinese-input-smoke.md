@@ -19,6 +19,8 @@
 当前已检查设备：
 
 - 设备 ID：`f3b59f04`
+- 设备型号：OnePlus PHK110
+- Android：16 / API 36
 - 默认输入法：`com.baidu.input_oppo/.ImeService`
 - 当前可列出的 IME：`com.baidu.input_oppo/.ImeService`
 
@@ -32,9 +34,30 @@ adb shell ime list -s
 
 ---
 
+## 2.1 当前已验证方案
+
+已在当前设备验证可用：
+
+- 测试 IME：`senzhk/ADBKeyBoard`
+- APK 版本：GitHub `v2.5-dev`
+- APK URL：`https://github.com/senzhk/ADBKeyBoard/releases/download/v2.5-dev/keyboardservice-debug.apk`
+- 本地临时路径：`/tmp/openclaw-adbkeyboard/keyboardservice-debug.apk`
+- SHA-256：`41a8a0996d7397a2390d1ca16a75cb66c4a7bdaa89cf4e63600a4d3fb346fbbb`
+- 测试 IME id：`com.android.adbkeyboard/.AdbIME`
+- 已验证输入文本：`工厂设备巡检助手`
+- 验证方式：`ADB_INPUT_B64` + UIAutomator dump
+
+验证后已恢复：
+
+- 默认输入法已恢复为 `com.baidu.input_oppo/.ImeService`
+- `com.android.adbkeyboard` 已卸载
+- `/data/local/tmp/openclaw-adbkeyboard.apk` 已删除
+
+---
+
 ## 3. 短期策略：继续使用 ASCII Smoke 输入
 
-用于验证主链路时，继续使用无空格 ASCII 等价样例。
+用于快速验证主链路时，可以继续使用无空格 ASCII 等价样例。
 
 适用任务：
 
@@ -53,40 +76,60 @@ adb shell ime list -s
 - 不能验证真实中文输入体验
 - 长文本仍可能因焦点问题落入错误输入框，执行时需用 UIAutomator dump 交叉确认
 
+如果本次 smoke 目标包含“真实中文输入覆盖”，优先使用第 4 节的测试 IME 方案。
+
 ---
 
 ## 4. 推荐方案：测试专用 IME
 
 需要覆盖中文输入时，使用测试专用输入法。
 
-基本流程：
+当前设备建议使用以下流程：
 
 ```bash
 # 1. 记录原默认输入法
 ORIGINAL_IME="$(adb shell settings get secure default_input_method | tr -d '\r')"
 echo "$ORIGINAL_IME"
 
-# 2. 安装可信的测试输入法 APK
-adb install -r /path/to/test-ime.apk
+# 2. 下载可信的测试输入法 APK 到 /tmp，不提交到 Git
+mkdir -p /tmp/openclaw-adbkeyboard
+curl -L --fail --show-error \
+  -o /tmp/openclaw-adbkeyboard/keyboardservice-debug.apk \
+  https://github.com/senzhk/ADBKeyBoard/releases/download/v2.5-dev/keyboardservice-debug.apk
+sha256sum /tmp/openclaw-adbkeyboard/keyboardservice-debug.apk
 
-# 3. 查看测试输入法 id
+# 3. 安装测试输入法
+# 当前设备上 adb install 曾出现卡住，已验证 push + pm install 更稳定。
+adb push /tmp/openclaw-adbkeyboard/keyboardservice-debug.apk /data/local/tmp/openclaw-adbkeyboard.apk
+adb shell pm install -r /data/local/tmp/openclaw-adbkeyboard.apk
+
+# 4. 查看测试输入法 id
 adb shell ime list -s
 
-# 4. 启用并切换到测试输入法
-adb shell ime enable <test_ime_id>
-adb shell ime set <test_ime_id>
+# 5. 启用并切换到测试输入法
+adb shell ime enable com.android.adbkeyboard/.AdbIME
+adb shell ime set com.android.adbkeyboard/.AdbIME
+adb shell settings get secure default_input_method
 
-# 5. 向当前焦点输入框发送中文
-adb shell am broadcast -a ADB_INPUT_TEXT --es msg "工厂设备巡检助手"
+# 6. 向当前焦点输入框发送中文
+MSG_B64="$(printf '%s' '工厂设备巡检助手' | base64 -w 0)"
+adb shell am broadcast -a ADB_INPUT_B64 --es msg "$MSG_B64"
 
-# 6. smoke 结束后恢复原输入法
+# 7. 用 UIAutomator dump 确认文本进入目标输入框
+adb shell uiautomator dump /sdcard/window.xml >/dev/null
+adb exec-out cat /sdcard/window.xml | rg "工厂设备巡检助手"
+
+# 8. smoke 结束后恢复原输入法并卸载测试 IME
 adb shell ime set "$ORIGINAL_IME"
+adb uninstall com.android.adbkeyboard
+adb shell rm -f /data/local/tmp/openclaw-adbkeyboard.apk
+adb shell settings get secure default_input_method
 ```
 
 说明：
 
 - `<test_ime_id>` 必须以设备实际 `adb shell ime list -s` 输出为准。
-- `ADB_INPUT_TEXT` 是常见测试输入法使用的 broadcast action，具体 action 以所选测试 IME 文档为准。
+- 当前设备优先使用 `ADB_INPUT_B64`，避免 UTF-8 参数在 `adb shell am broadcast` 中被系统或 shell 错误处理。
 - 不要把第三方测试 APK 提交到仓库。
 - smoke handoff 必须记录测试 IME 名称、版本来源、切换前后默认输入法。
 

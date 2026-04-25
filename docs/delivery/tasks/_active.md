@@ -53,6 +53,7 @@
 - `task_v1_lead_analysis_llm_phase1.md`
 - `task_v1_readiness_freeze_and_demo_acceptance.md`
 - `task_v1_report_generation_polish.md`
+- `task_v1_demo_device_smoke_after_llm_lead_analysis.md`
 
 这些任务当前应视为：
 
@@ -66,7 +67,7 @@
 
 ### Next queued tasks
 
-- 暂无已排定的下一项 implementation task
+- `task_v1_llm_latency_and_fallback_followup.md`（conditional：只有 demo smoke 被 timeout 明确阻断时才执行实现）
 
 最近完成：
 
@@ -122,7 +123,7 @@
 - lead_analysis LLM phase1 已完成，当前 `lead_analysis` 使用 TokenHub `minimax-m2.5` 生成 draft，并通过 8 个真实中文样例 eval。
 - V1 readiness freeze 已完成，当前 V1 具备 demo 条件但仍有 TTFT 延迟、报告交付感和 fallback 未实现等 known limitations。
 - report_generation polish 已完成，最终报告 sections 已收口为更像可复看的销售分析交付物。
-- 当前没有已排定的下一项 implementation task；下一步继续执行 demo device smoke after LLM lead analysis。
+- demo device smoke after LLM lead analysis 已完成。真实中文真机 demo 路径已跑通；过程中修复了 lead_analysis LLM JSON 解析稳定性问题。未出现 timeout 阻断，因此 latency / fallback follow-up 暂不触发实现。
 
 ### Auto-continue allowed when
 

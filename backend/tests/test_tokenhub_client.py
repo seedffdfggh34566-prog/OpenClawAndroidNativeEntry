@@ -139,6 +139,29 @@ def test_parse_lead_analysis_json_strips_thinking_and_markdown() -> None:
     assert "邻近机会" in parsed["scenario_opportunities"][0]
 
 
+def test_parse_lead_analysis_json_skips_invalid_prefix_braces() -> None:
+    parsed = _parse_lead_analysis_json(
+        """
+        模型前缀中可能出现非 JSON 花括号：{不是合法 JSON。
+
+        {
+          "title": "工厂设备巡检助手获客分析",
+          "analysis_scope": "基于已确认产品画像的获客方向分析",
+          "summary": "优先验证制造业设备主管。",
+          "priority_industries": ["制造业"],
+          "priority_customer_types": ["设备主管"],
+          "scenario_opportunities": ["邻近机会：拓展维修班组", "上下游机会：延伸到设备维护服务商"],
+          "ranking_explanations": ["设备主管直接面对巡检漏项和维修响应问题。"],
+          "recommendations": ["首轮销售验证建议：访谈设备主管。", "不建议优先覆盖泛工业客户。"],
+          "risks": ["需要验证现场网络和离线同步。"],
+          "limitations": ["未接入外部检索。"]
+        }
+        """
+    )
+
+    assert parsed["priority_industries"] == ["制造业"]
+
+
 def test_parse_lead_analysis_json_rejects_non_json() -> None:
     with pytest.raises(ValueError, match="lead_analysis_llm_json_object_not_found"):
         _parse_lead_analysis_json("<think>only thinking</think>没有 JSON")

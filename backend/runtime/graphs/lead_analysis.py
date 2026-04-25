@@ -157,17 +157,26 @@ def _strip_thinking_and_fences(content: str) -> str:
 
 def _parse_lead_analysis_json(content: str) -> dict[str, object]:
     text = _strip_thinking_and_fences(content)
-    start = text.find("{")
-    end = text.rfind("}")
-    if start < 0 or end < start:
-        raise ValueError("lead_analysis_llm_json_object_not_found")
-    try:
-        parsed = json.loads(text[start : end + 1])
-    except json.JSONDecodeError as exc:
-        raise ValueError("lead_analysis_llm_json_decode_failed") from exc
-    if not isinstance(parsed, dict):
-        raise ValueError("lead_analysis_llm_json_object_required")
-    return parsed
+    decoder = json.JSONDecoder()
+    saw_json_start = False
+    last_error: json.JSONDecodeError | None = None
+
+    for index, char in enumerate(text):
+        if char != "{":
+            continue
+        saw_json_start = True
+        try:
+            parsed, _ = decoder.raw_decode(text[index:])
+        except json.JSONDecodeError as exc:
+            last_error = exc
+            continue
+        if not isinstance(parsed, dict):
+            raise ValueError("lead_analysis_llm_json_object_required")
+        return parsed
+
+    if saw_json_start:
+        raise ValueError("lead_analysis_llm_json_decode_failed") from last_error
+    raise ValueError("lead_analysis_llm_json_object_not_found")
 
 
 def _token_count(value: object) -> int | None:

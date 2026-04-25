@@ -57,7 +57,7 @@
 - lead_analysis LLM phase1 已完成，当前 `lead_analysis` 已切到 TokenHub `minimax-m2.5`
 - V1 readiness freeze 已完成，demo acceptance、known limitations、TTFT 延迟风险和固定 demo 样例已收口
 - report_generation polish 已完成，报告 sections 已收口为可复看的销售分析交付物结构
-- 后续继续按任务顺序进入真机 demo smoke
+- 真机 demo smoke after LLM lead analysis 已完成，真实中文 demo 路径已跑通；过程中修复了 lead_analysis LLM JSON 解析稳定性问题
 
 ---
 
@@ -100,6 +100,7 @@
 | `task_v1_lead_analysis_llm_phase1.md` | 将 lead_analysis 切换到真实 LLM draft 生成 | `done` |
 | `task_v1_readiness_freeze_and_demo_acceptance.md` | 冻结 V1 demo acceptance 与 known limitations | `done` |
 | `task_v1_report_generation_polish.md` | 增强最终报告交付物表达 | `done` |
+| `task_v1_demo_device_smoke_after_llm_lead_analysis.md` | 真机验证 LeadAnalysis LLM 后的完整 demo 路径 | `done` |
 
 ---
 

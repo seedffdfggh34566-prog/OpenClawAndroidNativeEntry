@@ -7,6 +7,7 @@ import com.openclaw.android.nativeentry.data.backend.LeadAnalysisResultDetailDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileConfirmResponseDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileCreateResponseDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileDetailDto
+import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichResponseDto
 import com.openclaw.android.nativeentry.data.backend.ReportDetailDto
 import com.openclaw.android.nativeentry.data.backend.V1BackendBaseUrl
 
@@ -16,6 +17,7 @@ data class V1BackendUiState(
     val report: V1SectionState<ReportDetailDto> = V1SectionState.Idle,
     val analysisResult: V1SectionState<LeadAnalysisResultDetailDto> = V1SectionState.Idle,
     val productProfileCreate: V1SectionState<ProductProfileCreateResponseDto> = V1SectionState.Idle,
+    val productProfileEnrich: V1SectionState<ProductProfileEnrichResponseDto> = V1SectionState.Idle,
     val productProfileConfirm: V1SectionState<ProductProfileConfirmResponseDto> = V1SectionState.Idle,
     val productLearningRun: V1SectionState<AnalysisRunDetailResponseDto> = V1SectionState.Idle,
     val analysisRun: V1SectionState<AnalysisRunDetailResponseDto> = V1SectionState.Idle,

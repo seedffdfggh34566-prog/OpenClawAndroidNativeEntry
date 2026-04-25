@@ -1,12 +1,12 @@
 # Task：V1 Android Product Learning Iteration UI
 
-更新时间：2026-04-24
+更新时间：2026-04-25
 
 ## 1. 任务定位
 
 - 任务名称：V1 Android Product Learning Iteration UI
 - 建议路径：`docs/delivery/tasks/task_v1_android_product_learning_iteration_ui.md`
-- 当前状态：`planned`
+- 当前状态：`done`
 - 优先级：P2
 
 本任务用于在 backend 迭代 contract 与 LLM phase 1 明确后，把当前 Android 端的“提交一次 + 等待富化”学习页升级为可继续补充信息的轻量交互页。
@@ -146,22 +146,60 @@
 
 ## 11. 实际产出
 
-任务执行完成后补充。
+- Android backend adapter 新增 `ProductProfileEnrichRequestDto` / `ProductProfileEnrichResponseDto`。
+- `V1BackendClient.enrichProductProfile()` 接入 `POST /product-profiles/{id}/enrich`，请求体固定为 `supplemental_notes` + `trigger_source`。
+- `OpenClawApp` 新增补充材料输入状态、enrich job、提交补充并轮询 `product_learning` AgentRun 的流程。
+- ProductLearning 页面新增：
+  - 当前理解摘要
+  - 仍需补充字段
+  - 继续补充信息输入框与提交按钮
+  - product_learning run 状态展示
+  - `ready_for_confirmation` 后更明确的“查看并确认产品画像”入口
+- 创建 ProductProfile 后保留在产品学习页，避免用户被自动跳走后无法继续补充。
 
 ---
 
 ## 12. 本次定稿边界
 
-任务执行完成后补充。
+- Android 仍只是控制入口，未新增 public backend API，未修改 persisted object schema。
+- 未引入聊天列表、streaming token、消息持久化、ViewModel/Hilt/Retrofit/Room/WorkManager。
+- `missingFields`、`learningStage`、ProductProfile 写回仍完全由 backend 决定；Android 只展示与触发下一轮 enrich。
+- `trigger_source` 固定为 `android_product_learning_iteration`。
 
 ---
 
 ## 13. 已做验证
 
-任务执行完成后补充。
+已完成：
+
+1. `./gradlew :app:assembleDebug`
+   - 结果：成功。
+   - 备注：仍有既有 AGP / compileSdk warning 与 `LocalLifecycleOwner` deprecated warning，不属于本任务新增失败。
+2. `adb devices`
+   - 结果：检测到设备 `f3b59f04`。
+3. `adb install -r app/build/outputs/apk/debug/app-debug.apk`
+   - 结果：成功。
+4. `adb shell am start -n com.openclaw.android.nativeentry/.MainActivity`
+   - 结果：成功。
+5. `adb shell pidof com.openclaw.android.nativeentry`
+   - 结果：应用进程存在。
+6. `adb shell dumpsys window`
+   - 结果：当前焦点为 `com.openclaw.android.nativeentry/.MainActivity`。
+7. `adb logcat -d -t 200`
+   - 结果：未发现 `FATAL EXCEPTION` / `AndroidRuntime` 崩溃。
+8. `uiautomator dump`
+   - 结果：确认应用首页可见。
+9. 设备上点击“开始分析”进入 ProductLearning 页面，并通过 `uiautomator dump` 检查页面文本
+   - 结果：确认“产品学习”“创建产品画像草稿”“当前理解”“仍需补充”“继续补充信息”“提交补充并重新学习”可见。
+
+未完成：
+
+- 未在真机上完成一次完整“创建 ProductProfile -> 提交补充 -> enrich run succeeded -> ProductProfile 刷新”的手动链路；设备 smoke 时 backend / `adb reverse tcp:8013 tcp:8013` 未保持联通，页面显示后端不可达提示。
 
 ---
 
 ## 14. 实际结果说明
 
-任务执行完成后补充。
+本任务已完成 Android 端最小迭代 UI 与 contract 接线。当前代码已经能按既有 backend contract 发起 enrich、轮询 returned AgentRun，并在成功后重新读取 ProductProfile 和 `/history`。
+
+剩余风险主要在真实设备联调环境：需要 backend 在 `127.0.0.1:8013` 运行，并执行 `adb reverse tcp:8013 tcp:8013` 后，再做一次完整 enrich 人工 smoke。

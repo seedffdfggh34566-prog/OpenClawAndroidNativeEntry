@@ -27,6 +27,17 @@ class V1BackendClient(
             parser = ::parseProductProfileCreateResponse,
         )
 
+    suspend fun enrichProductProfile(
+        id: String,
+        payload: ProductProfileEnrichRequestDto,
+    ): BackendReadResult<ProductProfileEnrichResponseDto> =
+        requestJson(
+            method = "POST",
+            path = "/product-profiles/${id.encodePathSegment()}/enrich",
+            body = payload.toJsonBody(),
+            parser = ::parseProductProfileEnrichResponse,
+        )
+
     suspend fun createAnalysisRun(
         payload: AnalysisRunCreateRequestDto,
     ): BackendReadResult<AnalysisRunCreateResponseDto> =

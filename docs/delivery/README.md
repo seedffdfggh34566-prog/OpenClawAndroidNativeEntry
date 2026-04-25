@@ -1,6 +1,6 @@
 # 任务目录说明
 
-更新时间：2026-04-24
+更新时间：2026-04-25
 
 ## 1. 目录定位
 
@@ -22,6 +22,7 @@
 当前项目尚未完成：
 
 - 首页、结果页和报告页的最终产品表达收口
+- Android 端完整 backend 联通环境下的 product learning enrich 人工 smoke
 
 因此，当前阶段的重点是：
 
@@ -31,7 +32,7 @@
 
 ## 3. 当前推荐执行顺序
 
-建议按以下顺序进入下一批任务：
+最近完成的下一批任务：
 
 1. product learning LLM phase 1
 2. Android product learning iteration UI
@@ -43,8 +44,10 @@
 - Android 已完成最小 ProductProfile 创建
 - Android 已完成 `lead_analysis` 触发与轮询
 - Android 已完成 `report_generation` 触发与轮询
-- runtime observability / eval baseline 已冻结，下一步应先做 product learning LLM phase 1
-- `lead_analysis` / `report_generation` 已完成 runtime Phase 1，下一批任务应转向 iteration、observability 与真实 LLM
+- runtime observability / eval baseline 已冻结
+- product learning 已切到真实 LLM draft 生成
+- Android 产品学习页已补齐最小“继续补充一轮信息”交互
+- `lead_analysis` / `report_generation` 已完成 runtime Phase 1，后续应由规划层决定是否进入 UI polish、真机完整 enrich smoke 或 V1 表达收口任务
 
 ---
 
@@ -73,7 +76,7 @@
 | `task_v1_product_learning_iteration_contract.md` | 冻结下一轮 product learning enrich endpoint 与写回 contract | `done` |
 | `task_v1_runtime_observability_eval_baseline.md` | 冻结 runtime metadata、样例集与最小评估基线 | `done` |
 | `task_v1_product_learning_llm_phase1.md` | 将 heuristic product learning 切换到真实 LLM draft 生成 | `done` |
-| `task_v1_android_product_learning_iteration_ui.md` | 让 Android 学习页支持继续补充一轮信息 | `planned` |
+| `task_v1_android_product_learning_iteration_ui.md` | 让 Android 学习页支持继续补充一轮信息 | `done` |
 
 ---
 

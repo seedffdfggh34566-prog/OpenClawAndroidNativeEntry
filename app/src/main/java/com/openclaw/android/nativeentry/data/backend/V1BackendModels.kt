@@ -50,6 +50,15 @@ data class ProductProfileCreateResponseDto(
     val links: Map<String, String>,
 )
 
+data class ProductProfileEnrichRequestDto(
+    val supplementalNotes: String,
+    val triggerSource: String,
+)
+
+data class ProductProfileEnrichResponseDto(
+    val agentRun: AgentRunDto,
+)
+
 data class ProductProfileConfirmResponseDto(
     val productProfile: ProductProfileSummaryDto,
 )

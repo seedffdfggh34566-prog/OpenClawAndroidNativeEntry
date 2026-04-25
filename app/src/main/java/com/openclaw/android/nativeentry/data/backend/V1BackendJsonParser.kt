@@ -45,6 +45,13 @@ fun parseProductProfileCreateResponse(rawJson: String): ProductProfileCreateResp
     )
 }
 
+fun parseProductProfileEnrichResponse(rawJson: String): ProductProfileEnrichResponseDto {
+    val json = JSONObject(rawJson)
+    return ProductProfileEnrichResponseDto(
+        agentRun = json.getJSONObject("agent_run").toAgentRunDto(),
+    )
+}
+
 fun parseProductProfileConfirmResponse(rawJson: String): ProductProfileConfirmResponseDto {
     val json = JSONObject(rawJson)
     return ProductProfileConfirmResponseDto(
@@ -65,6 +72,12 @@ fun ProductProfileCreateRequestDto.toJsonBody(): String {
 
     return json.toString()
 }
+
+fun ProductProfileEnrichRequestDto.toJsonBody(): String =
+    JSONObject()
+        .put("supplemental_notes", supplementalNotes)
+        .put("trigger_source", triggerSource)
+        .toString()
 
 fun parseAnalysisRunCreateResponse(rawJson: String): AnalysisRunCreateResponseDto {
     val json = JSONObject(rawJson)

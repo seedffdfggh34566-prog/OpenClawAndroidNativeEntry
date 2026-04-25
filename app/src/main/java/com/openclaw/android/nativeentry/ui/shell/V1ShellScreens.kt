@@ -30,14 +30,24 @@ fun ProductLearningScreen(
     productName: String,
     productDescription: String,
     sourceNotes: String,
+    supplementalNotes: String,
     onProductNameChange: (String) -> Unit,
     onProductDescriptionChange: (String) -> Unit,
     onSourceNotesChange: (String) -> Unit,
+    onSupplementalNotesChange: (String) -> Unit,
     onSubmitProductProfileClick: () -> Unit,
+    onSubmitProductProfileEnrichClick: () -> Unit,
     onContinueClick: () -> Unit,
     onOpenOpsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val currentProfile = (backendState.productProfile as? V1SectionState.Loaded)?.value
+    val canSubmitEnrich = currentProfile?.status == "draft" &&
+        supplementalNotes.isNotBlank() &&
+        backendState.productProfileEnrich !is V1SectionState.Loading &&
+        backendState.productLearningRun !is V1SectionState.Loading
+    val isReadyForConfirmation = currentProfile
+        ?.let { it.status == "draft" && it.learningStage == "ready_for_confirmation" } == true
     val canSubmit = productName.isNotBlank() &&
         productDescription.isNotBlank() &&
         backendState.productProfileCreate !is V1SectionState.Loading
@@ -49,7 +59,7 @@ fun ProductLearningScreen(
             fontWeight = FontWeight.SemiBold,
         )
         Text(
-            text = "填写最小产品信息后创建 ProductProfile 草稿，并立即触发一次产品学习富化。",
+            text = "创建产品画像后，可继续补充一轮信息，让后端重新富化并收敛到确认状态。",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -149,17 +159,116 @@ fun ProductLearningScreen(
             }
         }
 
-        ScreenSection(title = "占位调试参考") {
-            DebugFallbackBanner()
-            Text(text = "产品：${placeholderState.productProfile.name}", style = MaterialTheme.typography.bodyLarge)
-            Text(text = "一句话描述：${placeholderState.productProfile.oneLineDescription}", style = MaterialTheme.typography.bodyMedium)
+        ScreenSection(title = "当前理解") {
+            when (val profileState = backendState.productProfile) {
+                V1SectionState.Idle,
+                V1SectionState.Loading -> StateNotice("正在读取最新 ProductProfile。")
+
+                V1SectionState.Empty -> StateNotice("当前还没有可继续学习的 ProductProfile。")
+
+                is V1SectionState.Failed -> FailureNotice(
+                    title = profileState.error.title,
+                    detail = profileState.error.detail,
+                )
+
+                is V1SectionState.Loaded -> {
+                    val profile = profileState.value
+                    Text(text = profile.name, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = "状态：${profile.status} · ${profile.learningStage} · v${profile.version}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(text = "目标客户：${profile.targetCustomers.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "目标行业：${profile.targetIndustries.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "典型场景：${profile.typicalUseCases.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "解决痛点：${profile.painPointsSolved.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "核心优势：${profile.coreAdvantages.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "限制条件：${profile.constraints.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
         }
 
-        OutlinedButton(
+        ScreenSection(title = "仍需补充") {
+            val missingFields = currentProfile?.missingFields.orEmpty()
+            missingFields.ifEmpty { listOf("暂无") }.forEach { BulletText(text = it) }
+            if (isReadyForConfirmation) {
+                Text(
+                    text = "当前画像已达到 ready_for_confirmation，可进入确认。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+
+        ScreenSection(title = "继续补充信息") {
+            OutlinedTextField(
+                value = supplementalNotes,
+                onValueChange = onSupplementalNotesChange,
+                label = { Text(text = "补充材料") },
+                minLines = 3,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            when (val enrichState = backendState.productProfileEnrich) {
+                V1SectionState.Idle -> {
+                    Text(
+                        text = "提交后会调用 POST /product-profiles/{id}/enrich，并轮询 product_learning AgentRun。",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                V1SectionState.Loading -> {
+                    Text(text = "正在提交补充信息。", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                V1SectionState.Empty -> {
+                    Text(text = "当前没有可补充的 ProductProfile。", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                is V1SectionState.Failed -> FailureNotice(
+                    title = enrichState.error.title,
+                    detail = enrichState.error.detail,
+                )
+
+                is V1SectionState.Loaded -> {
+                    val run = enrichState.value.agentRun
+                    Text(text = "已创建补充运行：${run.id}", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "状态：${run.status}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            Button(
+                onClick = onSubmitProductProfileEnrichClick,
+                enabled = canSubmitEnrich,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = if (backendState.productProfileEnrich is V1SectionState.Loading) {
+                        "补充中"
+                    } else {
+                        "提交补充并重新学习"
+                    },
+                )
+            }
+        }
+
+        if (backendState.isDebugFallbackEnabled) {
+            ScreenSection(title = "占位调试参考") {
+                DebugFallbackBanner()
+                Text(text = "产品：${placeholderState.productProfile.name}", style = MaterialTheme.typography.bodyLarge)
+                Text(text = "一句话描述：${placeholderState.productProfile.oneLineDescription}", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+
+        Button(
             onClick = onContinueClick,
+            enabled = currentProfile != null,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(text = "查看最新产品画像")
+            Text(text = if (isReadyForConfirmation) "查看并确认产品画像" else "查看最新产品画像")
         }
 
         OutlinedButton(

@@ -37,6 +37,8 @@
 - `task_v1_product_learning_runtime_decision_freeze.md`
 - `task_v1_product_learning_iteration_contract.md`
 - `task_v1_product_learning_backend_preflight.md`
+- `task_v1_product_learning_llm_phase1.md`
+- `task_v1_android_product_learning_iteration_ui.md`
 
 这些任务当前应视为：
 
@@ -50,10 +52,11 @@
 
 ### Next queued tasks
 
-- `task_v1_android_product_learning_iteration_ui.md`
+- 暂无已排定的下一项 implementation task
 
 最近完成：
 
+- `task_v1_android_product_learning_iteration_ui.md`
 - `task_v1_product_learning_llm_phase1.md`
 - `task_v1_product_learning_backend_preflight.md`
 - `task_v1_runtime_observability_eval_baseline.md`
@@ -77,9 +80,7 @@
   - product learning LLM 是否能在现有 contract 与 eval baseline 下稳定输出
   - heuristic 与真实 LLM 的差异是否可被样例集约束
   - Android 是否会在 runtime 未稳定时被过早拉进交互重写
-- 因此新队列改为：
-  1. 先做 product learning LLM Phase 1
-  2. 最后做 Android iteration UI
+- 当前 product learning LLM Phase 1 与 Android iteration UI 均已完成最小实现与收口；下一步需要规划层决定是否进入 UI polish、真机完整 enrich smoke、或新的 V1 表达收口任务。
 
 ### Auto-continue allowed when
 

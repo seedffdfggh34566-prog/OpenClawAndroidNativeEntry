@@ -20,6 +20,7 @@ In Scope：
 - 编写正式 demo runbook。
 - 使用真实 backend、真实 TokenHub、真机 Android 跑一次中文 demo。
 - 记录对象 ID、run ID、token usage、关键 UI 文案证据和 logcat 崩溃扫描结果。
+- 默认复用人工正在查看的 `8013` inspector backend；不得静默切到其他端口。
 - 如 demo 被 timeout 阻断，只记录证据并决定是否重新打开 latency / fallback follow-up。
 
 Out of Scope：

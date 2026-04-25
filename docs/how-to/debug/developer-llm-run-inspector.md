@@ -29,7 +29,20 @@ backend/.venv/bin/python -m uvicorn backend.api.main:app --host 127.0.0.1 --port
 
 未设置 `OPENCLAW_BACKEND_DEV_LLM_TRACE_ENABLED=true` 时，这些入口返回 404。
 
-## 4. Win10 远程查看
+## 4. Eval / Smoke 端口约定
+
+当人工已经打开 `http://127.0.0.1:8013/dev/llm-inspector` 用于观察测试过程时，后续 eval / smoke 默认必须复用 `8013` 这个 backend 实例。
+
+执行 agent 不应静默改用 `8014` 或其他端口。若 `8013` 已被旧 backend 占用，应先明确处理成同一个可观看实例：
+
+1. 确认 `8013` 当前进程、DB 和 trace dir。
+2. 如果配置不属于本次任务，先停止旧 `8013` backend。
+3. 用本次任务的 DB 和 trace dir 重新启动 `8013`。
+4. 告知人工刷新原浏览器页面即可观察新 trace。
+
+只在人工明确同意，或 `8013` 无法安全复用时，才临时使用其他端口。使用其他端口时必须同步告知 Win10 tunnel 和浏览器地址。
+
+## 5. Win10 远程查看
 
 如果 backend 运行在 `jianglab`，并且只监听 `127.0.0.1:8013`，Win10 浏览器不能直接访问 jianglab 的本机回环地址。
 
@@ -65,7 +78,7 @@ ssh -N -L 8014:127.0.0.1:8013 yulin@jianglab
 http://127.0.0.1:8014/dev/llm-inspector
 ```
 
-## 5. Trace 内容
+## 6. Trace 内容
 
 每次 ProductLearning / LeadAnalysis LLM 调用会写入一个本地 JSON 文件，字段包括：
 
@@ -86,7 +99,7 @@ http://127.0.0.1:8014/dev/llm-inspector
 
 trace 不记录 API key、Authorization header、完整 prompt messages 或完整 request body。
 
-## 6. 清理
+## 7. 清理
 
 trace 默认写入 `/tmp/openclaw_llm_traces`，可直接清理：
 
@@ -96,6 +109,6 @@ rm -rf /tmp/openclaw_llm_traces
 
 如果把 `OPENCLAW_BACKEND_DEV_LLM_TRACE_DIR` 指到仓库内，提交前必须确认 trace JSON 不进入 Git。
 
-## 7. Round 2 Eval 建议
+## 8. Eval 建议
 
-执行 `task_v1_extended_business_eval_round2.md` 时建议开启 inspector，并在 eval 记录中只引用 run id、usage 和问题摘要，不粘贴长 raw content。
+执行 eval / smoke 时建议开启 inspector，并在 eval 记录中只引用 run id、usage 和问题摘要，不粘贴长 raw content。

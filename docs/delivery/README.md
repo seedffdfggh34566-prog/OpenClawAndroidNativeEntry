@@ -21,11 +21,11 @@
 
 当前项目尚未完成：
 
-- lead_analysis / report_generation 质量提升或 ProductLearning 更细粒度交互 polish，需规划层继续选择
+- 下一项 implementation task 尚未排定，需规划层继续选择
 
 因此，当前阶段的重点是：
 
-> 从“方向与原则已明确”推进到“任务可执行、实现可收口”。
+> 保持 V1 demo 链路可验证，并按明确任务继续做小闭环质量提升。
 
 ---
 
@@ -58,6 +58,7 @@
 - V1 readiness freeze 已完成，demo acceptance、known limitations、TTFT 延迟风险和固定 demo 样例已收口
 - report_generation polish 已完成，报告 sections 已收口为可复看的销售分析交付物结构
 - 真机 demo smoke after LLM lead analysis 已完成，真实中文 demo 路径已跑通；过程中修复了 lead_analysis LLM JSON 解析稳定性问题
+- LLM latency / fallback follow-up 已收口为 conditional not triggered，当前未实现 fallback
 
 ---
 
@@ -101,6 +102,7 @@
 | `task_v1_readiness_freeze_and_demo_acceptance.md` | 冻结 V1 demo acceptance 与 known limitations | `done` |
 | `task_v1_report_generation_polish.md` | 增强最终报告交付物表达 | `done` |
 | `task_v1_demo_device_smoke_after_llm_lead_analysis.md` | 真机验证 LeadAnalysis LLM 后的完整 demo 路径 | `done` |
+| `task_v1_llm_latency_and_fallback_followup.md` | 仅在 LLM timeout 阻断 demo 时执行延迟 / fallback 最小修复 | `conditional_not_triggered` |
 
 ---
 

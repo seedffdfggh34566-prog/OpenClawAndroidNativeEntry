@@ -54,6 +54,7 @@
 - `task_v1_readiness_freeze_and_demo_acceptance.md`
 - `task_v1_report_generation_polish.md`
 - `task_v1_demo_device_smoke_after_llm_lead_analysis.md`
+- `task_v1_llm_latency_and_fallback_followup.md`
 
 这些任务当前应视为：
 
@@ -67,10 +68,12 @@
 
 ### Next queued tasks
 
-- `task_v1_llm_latency_and_fallback_followup.md`（conditional：只有 demo smoke 被 timeout 明确阻断时才执行实现）
+- 暂无已排定的下一项 implementation task
 
 最近完成：
 
+- `task_v1_llm_latency_and_fallback_followup.md`
+- `task_v1_demo_device_smoke_after_llm_lead_analysis.md`
 - `task_v1_report_generation_polish.md`
 - `task_v1_readiness_freeze_and_demo_acceptance.md`
 - `task_v1_lead_analysis_llm_phase1.md`
@@ -124,6 +127,7 @@
 - V1 readiness freeze 已完成，当前 V1 具备 demo 条件但仍有 TTFT 延迟、报告交付感和 fallback 未实现等 known limitations。
 - report_generation polish 已完成，最终报告 sections 已收口为更像可复看的销售分析交付物。
 - demo device smoke after LLM lead analysis 已完成。真实中文真机 demo 路径已跑通；过程中修复了 lead_analysis LLM JSON 解析稳定性问题。未出现 timeout 阻断，因此 latency / fallback follow-up 暂不触发实现。
+- LLM latency / fallback follow-up 已作为 conditional task 收口为未触发；当前没有已排定的下一项 implementation task。
 
 ### Auto-continue allowed when
 

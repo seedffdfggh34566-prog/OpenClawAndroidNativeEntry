@@ -21,8 +21,8 @@
 
 当前项目尚未完成：
 
-- 完整 V1 真机端到端 smoke
 - 真实样例评估 / prompt tuning follow-up
+- ProductLearning 页面表达 polish
 
 因此，当前阶段的重点是：
 
@@ -49,7 +49,8 @@
 - Android 产品学习页已补齐最小“继续补充一轮信息”交互
 - Android 端已完成真实 backend 联通环境下的 product learning enrich 真机 smoke
 - 首页 / 产品画像确认页 / 结果页 / 报告页的 V1 销售闭环产品表达收口已完成
-- 后续应由规划层决定是否拆完整 V1 真机端到端 smoke、真实样例评估 / prompt tuning follow-up，或继续 ProductLearning 页面表达 polish
+- 完整 V1 真机端到端 smoke 已完成，当前主闭环从空库到报告可复看已跑通
+- 后续应由规划层决定是否进入真实样例评估 / prompt tuning follow-up，或继续 ProductLearning 页面表达 polish
 
 ---
 
@@ -81,6 +82,7 @@
 | `task_v1_android_product_learning_iteration_ui.md` | 让 Android 学习页支持继续补充一轮信息 | `done` |
 | `task_v1_android_product_learning_enrich_device_smoke.md` | 真机跑通 Android product learning enrich 完整链路 | `done` |
 | `task_v1_android_sales_flow_expression_closeout.md` | 收口 Android 首页、产品画像确认页、结果页和报告页的销售闭环表达 | `done` |
+| `task_v1_full_sales_flow_device_smoke.md` | 真机从空库验证 V1 主闭环完整跑通 | `done` |
 
 ---
 

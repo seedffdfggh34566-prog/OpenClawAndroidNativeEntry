@@ -6,7 +6,7 @@
 
 - 任务名称：V1 Demo Runbook And Evidence Pack
 - 建议路径：`docs/delivery/tasks/task_v1_demo_runbook_and_evidence_pack.md`
-- 当前状态：`planned`
+- 当前状态：`done`
 - 优先级：P0
 
 本任务用于在 V1 RC hardening、report polish、developer LLM inspector 和 16 样例 round2 eval 完成后，固化可重复 demo 流程，并收集一次真机中文 demo 证据包。
@@ -60,3 +60,40 @@ Out of Scope：
   - 关键 UIAutomator 文案
   - logcat 崩溃扫描结果
 - 若未能跑通，必须明确记录 blocked 原因。
+
+---
+
+## 5. 实际产出
+
+- 新增 runbook：`docs/how-to/debug/v1-demo-runbook.md`
+- 新增 evidence pack：`docs/product/research/v1_demo_evidence_pack_2026_04_25.md`
+- 新增 handoff：`docs/delivery/handoffs/handoff_2026_04_25_demo_runbook_and_evidence_pack.md`
+- 真机中文 demo 已完整跑通：
+
+```text
+创建产品画像 -> 确认产品画像 -> LeadAnalysis LLM -> ReportGeneration -> 首页最终状态 -> 报告页
+```
+
+## 6. 验证记录
+
+- backend：`127.0.0.1:8013`
+- database：`/tmp/openclaw_v1_demo_runbook_evidence_pack_2026_04_25.db`
+- trace dir：`/tmp/openclaw_llm_traces_demo_evidence_pack`
+- device：`f3b59f04`
+- ProductProfile：`pp_b8b393e5`
+- ProductLearning run：`run_20c92ad5`，`succeeded`，`total_tokens=1074`
+- LeadAnalysis run：`run_5f07b0f9`，`succeeded`，`total_tokens=1806`
+- ReportGeneration run：`run_34e62bea`，`succeeded`
+- AnalysisReport：`rep_bd382d9f`
+- UIAutomator 确认：
+  - `销售分析报告已生成。`
+  - `执行摘要`
+  - `重点建议`
+  - `状态：可复看`
+- logcat crash scan：无 `FATAL EXCEPTION` / `AndroidRuntime: FATAL`
+
+## 7. Closeout
+
+- 未触发 timeout 阻断。
+- `task_v1_llm_latency_and_fallback_followup.md` 继续保持 conditional not triggered。
+- 当前 task 队列已收口为空，下一步应回到规划层决定。

@@ -155,11 +155,13 @@ docs/
 
 当前 product learning LLM、Android iteration UI、真机 enrich smoke、Android 销售闭环产品表达收口、完整 V1 真机端到端 smoke、product learning 真实样例评估、runtime usage metadata follow-up、真实业务样例库全链路评估、lead_analysis LLM phase1、V1 readiness freeze、report_generation polish、真机 demo smoke after LLM lead analysis、latency/fallback conditional follow-up、developer LLM run inspector 与 extended business eval round2 均已完成或收口。
 
-当前已排定的下一项 implementation task：
+当前已排定的 implementation task 已全部收口。
+
+最近完成：
 
 - `task_v1_demo_runbook_and_evidence_pack.md`
 
-目标是固化可重复 demo 流程，并收集真机证据包。
+当前下一步需要回到规划层重新排定，例如决定是否进入对外 demo 准备、latency / fallback 正式实现、report_generation LLM phase1，或继续扩大真实业务样例库。
 
 当前补充建议阅读：
 

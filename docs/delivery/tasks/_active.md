@@ -67,7 +67,7 @@
 
 ### Current task
 
-- `task_v1_demo_runbook_and_evidence_pack.md`
+- 暂无。当前正式任务队列已收口，下一步需要规划层重新排定。
 
 ### Next queued tasks
 
@@ -75,6 +75,7 @@
 
 最近完成：
 
+- `task_v1_demo_runbook_and_evidence_pack.md`
 - `task_v1_extended_business_eval_round2.md`
 - `task_v1_developer_llm_run_inspector.md`
 - `task_v1_llm_latency_and_fallback_followup.md`
@@ -137,6 +138,7 @@
 - report readability postprocess 已完成，报告 summary 和 section bullet 长度已做轻量控制。下一项进入 16 个真实业务样例 round 2 eval。
 - developer LLM run inspector 已完成，当前可用 `/dev/llm-inspector` 查看 ProductLearning / LeadAnalysis 的本地 LLM trace。下一项恢复为 16 个真实业务样例 round 2 eval。
 - extended business eval round2 已完成，16 个真实中文业务样例全链路通过；过程中修复了 LeadAnalysis LLM 尾部 malformed JSON 的最小解析兼容问题。下一项进入 demo runbook and evidence pack。
+- demo runbook and evidence pack 已完成，V1 真机中文 demo 路径、开发者复现 runbook 和 evidence pack 已收口。当前没有下一项已排定 implementation task。
 
 ### Auto-continue allowed when
 

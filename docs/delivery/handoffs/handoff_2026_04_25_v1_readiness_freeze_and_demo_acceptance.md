@@ -13,7 +13,7 @@
 
 - `docs/delivery/tasks/task_v1_readiness_freeze_and_demo_acceptance.md`
 - `docs/product/research/v1_readiness_freeze_2026_04_25.md`
-- `docs/product/research/tencent_tokenhub_uin_ttft_2026_04_25.csv`
+- `docs/product/research/tencent_tokenhub_ttft_redacted_2026_04_25.csv`
 - `docs/product/research/tencent_tokenhub_ttft_latency_analysis_2026_04_25.md`
 - `docs/delivery/tasks/_active.md`
 - `docs/delivery/README.md`

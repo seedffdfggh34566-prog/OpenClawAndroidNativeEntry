@@ -2,11 +2,11 @@
 
 ## 1. 数据来源
 
-- 原始文件：`docs/product/research/tencent_tokenhub_uin_ttft_2026_04_25.csv`
+- 原始文件：`docs/product/research/tencent_tokenhub_ttft_redacted_2026_04_25.csv`
 - 来源：腾讯云控制台首 token 延迟数据
 - 时间范围：2026-04-25 00:00:00 到 2026-04-25 23:59:00
 - 粒度：按分钟聚合
-- 数据列：`时间`、`100048398763`
+- 数据列：`时间`、`metric_redacted`
 
 说明：CSV 中大部分分钟为 `null`，应理解为该分钟没有可展示的统计值或没有请求样本；本分析只统计非 `null` 的 27 个分钟点。
 

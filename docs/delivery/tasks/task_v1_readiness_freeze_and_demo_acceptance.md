@@ -49,7 +49,7 @@
 
 - 新增 readiness 文档：`docs/product/research/v1_readiness_freeze_2026_04_25.md`。
 - 归档腾讯云 TokenHub TTFT 控制台数据：
-  - `docs/product/research/tencent_tokenhub_uin_ttft_2026_04_25.csv`
+  - `docs/product/research/tencent_tokenhub_ttft_redacted_2026_04_25.csv`
   - `docs/product/research/tencent_tokenhub_ttft_latency_analysis_2026_04_25.md`
 - 明确 V1 demo acceptance、known limitations、推荐 demo 样例和下一步任务顺序。
 

@@ -4,7 +4,7 @@
 
 ## 1. 文档定位
 
-本文记录 V1 product learning LLM Phase 1 的供应商、模型与 API Key 获取决策。
+本文记录 V1 product learning LLM Phase 1 的供应商、模型、计费形态与 API Key 获取决策。
 
 它服务于：
 
@@ -26,23 +26,26 @@
 当前 V1 product learning LLM Phase 1 采用：
 
 - 供应商：腾讯云大模型服务平台 TokenHub
-- 计费形态：Token Plan 企业版 API Key
-- OpenAI-compatible Base URL：`https://tokenhub.tencentmaas.com/plan/v3`
-- Chat Completions URL：`https://tokenhub.tencentmaas.com/plan/v3/chat/completions`
+- 计费形态：普通 TokenHub 按量计费 API
+- API Key 形态：TokenHub 控制台创建的普通 API Key
+- OpenAI-compatible Base URL：`https://tokenhub.tencentmaas.com/v1`
+- Chat Completions URL：`https://tokenhub.tencentmaas.com/v1/chat/completions`
 - 第一轮默认模型：`minimax-m2.5`
 - Prompt version：`product_learning_llm_v1`
 
 推荐默认环境变量：
 
 ```bash
-OPENCLAW_BACKEND_LLM_PROVIDER=tencent_tokenhub_plan
-OPENCLAW_BACKEND_LLM_BASE_URL=https://tokenhub.tencentmaas.com/plan/v3
+OPENCLAW_BACKEND_LLM_PROVIDER=tencent_tokenhub
+OPENCLAW_BACKEND_LLM_BASE_URL=https://tokenhub.tencentmaas.com/v1
 OPENCLAW_BACKEND_LLM_MODEL=minimax-m2.5
 OPENCLAW_BACKEND_LLM_API_KEY=<provided-by-human>
 OPENCLAW_BACKEND_LLM_PROMPT_VERSION=product_learning_llm_v1
 ```
 
 API Key 必须只存在于服务端运行环境，不进入 Android 客户端，不提交到 Git。
+
+Token Plan 企业版当前不作为本阶段默认方案。它只作为后续真实用量稳定后，用于降低单位成本和做企业团队配额管理的候选方案。
 
 ---
 
@@ -57,7 +60,7 @@ API Key 必须只存在于服务端运行环境，不进入 Android 客户端，
 3. 质量能被 3 个固定样例集人工对比
 4. 供应商和模型选择可复现
 
-在腾讯云 Token Plan 企业版当前模型中，`minimax-m2.5` 的综合单价预估最低，适合做第一轮 baseline。
+当前先用普通 TokenHub 按量 API，是为了避免在模型质量未验证前购买月度套餐。`minimax-m2.5` 继续作为第一轮 baseline，因为它能覆盖本轮文本生成 / 结构化补全需求，且可在同一 TokenHub API 下与 `kimi-k2.5`、`glm-5` 做同 prompt 对照。
 
 | 模型 | 本轮定位 | 是否作为默认 |
 |---|---|---|
@@ -66,10 +69,9 @@ API Key 必须只存在于服务端运行环境，不进入 Android 客户端，
 | `glm-5` | 结构化稳定性兜底对照 | no, fallback |
 | `auto` | 临时办公或工具体验 | no, not reproducible baseline |
 
-不先用 `kimi-k2.5` 的原因：
+不先用 `kimi-k2.5` 作为默认的原因：
 
 - Kimi-K2.5 的优势更偏长上下文、多模态、agent / coding 与复杂工具调用。
-- 腾讯云企业版 Token Plan 当前说明该套餐模型暂不支持图片、视频等多模态能力，本项目本轮也不需要视觉输入。
 - 当前样例输入较短，产品学习重点是结构化抽取和补全，先用低成本模型更适合验证商业可行性。
 - `kimi-k2.5` 应保留为对照模型：如果 `minimax-m2.5` 在字段质量、幻觉控制或 JSON 稳定性上不达标，再切换对比。
 
@@ -79,27 +81,31 @@ API Key 必须只存在于服务端运行环境，不进入 Android 客户端，
 
 由 human 在腾讯云控制台完成以下动作：
 
-1. 购买或确认 Token Plan 企业版套餐。
-   - 当前公开文档显示月预算范围为 5,000 元/月到 20,000 元/月，步长 5,000 元。
-   - 如果只是技术试验，应优先只买最小可用周期和最小预算，避免在模型质量未验证前锁定更大成本。
+1. 开通或确认 TokenHub 普通 API 服务。
+   - 控制台入口：`https://console.cloud.tencent.com/tokenhub/`
+   - 模型广场入口：`https://console.cloud.tencent.com/tokenhub/models`
+   - 当前阶段不要进入 Token Plan 企业版购买页。
 
-2. 创建 API Key。
+2. 可先领取新用户免费体验额度。
+   - 腾讯云 TokenHub 文档说明新用户可在模型广场领取免费体验额度，具体额度和有效期以控制台显示为准。
+   - 免费额度不足或过期后，普通语言模型按后付费 tokens 计量。
+
+3. 创建普通 TokenHub API Key。
+   - API Key 管理入口：`https://console.cloud.tencent.com/tokenhub/apikey`
    - Key 名称建议：`openclaw-v1-product-learning-dev`
-   - 模型选择至少勾选：`MiniMax-M2.5`
-   - 建议同时勾选：`Kimi-K2.5`、`GLM-5`
-   - 不建议依赖：`Auto`，除非只是人工临时测试。
+   - 可访问范围建议先限定到本轮需要的模型，至少包含 `MiniMax-M2.5`。
+   - 建议同时允许 `Kimi-K2.5`、`GLM-5`，便于后续同 prompt 对照。
 
-3. 设置 Key 配额。
-   - 独占积分：可先设为 `0`，使用共享池。
-   - 总积分上限：为 dev key 设置较小上限，建议先用控制台允许的较小值，例如 `10000` 到 `50000` 积分；若控制台有更小最小值，以控制台为准。
-   - TPM 限制：为 dev key 设置自定义较低值即可，满足单人开发和样例验证，不需要一开始放开套餐上限。
+4. 成本控制。
+   - 当前不是预付费 Token Plan，因此主要通过腾讯云账户预算、告警、用量查询和 dev key 访问范围控制成本。
+   - 实现侧应限制样例运行规模，记录 `usage`，不要在未确认前做批量调用。
 
-4. 交付 API Key。
+5. 交付 API Key。
    - 不要把 API Key 发送到 Git、文档、聊天记录或 Android 端代码。
    - 推荐通过服务器环境变量、部署平台 secret、或仅 human 可控的本地 `.env` 注入。
    - 交付给执行 agent 时，只说明 key 已放入哪台服务器的哪个运行环境，不需要把明文 key 写进仓库。
 
-5. 最小连通性验证。
+6. 最小连通性验证。
    - 使用 `model=minimax-m2.5`
    - 使用非流式 `chat/completions`
    - 验证返回中包含 `choices` 与 `usage`
@@ -119,7 +125,7 @@ LLM Phase 1 实现时必须保持：
 
 推荐 metadata 增补字段：
 
-- `llm_provider`: `tencent_tokenhub_plan`
+- `llm_provider`: `tencent_tokenhub`
 - `llm_model`: `minimax-m2.5`
 - `llm_base_url`: 不记录完整 secret，只记录 provider URL 或 provider name
 - `prompt_version`: `product_learning_llm_v1`
@@ -145,7 +151,9 @@ LLM Phase 1 实现时必须保持：
 
 ## 7. 参考来源
 
-- 腾讯云 Token Plan 企业版套餐概览：`https://cloud.tencent.com/document/product/1823/130659`
-- 腾讯云 Token Plan 企业版快速入门：`https://cloud.tencent.com/document/product/1823/130660`
+- 腾讯云 TokenHub 产品页：`https://cloud.tencent.com/product/tokenhub`
+- 腾讯云 TokenHub 快速入门：`https://cloud.tencent.com/document/product/1823/130058`
+- 腾讯云 TokenHub 计费方式：`https://cloud.tencent.com/document/product/1823/130054`
+- 腾讯云 TokenHub API 使用说明：`https://cloud.tencent.com/document/product/1823/130078`
 - 腾讯云 TokenHub 文本生成 / OpenAI-compatible Chat Completions：`https://cloud.tencent.com/document/product/1823/130079`
 - Kimi-K2.5 官方模型说明：`https://www.kimi.com/ai-models/kimi-k2-5`

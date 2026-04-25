@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+import json
+import re
+from typing import Any
+
 from langgraph.graph import END, START, StateGraph
 
+from backend.api.config import get_settings
+from backend.runtime.llm_client import TokenHubClient
 from backend.runtime.types import (
     LeadAnalysisDraft,
+    LeadAnalysisDraftResult,
     LeadAnalysisGraphState,
     ProductProfileRuntimePayload,
 )
@@ -72,36 +79,133 @@ def _infer_scenarios(profile: ProductProfileRuntimePayload) -> list[str]:
     return _compact(scenarios)[:4]
 
 
-def _infer_neighbor_opportunities(
-    *,
-    industries: list[str],
-    customer_types: list[str],
-    scenarios: list[str],
-    primary_pain: str,
-) -> list[str]:
-    top_industry = industries[0]
-    top_customer = customer_types[0]
-    top_scenario = scenarios[0]
-    return _compact(
-        [
-            f"邻近机会：寻找与 {top_industry} 业务流程相近、同样存在“{primary_pain}”的团队，作为第二批验证对象。",
-            f"上下游机会：从 {top_customer} 的协作对象切入，观察采购、运营、服务或交付环节是否也受“{top_scenario}”影响。",
-        ]
-    )
+def _build_lead_analysis_messages(
+    profile: ProductProfileRuntimePayload,
+    context: dict[str, Any],
+) -> list[dict[str, str]]:
+    schema = {
+        "title": "报告标题，字符串",
+        "analysis_scope": "固定为：基于已确认产品画像的获客方向分析",
+        "summary": "获客分析摘要，字符串",
+        "priority_industries": ["优先行业，字符串数组"],
+        "priority_customer_types": ["优先客户类型，字符串数组"],
+        "scenario_opportunities": ["场景机会，字符串数组"],
+        "ranking_explanations": ["优先级判断依据，字符串数组"],
+        "recommendations": ["销售验证建议，字符串数组"],
+        "risks": ["风险，字符串数组"],
+        "limitations": ["限制，字符串数组"],
+    }
+    product_input = {
+        "name": profile.name,
+        "one_line_description": profile.one_line_description,
+        "source_notes": profile.source_notes or "",
+        "target_customers": profile.target_customers,
+        "target_industries": profile.target_industries,
+        "typical_use_cases": profile.typical_use_cases,
+        "pain_points_solved": profile.pain_points_solved,
+        "core_advantages": profile.core_advantages,
+        "delivery_model": profile.delivery_model,
+        "constraints": profile.constraints,
+        "missing_fields": profile.missing_fields,
+        "inferred_context": {
+            "priority_industries": context["industries"],
+            "customer_types": context["customer_types"],
+            "scenarios": context["scenarios"],
+            "primary_pain": context["primary_pain"],
+            "primary_advantage": context["primary_advantage"],
+        },
+    }
+    return [
+        {
+            "role": "system",
+            "content": (
+                "你是 AI 销售助手 V1 的获客分析节点。"
+                "你的任务是基于已确认产品画像生成结构化 LeadAnalysisDraft。"
+                "只根据输入材料和合理业务归纳分析，不要编造具体客户名称、真实案例、价格、市场份额或外部事实。"
+                "输出必须面向业务用户，不要出现 Phase 1、LangGraph、runtime、v1_langgraph_phase1 等工程词。"
+                "只输出一个 JSON object，不要输出 markdown、解释或额外文本。"
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                "请生成获客分析草稿。\n"
+                "输出必须是单个 JSON object，字段必须严格匹配 output_schema。\n"
+                "analysis_scope 固定输出“基于已确认产品画像的获客方向分析”。\n"
+                "priority_industries、priority_customer_types、scenario_opportunities、"
+                "ranking_explanations、recommendations、risks、limitations 应尽量各输出 2 到 5 条。\n"
+                "scenario_opportunities 必须包含至少一条“邻近机会：...”和一条“上下游机会：...”。\n"
+                "recommendations 必须包含一条以“首轮销售验证建议：”开头的建议，"
+                "也必须包含一条以“不建议优先”开头的建议。\n"
+                "ranking_explanations 要说明为什么优先这些行业、客户和场景，不要只复述字段。\n\n"
+                "每条数组内容控制在 80 个中文字符以内，避免长篇展开。\n\n"
+                f"output_schema:\n{json.dumps(schema, ensure_ascii=False)}\n\n"
+                f"product_input:\n{json.dumps(product_input, ensure_ascii=False)}"
+            ),
+        },
+    ]
 
 
-def _build_not_priority_guidance(
-    *,
-    industries: list[str],
-    customer_types: list[str],
-    scenarios: list[str],
-) -> str:
-    later_industries = "、".join(industries[1:]) if len(industries) > 1 else "跨度过大的行业"
-    later_customers = "、".join(customer_types[1:]) if len(customer_types) > 1 else "离一线问题较远的角色"
-    return (
-        f"不建议优先同时铺开 {later_industries} 或 {later_customers}；"
-        f"先把“{scenarios[0]}”这一场景跑出清晰反馈后再扩展。"
-    )
+def _strip_thinking_and_fences(content: str) -> str:
+    text = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL | re.IGNORECASE)
+    text = text.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s*```$", "", text)
+    return text.strip()
+
+
+def _parse_lead_analysis_json(content: str) -> dict[str, object]:
+    text = _strip_thinking_and_fences(content)
+    start = text.find("{")
+    end = text.rfind("}")
+    if start < 0 or end < start:
+        raise ValueError("lead_analysis_llm_json_object_not_found")
+    try:
+        parsed = json.loads(text[start : end + 1])
+    except json.JSONDecodeError as exc:
+        raise ValueError("lead_analysis_llm_json_decode_failed") from exc
+    if not isinstance(parsed, dict):
+        raise ValueError("lead_analysis_llm_json_object_required")
+    return parsed
+
+
+def _token_count(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value >= 0 else None
+    if isinstance(value, float) and value.is_integer():
+        count = int(value)
+        return count if count >= 0 else None
+    return None
+
+
+def _normalize_llm_usage(usage: dict[str, Any]) -> dict[str, int]:
+    normalized: dict[str, int] = {}
+    for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+        count = _token_count(usage.get(key))
+        if count is not None:
+            normalized[key] = count
+
+    prompt_details = usage.get("prompt_tokens_details")
+    if isinstance(prompt_details, dict):
+        cached_tokens = _token_count(prompt_details.get("cached_tokens"))
+        if cached_tokens is not None:
+            normalized["cached_tokens"] = cached_tokens
+
+    completion_details = usage.get("completion_tokens_details")
+    if isinstance(completion_details, dict):
+        reasoning_tokens = _token_count(completion_details.get("reasoning_tokens"))
+        if reasoning_tokens is not None:
+            normalized["reasoning_tokens"] = reasoning_tokens
+
+    for key in ("cached_tokens", "reasoning_tokens"):
+        count = _token_count(usage.get(key))
+        if count is not None:
+            normalized[key] = count
+
+    return normalized
 
 
 def load_confirmed_product_profile(
@@ -136,82 +240,22 @@ def normalize_product_profile_context(
 def generate_lead_analysis_draft(
     state: LeadAnalysisGraphState,
 ) -> LeadAnalysisGraphState:
+    settings = get_settings()
     profile = state["product_profile_payload"]
     context = state["normalized_context"]
-    industries = context["industries"]
-    customer_types = context["customer_types"]
-    scenarios = context["scenarios"]
-    primary_advantage = context["primary_advantage"]
-    primary_pain = context["primary_pain"]
-    missing_fields = context["missing_fields"]
-    constraints = context["constraints"]
-    neighbor_opportunities = _infer_neighbor_opportunities(
-        industries=industries,
-        customer_types=customer_types,
-        scenarios=scenarios,
-        primary_pain=primary_pain,
+    client = TokenHubClient(
+        api_key=settings.llm_api_key,
+        base_url=settings.llm_base_url,
+        model=settings.llm_model,
+        timeout_seconds=max(settings.llm_timeout_seconds, 60.0),
     )
-    not_priority_guidance = _build_not_priority_guidance(
-        industries=industries,
-        customer_types=customer_types,
-        scenarios=scenarios,
-    )
-
-    ranking_explanations = _compact(
-        [
-            (
-                f"{industries[0]} 应排在首位：该行业更容易直接暴露“{primary_pain}”，"
-                f"也更适合用“{scenarios[0]}”做第一轮验证。"
-            ),
-            (
-                f"{customer_types[0]} 是首批沟通对象：该角色更接近预算、流程或一线执行问题，"
-                f"更容易判断“{primary_advantage}”是否足够形成购买理由。"
-            ),
-            (
-                f"优先级应先看痛点强度、触达难度和反馈速度；若首轮反馈集中，再扩展到"
-                f"邻近行业和上下游角色。"
-            ),
-            "后续可结合更多真实客户反馈和外部市场资料继续校准优先级。",
-        ]
-    )
-    recommendations = _compact(
-        [
-            f"先围绕 {industries[0]} + {customer_types[0]} 组合验证第一轮销售表达。",
-            f"首轮销售验证建议：准备 5 到 10 次访谈或试用沟通，重点确认“{primary_pain}”是否紧急、谁负责决策、现有替代方案是什么。",
-            f"把场景说明收口到“{scenarios[0]}”，避免首轮叙事过宽。",
-            not_priority_guidance,
-            f"继续补齐缺失信息：{', '.join(missing_fields)}。" if missing_fields else "继续积累更多真实客户反馈，验证优先方向。",
-        ]
-    )
-    risks = _compact(
-        constraints[:2]
-        + (
-            [f"当前仍缺少 {', '.join(missing_fields)}，会影响行业和客户优先级判断。"] if missing_fields else []
-        )
-    )
-    limitations = _compact(
-        [
-            "当前分析主要基于已确认的产品画像，尚未接入外部检索和长期客户反馈。",
-            "分析结果仍依赖现有产品画像的完整度和当前已知上下文。",
-        ]
-    )
-
-    draft = LeadAnalysisDraft(
-        title=f"{profile.name} 获客分析结果",
-        analysis_scope="基于已确认产品画像的获客方向分析",
-        summary=(
-            f"基于 {profile.name} 的当前画像，优先建议从 {industries[0]} 的 "
-            f"{customer_types[0]} 入手，围绕“{primary_pain}”组织第一轮销售表达。"
-        ),
-        priority_industries=industries,
-        priority_customer_types=customer_types,
-        scenario_opportunities=_compact(scenarios + neighbor_opportunities),
-        ranking_explanations=ranking_explanations,
-        recommendations=recommendations,
-        risks=risks,
-        limitations=limitations,
-    )
-    return {"draft_output": draft}
+    completion = client.complete(_build_lead_analysis_messages(profile, context))
+    draft = LeadAnalysisDraft.model_validate(_parse_lead_analysis_json(completion.content))
+    llm_usage = _normalize_llm_usage(completion.usage)
+    return {
+        "draft_output": draft,
+        "runtime_metadata": {"llm_usage": llm_usage} if llm_usage else {},
+    }
 
 
 def validate_lead_analysis_draft(
@@ -224,7 +268,10 @@ def validate_lead_analysis_draft(
 def return_draft_payload(
     state: LeadAnalysisGraphState,
 ) -> LeadAnalysisGraphState:
-    return {"draft_output": state["draft_output"]}
+    return {
+        "draft_output": state["draft_output"],
+        "runtime_metadata": state.get("runtime_metadata", {}),
+    }
 
 
 _builder = StateGraph(LeadAnalysisGraphState)
@@ -246,7 +293,7 @@ def invoke_lead_analysis_graph(
     *,
     run_id: str,
     product_profile_payload: ProductProfileRuntimePayload,
-) -> LeadAnalysisDraft:
+) -> LeadAnalysisDraftResult:
     state = LEAD_ANALYSIS_GRAPH.invoke(
         {
             "run_id": run_id,
@@ -255,4 +302,7 @@ def invoke_lead_analysis_graph(
             "product_profile_payload": product_profile_payload,
         }
     )
-    return LeadAnalysisDraft.model_validate(state["draft_output"])
+    return LeadAnalysisDraftResult(
+        draft=LeadAnalysisDraft.model_validate(state["draft_output"]),
+        runtime_metadata=dict(state.get("runtime_metadata", {})),
+    )

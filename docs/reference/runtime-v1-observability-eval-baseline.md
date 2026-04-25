@@ -77,7 +77,8 @@
 - `prompt_version`
   - heuristic 阶段：`heuristic_v1`
   - product learning LLM phase 1：`product_learning_llm_v1`
-  - lead analysis / report generation 当前可先写 `heuristic_v1`
+  - lead analysis LLM phase 1：`lead_analysis_llm_v1`
+  - report generation 当前仍写 `heuristic_v1`
 - `round_index`
   - `POST /product-profiles` 首轮创建：`0`
   - `POST /product-profiles/{id}/enrich` 的第一次补充：`1`
@@ -89,9 +90,9 @@
 
 - `error_type`
 
-### 3.6 Product Learning LLM usage
+### 3.6 LLM usage
 
-product learning 使用真实 LLM 成功返回时，应在 `AgentRun.runtime_metadata.llm_usage` 中记录非敏感 token 统计：
+product learning 与 lead analysis 使用真实 LLM 成功返回时，应在 `AgentRun.runtime_metadata.llm_usage` 中记录非敏感 token 统计：
 
 - `prompt_tokens`
 - `completion_tokens`

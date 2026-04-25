@@ -97,6 +97,11 @@ class LeadAnalysisDraft(BaseModel):
     limitations: list[str]
 
 
+class LeadAnalysisDraftResult(BaseModel):
+    draft: LeadAnalysisDraft
+    runtime_metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class AnalysisReportDraft(BaseModel):
     title: str
     summary: str

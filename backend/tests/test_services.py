@@ -67,7 +67,9 @@ def test_create_analysis_run_queues_lead_analysis(db_session) -> None:
     assert run.output_refs == []
     assert run.runtime_metadata["provider"] == "langgraph"
     assert run.runtime_metadata["graph_name"] == "lead_analysis_graph"
-    assert run.runtime_metadata["prompt_version"] == "heuristic_v1"
+    assert run.runtime_metadata["prompt_version"] == "lead_analysis_llm_v1"
+    assert run.runtime_metadata["llm_provider"] == "tencent_tokenhub"
+    assert run.runtime_metadata["llm_model"] == "minimax-m2.5"
     assert run.runtime_metadata["round_index"] == 0
     assert "llm_usage" not in run.runtime_metadata
 
@@ -181,6 +183,88 @@ def test_process_product_learning_run_marks_failed_for_invalid_llm_json(
     assert "product_learning_llm_json_object_not_found" in str(
         refreshed_run.error_message
     )
+
+
+def test_process_lead_analysis_run_records_llm_usage(db_session) -> None:
+    created = services.create_product_profile(
+        db_session,
+        schemas.ProductProfileCreateRequest(
+            name="AI 销售助手 V1",
+            one_line_description="帮助用户先讲清产品，再生成获客分析结果。",
+            source_notes="适合企业服务团队做产品学习。",
+        ),
+    )
+    profile = created.product_profile
+    services.process_agent_run(created.current_run.id)
+    db_session.expire_all()
+    services.confirm_product_profile(db_session, profile.id)
+    run = services.create_analysis_run(
+        db_session,
+        schemas.AnalysisRunCreateRequest(
+            run_type="lead_analysis",
+            product_profile_id=profile.id,
+            trigger_source="android_home",
+        ),
+    )
+
+    services.process_agent_run(run.id)
+    db_session.expire_all()
+
+    refreshed_run = services.get_agent_run_or_404(db_session, run.id)
+    assert refreshed_run.status == "succeeded"
+    assert refreshed_run.runtime_metadata["prompt_version"] == "lead_analysis_llm_v1"
+    assert refreshed_run.runtime_metadata["llm_provider"] == "tencent_tokenhub"
+    assert refreshed_run.runtime_metadata["llm_model"] == "minimax-m2.5"
+    assert refreshed_run.runtime_metadata["llm_usage"] == {
+        "prompt_tokens": 70,
+        "completion_tokens": 150,
+        "total_tokens": 220,
+        "cached_tokens": 8,
+        "reasoning_tokens": 0,
+    }
+    assert refreshed_run.output_refs[0]["object_type"] == "lead_analysis_result"
+
+
+def test_process_lead_analysis_run_marks_failed_for_invalid_llm_json(
+    db_session,
+    monkeypatch,
+) -> None:
+    created = services.create_product_profile(
+        db_session,
+        schemas.ProductProfileCreateRequest(
+            name="AI 销售助手 V1",
+            one_line_description="帮助用户先讲清产品，再生成获客分析结果。",
+            source_notes="适合企业服务团队做产品学习。",
+        ),
+    )
+    profile = created.product_profile
+    services.process_agent_run(created.current_run.id)
+    db_session.expire_all()
+    services.confirm_product_profile(db_session, profile.id)
+    run = services.create_analysis_run(
+        db_session,
+        schemas.AnalysisRunCreateRequest(
+            run_type="lead_analysis",
+            product_profile_id=profile.id,
+            trigger_source="android_home",
+        ),
+    )
+    monkeypatch.setattr(
+        "backend.runtime.graphs.lead_analysis.TokenHubClient.complete",
+        lambda *args, **kwargs: TokenHubCompletion(
+            content="<think>无法输出 JSON</think>不是 JSON",
+            usage={"total_tokens": 8},
+        ),
+    )
+
+    services.process_agent_run(run.id)
+    db_session.expire_all()
+
+    refreshed_run = services.get_agent_run_or_404(db_session, run.id)
+    assert refreshed_run.status == "failed"
+    assert refreshed_run.runtime_metadata["error_type"] == "ValueError"
+    assert "llm_usage" not in refreshed_run.runtime_metadata
+    assert "lead_analysis_llm_json_object_not_found" in str(refreshed_run.error_message)
 
 
 def test_confirm_requires_ready_for_confirmation(db_session) -> None:

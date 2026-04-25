@@ -396,10 +396,12 @@ def _process_lead_analysis(
     if product_profile.status != "confirmed":
         raise ValueError("lead_analysis_requires_confirmed_product_profile")
 
-    draft = runtime_provider.generate_lead_analysis_draft(
+    draft_result = runtime_provider.generate_lead_analysis_draft(
         product_profile,
         run_id=agent_run.id,
     )
+    draft = draft_result.draft
+    _merge_runtime_metadata(agent_run, draft_result.runtime_metadata)
     analysis_result = models.LeadAnalysisResult(
         id=generate_prefixed_id("lar"),
         product_profile_id=product_profile.id,

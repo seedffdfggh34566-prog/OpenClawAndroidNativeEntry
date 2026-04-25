@@ -5,6 +5,7 @@ import json
 import httpx
 import pytest
 
+from backend.runtime.graphs.lead_analysis import _parse_lead_analysis_json
 from backend.runtime.graphs.product_learning import _parse_product_learning_json
 from backend.runtime.llm_client import TokenHubClient, TokenHubClientError
 
@@ -110,3 +111,34 @@ def test_parse_product_learning_json_strips_thinking_and_markdown() -> None:
 def test_parse_product_learning_json_rejects_non_json() -> None:
     with pytest.raises(ValueError, match="product_learning_llm_json_object_not_found"):
         _parse_product_learning_json("<think>only thinking</think>没有 JSON")
+
+
+def test_parse_lead_analysis_json_strips_thinking_and_markdown() -> None:
+    parsed = _parse_lead_analysis_json(
+        """
+        <think>内部推理不应进入 JSON。</think>
+
+        ```json
+        {
+          "title": "AI 销售助手 V1 获客分析结果",
+          "analysis_scope": "基于已确认产品画像的获客方向分析",
+          "summary": "优先验证企业服务团队。",
+          "priority_industries": ["企业服务"],
+          "priority_customer_types": ["销售负责人"],
+          "scenario_opportunities": ["邻近机会：拓展运营负责人", "上下游机会：延伸到市场团队"],
+          "ranking_explanations": ["销售负责人更接近转化结果。"],
+          "recommendations": ["首轮销售验证建议：访谈销售负责人。", "不建议优先铺开过多行业。"],
+          "risks": ["样本有限。"],
+          "limitations": ["未接入外部检索。"]
+        }
+        ```
+        """
+    )
+
+    assert parsed["analysis_scope"] == "基于已确认产品画像的获客方向分析"
+    assert "邻近机会" in parsed["scenario_opportunities"][0]
+
+
+def test_parse_lead_analysis_json_rejects_non_json() -> None:
+    with pytest.raises(ValueError, match="lead_analysis_llm_json_object_not_found"):
+        _parse_lead_analysis_json("<think>only thinking</think>没有 JSON")

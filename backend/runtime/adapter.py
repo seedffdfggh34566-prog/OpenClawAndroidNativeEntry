@@ -11,7 +11,7 @@ from backend.runtime.graphs.product_learning import invoke_product_learning_grap
 from backend.runtime.graphs.report_generation import invoke_report_generation_graph
 from backend.runtime.types import (
     AnalysisReportDraft,
-    LeadAnalysisDraft,
+    LeadAnalysisDraftResult,
     LeadAnalysisResultRuntimePayload,
     ProductLearningDraftResult,
     ProductProfileRuntimePayload,
@@ -37,7 +37,7 @@ class RuntimeProvider(ABC):
         profile: models.ProductProfile,
         *,
         run_id: str,
-    ) -> LeadAnalysisDraft:
+    ) -> LeadAnalysisDraftResult:
         raise NotImplementedError
 
     @abstractmethod
@@ -76,24 +76,29 @@ class LangGraphRuntimeProvider(RuntimeProvider):
             "lead_analysis": "lead_analysis_graph",
             "report_generation": "report_generation_graph",
         }.get(run_type, "unknown_graph")
+        if run_type == "product_learning":
+            prompt_version = settings.llm_prompt_version
+            phase = "llm_phase1"
+        elif run_type == "lead_analysis":
+            prompt_version = "lead_analysis_llm_v1"
+            phase = "llm_phase1"
+        else:
+            prompt_version = "heuristic_v1"
+            phase = "phase1"
+
         metadata: dict[str, Any] = {
             "provider": self.provider_name,
             "mode": "backend_direct_langgraph",
-            "phase": "product_learning_followup"
-            if run_type == "product_learning"
-            else "phase1",
+            "phase": phase,
             "graph_name": graph_name,
             "run_type": run_type,
             "trace_id": trace_id or uuid4().hex,
-            "prompt_version": settings.llm_prompt_version
-            if run_type == "product_learning"
-            else "heuristic_v1",
+            "prompt_version": prompt_version,
             "round_index": round_index,
         }
-        if run_type == "product_learning":
+        if run_type in {"product_learning", "lead_analysis"}:
             metadata.update(
                 {
-                    "phase": "llm_phase1",
                     "llm_provider": settings.llm_provider,
                     "llm_model": settings.llm_model,
                     "llm_base_url": settings.llm_base_url,
@@ -106,7 +111,7 @@ class LangGraphRuntimeProvider(RuntimeProvider):
         profile: models.ProductProfile,
         *,
         run_id: str,
-    ) -> LeadAnalysisDraft:
+    ) -> LeadAnalysisDraftResult:
         return invoke_lead_analysis_graph(
             run_id=run_id,
             product_profile_payload=ProductProfileRuntimePayload.from_model(profile),

@@ -83,6 +83,7 @@
 | `task_v1_android_product_learning_enrich_device_smoke.md` | 真机跑通 Android product learning enrich 完整链路 | `done` |
 | `task_v1_android_sales_flow_expression_closeout.md` | 收口 Android 首页、产品画像确认页、结果页和报告页的销售闭环表达 | `done` |
 | `task_v1_full_sales_flow_device_smoke.md` | 真机从空库验证 V1 主闭环完整跑通 | `done` |
+| `task_android_chinese_input_smoke_mechanism.md` | 记录 Android 真机中文自动化输入机制与测试 IME 方案 | `done` |
 
 ---
 

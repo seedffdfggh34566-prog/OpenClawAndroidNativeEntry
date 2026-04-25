@@ -138,6 +138,9 @@ def test_product_learning_trace_records_raw_content_and_parsed_draft(
         inspector_response = client.get("/dev/llm-inspector")
         assert inspector_response.status_code == 200
         assert "OpenClaw LLM Run Inspector" in inspector_response.text
+        assert "Raw content" in inspector_response.text
+        assert "Parsed draft" in inspector_response.text
+        assert "Full trace JSON" in inspector_response.text
         assert "test-secret-key" not in json.dumps(trace, ensure_ascii=False)
 
 

@@ -48,10 +48,17 @@ def _dev_llm_inspector_html() -> str:
     main { display: grid; grid-template-columns: minmax(280px, 420px) minmax(0, 1fr); gap: 16px; }
     button { display: block; width: 100%; padding: 10px 12px; margin: 0 0 8px; text-align: left; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer; }
     button:hover { border-color: #2563eb; }
-    pre { padding: 16px; overflow: auto; background: #0f172a; color: #e2e8f0; border-radius: 6px; min-height: 480px; }
+    pre { padding: 16px; overflow: auto; background: #0f172a; color: #e2e8f0; border-radius: 6px; white-space: pre-wrap; word-break: break-word; }
     .meta { color: #64748b; font-size: 13px; margin: 4px 0 0; }
     .toolbar { margin-bottom: 16px; display: flex; gap: 8px; align-items: center; }
     .toolbar button { width: auto; margin: 0; }
+    .detail-grid { display: grid; gap: 14px; }
+    .panel { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; }
+    .panel h3 { margin: 0 0 10px; font-size: 18px; }
+    .kv { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 6px 12px; font-size: 14px; }
+    .kv div:nth-child(odd) { color: #64748b; }
+    .raw-content { min-height: 360px; max-height: 620px; }
+    .json-content { max-height: 360px; }
   </style>
 </head>
 <body>
@@ -67,7 +74,9 @@ def _dev_llm_inspector_html() -> str:
     </section>
     <section>
       <h2>Detail</h2>
-      <pre id="detail">Select a run.</pre>
+      <div id="detail" class="detail-grid">
+        <pre>Select a run.</pre>
+      </div>
     </section>
   </main>
   <script>
@@ -94,7 +103,70 @@ def _dev_llm_inspector_html() -> str:
     async function loadDetail(runId) {
       const response = await fetch(`/dev/llm-runs/${encodeURIComponent(runId)}`);
       const payload = await response.json();
-      document.getElementById("detail").textContent = JSON.stringify(payload, null, 2);
+      renderDetail(payload);
+    }
+
+    function textBlock(value) {
+      if (value == null || value === "") {
+        return "";
+      }
+      if (typeof value === "string") {
+        return value;
+      }
+      return JSON.stringify(value, null, 2);
+    }
+
+    function appendPanel(container, title, content, className) {
+      const panel = document.createElement("section");
+      panel.className = "panel";
+      const heading = document.createElement("h3");
+      heading.textContent = title;
+      const pre = document.createElement("pre");
+      pre.className = className || "json-content";
+      pre.textContent = content || "(empty)";
+      panel.appendChild(heading);
+      panel.appendChild(pre);
+      container.appendChild(panel);
+    }
+
+    function renderDetail(payload) {
+      const container = document.getElementById("detail");
+      container.innerHTML = "";
+
+      const summary = document.createElement("section");
+      summary.className = "panel";
+      const heading = document.createElement("h3");
+      heading.textContent = "Summary";
+      const kv = document.createElement("div");
+      kv.className = "kv";
+      const fields = [
+        ["run_id", payload.run_id],
+        ["run_type", payload.run_type],
+        ["parse_status", payload.parse_status],
+        ["error_type", payload.error_type || "-"],
+        ["provider", payload.provider],
+        ["model", payload.model],
+        ["prompt_version", payload.prompt_version],
+        ["duration_ms", payload.duration_ms],
+        ["started_at", payload.started_at],
+        ["ended_at", payload.ended_at],
+      ];
+      for (const [label, value] of fields) {
+        const key = document.createElement("div");
+        key.textContent = label;
+        const val = document.createElement("div");
+        val.textContent = value == null ? "-" : String(value);
+        kv.appendChild(key);
+        kv.appendChild(val);
+      }
+      summary.appendChild(heading);
+      summary.appendChild(kv);
+      container.appendChild(summary);
+
+      appendPanel(container, "Raw content", textBlock(payload.raw_content), "raw-content");
+      appendPanel(container, "Parsed draft", textBlock(payload.parsed_draft), "json-content");
+      appendPanel(container, "Usage", textBlock(payload.usage), "json-content");
+      appendPanel(container, "Full trace JSON", JSON.stringify(payload, null, 2), "json-content");
     }
 
     loadRuns();

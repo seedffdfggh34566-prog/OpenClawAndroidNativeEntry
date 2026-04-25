@@ -41,7 +41,6 @@
 
 ## 5. 推荐下一步
 
-1. 冻结 V2 PRD v0.2。
-2. 冻结 V2 data model v0.2。
-3. 补 V2 backend contract 草案。
-4. 再决定是否创建后端-only lead research spike task。
+1. 已由 `handoff_2026_04_25_v2_conversational_sales_agent_definition_update.md` 接续。
+2. 后续以 ADR-006 的 V2.1 对话式专属销售 agent 路线为准。
+3. 不再直接进入后端-only lead research spike。

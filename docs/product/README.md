@@ -12,6 +12,8 @@
 当前 V2 规划草案：
 
 - `prd/ai_sales_assistant_v2_prd.md`
+- `../architecture/data/v2-sales-agent-data-model.md`
+- `../adr/ADR-006-v2-conversational-sales-agent-baseline.md`
 
 当前与 V1 收口直接相关的补充文档：
 

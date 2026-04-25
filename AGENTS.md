@@ -41,11 +41,13 @@ V1 is no longer the active implementation track. Agents may fix severe demo repr
 ### V2 planning baseline
 V2 currently explores:
 
-1. **AI-guided product learning**
-2. **Lightweight lead research**
-3. **Chinese public-web search with source evidence**
-4. **Concrete company / organization candidates**
-5. **Traceable contact points with manual verification boundaries**
+1. **Conversational dedicated sales agent prototype**
+2. **AI-guided product learning through chat**
+3. **Conversation-based lead direction analysis and iteration**
+4. **Lightweight lead research as a later V2.2 capability**
+5. **Chinese public-web search with source evidence**
+6. **Concrete company / organization candidates**
+7. **Traceable contact points with manual verification boundaries**
 
 V2 is not yet an MVP, schema baseline, API contract, or implementation queue.
 
@@ -71,6 +73,7 @@ Do **not** proactively expand V2 into:
 - Personal contact points are high-risk and must be explicitly marked, sourced, and never auto-contacted.
 - Android remains the control entry; backend remains the formal truth layer.
 - Runtime / agents may produce draft payloads and tool outputs, but backend services own formal object writeback.
+- Sales agent memory must be persisted as structured backend objects, not only in prompts, Markdown files, SDK sessions, or LangGraph checkpoints.
 
 Agents must treat scope control as a top-level rule.
 

@@ -2,9 +2,10 @@
 
 - 文档状态：Draft v0.1
 - 更新日期：2026-04-25
-- 阶段定位：V2 数据架构草案，尚未冻结为数据库 schema 或 migration
+- 阶段定位：V2.2 轻量线索研究数据架构草案，尚未冻结为数据库 schema 或 migration
 - 关联文档：
   - `docs/product/prd/ai_sales_assistant_v2_prd.md`
+  - `docs/architecture/data/v2-sales-agent-data-model.md`
   - `docs/reference/schemas/v1-domain-model-baseline.md`
   - `docs/architecture/system-context.md`
 
@@ -12,7 +13,11 @@
 
 ## 1. 文档目的
 
-本文档定义 V2 “轻量线索研究”所需的数据对象、对象边界、关系和落地原则。
+本文档定义 V2.2 “轻量线索研究”所需的数据对象、对象边界、关系和落地原则。
+
+V2 当前产品形态已调整为“对话式专属销售 agent prototype”。因此本文档不再承担整个 V2 数据模型定义，而是作为 V2.2 lead research 子模型。V2.1 的会话、消息、产品画像版本和获客方向版本见：
+
+- `docs/architecture/data/v2-sales-agent-data-model.md`
 
 V1 的数据模型已经证明最小闭环可用：
 
@@ -21,18 +26,17 @@ ProductProfile -> LeadAnalysisResult -> AnalysisReport
 AgentRun 记录执行过程
 ```
 
-V2 如果要支持主动联网 / 搜索、AI 引导式产品学习、具体公司候选、来源证据和联系方式，就不能继续只把结果写成一段报告。
+V2.2 如果要支持主动联网 / 搜索、具体公司候选、来源证据和联系方式，就不能继续只把结果写成一段报告。
 
-V2 数据层需要显式回答：
+V2.2 数据层需要显式回答：
 
-1. 用户是怎么把产品讲清楚的。
-2. 哪一版 ProductProfile 被用于搜索。
-3. 搜索用了哪些 query。
-4. 搜索命中了哪些来源。
-5. 哪些来源支撑了哪些候选公司。
-6. 哪些联系方式来自哪些来源。
-7. 哪些结论是 LLM 推断，哪些有公开来源支持。
-8. 用户最终看到的行动建议来自哪次研究。
+1. 哪一版 ProductProfile / LeadDirectionVersion 被用于搜索。
+2. 搜索用了哪些 query。
+3. 搜索命中了哪些来源。
+4. 哪些来源支撑了哪些候选公司。
+5. 哪些联系方式来自哪些来源。
+6. 哪些结论是 LLM 推断，哪些有公开来源支持。
+7. 用户最终看到的行动建议来自哪次研究。
 
 本文档不是：
 
@@ -165,11 +169,16 @@ V2 中的变化：
 
 ---
 
-## 4. V2 建议新增对象
+## 4. V2.2 建议新增对象
 
 ### 4.1 `ProductLearningSession`
 
-职责：
+状态：
+
+- V2.1 已不建议使用该名称作为主会话对象。
+- 主会话对象改为 `SalesAgentSession`，见 `v2-sales-agent-data-model.md`。
+
+历史职责：
 
 - 表示一次产品学习会话。
 - 连接用户对话、ProductProfile 草稿、ProductProfileRevision 和 AgentRun。
@@ -191,6 +200,11 @@ V2 中的变化：
 - 它是产品学习过程容器。
 
 ### 4.2 `ConversationMessage`
+
+状态：
+
+- V2.1 已将 `ConversationMessage` 提升为首批对象。
+- 本节仅保留与 V2.2 lead research 的衔接背景。
 
 职责：
 
@@ -515,30 +529,26 @@ SalesActionCard / AnalysisReport
 
 ---
 
-## 7. 首版落地建议
+## 7. V2.2 落地建议
 
-由于 V2 定义尚未完善，不建议一次性落全部对象。
+由于 V2.1 会先实现对话式销售 agent，不建议 V2.2 一次性落全部对象。
 
-建议首批实现：
+V2.2 建议首批实现：
 
-1. `ProductProfileRevision`
-2. `LeadResearchResult`
-3. `ResearchSource`
-4. `CompanyCandidate`
-5. `ContactPoint`
-6. `AgentRun.run_type = lead_research`
+1. `LeadResearchResult`
+2. `ResearchSource`
+3. `CompanyCandidate`
+4. `ContactPoint`
+5. `AgentRun.run_type = lead_research`
 
 暂缓：
 
-- `ProductLearningSession`
-- `ConversationMessage`
 - `ResearchQuery`
 - `SearchResult`
 - `SalesActionCard`
 
 暂缓原因：
 
-- 对话 UI 尚未设计。
 - 搜索 provider 尚未确定。
 - 成功标准尚未冻结。
 - 联系方式展示边界尚未完全明确。

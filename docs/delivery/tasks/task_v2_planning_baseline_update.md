@@ -145,9 +145,9 @@ V1 已通过 closeout 收口为 demo-ready release candidate / learning mileston
 
 本任务完成后，推荐继续：
 
-1. 冻结 V2 PRD v0.2。
-2. 冻结 V2 data model v0.2。
-3. 设计 V2 backend contract 草案。
+1. 已由 `task_v2_conversational_sales_agent_definition_update.md` 接续。
+2. 后续以 ADR-006 的 V2.1 对话式专属销售 agent 路线为准。
+3. 不再直接进入后端-only lead research spike。
 
 ---
 

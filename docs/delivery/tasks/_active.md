@@ -39,6 +39,7 @@
 
 ## 3. 最近完成
 
+- `task_v2_conversational_sales_agent_definition_update.md`
 - `task_v2_planning_baseline_update.md`
 - `task_v1_closeout.md`
 - `task_v1_demo_runbook_and_evidence_pack.md`
@@ -81,8 +82,10 @@ V1 当前应视为：
 V2 当前应视为：
 
 - 已进入 planning baseline
-- 已有 PRD Draft v0.1
-- 已有 data model Draft v0.1
+- 已有 PRD Draft v0.2
+- 已有 sales agent data model Draft v0.1
+- 已有 lead research data model Draft v0.1
+- 已有 ADR-006 对话式专属销售 agent baseline
 - 已有 ADR-005 搜索 / 来源证据 / 联系方式边界
 - 尚未冻结 schema、API contract、搜索 provider 或 implementation queue
 
@@ -97,16 +100,20 @@ V2 当前应视为：
 3. `docs/product/overview.md`
 4. `docs/product/research/v1_closeout_2026_04_25.md`
 5. `docs/product/prd/ai_sales_assistant_v2_prd.md`
-6. `docs/architecture/data/v2-lead-research-data-model.md`
-7. `docs/adr/ADR-005-v2-lead-research-scope-and-search-boundary.md`
-8. 本文件
+6. `docs/architecture/data/v2-sales-agent-data-model.md`
+7. `docs/adr/ADR-006-v2-conversational-sales-agent-baseline.md`
+8. `docs/architecture/data/v2-lead-research-data-model.md`
+9. `docs/adr/ADR-005-v2-lead-research-scope-and-search-boundary.md`
+10. 本文件
 
 当前 planning baseline task：
 
+- `docs/delivery/tasks/task_v2_conversational_sales_agent_definition_update.md`
 - `docs/delivery/tasks/task_v2_planning_baseline_update.md`
 
 当前 handoff：
 
+- `docs/delivery/handoffs/handoff_2026_04_25_v2_conversational_sales_agent_definition_update.md`
 - `docs/delivery/handoffs/handoff_2026_04_25_v2_planning_baseline_update.md`
 
 ---

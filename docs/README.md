@@ -35,10 +35,12 @@
 2. `docs/product/overview.md`
 3. `docs/product/research/v1_closeout_2026_04_25.md`
 4. `docs/product/prd/ai_sales_assistant_v2_prd.md`
-5. `docs/architecture/data/v2-lead-research-data-model.md`
-6. `docs/adr/ADR-005-v2-lead-research-scope-and-search-boundary.md`
-7. `docs/delivery/tasks/_active.md`
-8. 当前 task 引用的 spec / runbook / handoff
+5. `docs/architecture/data/v2-sales-agent-data-model.md`
+6. `docs/adr/ADR-006-v2-conversational-sales-agent-baseline.md`
+7. `docs/architecture/data/v2-lead-research-data-model.md`
+8. `docs/adr/ADR-005-v2-lead-research-scope-and-search-boundary.md`
+9. `docs/delivery/tasks/_active.md`
+10. 当前 task 引用的 spec / runbook / handoff
 
 V1 细节可继续参考：
 
@@ -73,6 +75,8 @@ V1 细节可继续参考：
 - `docs/product/overview.md`
 - `docs/product/research/v1_closeout_2026_04_25.md`
 - `docs/product/prd/ai_sales_assistant_v2_prd.md`
+- `docs/architecture/data/v2-sales-agent-data-model.md`
+- `docs/adr/ADR-006-v2-conversational-sales-agent-baseline.md`
 - `docs/architecture/data/v2-lead-research-data-model.md`
 - `docs/adr/ADR-005-v2-lead-research-scope-and-search-boundary.md`
 - `docs/product/prd/ai_sales_assistant_v1_prd.md`
@@ -95,7 +99,9 @@ V1 细节可继续参考：
 
 - `docs/delivery/tasks/_active.md`
 - `docs/delivery/README.md`
+- `docs/delivery/tasks/task_v2_conversational_sales_agent_definition_update.md`
 - `docs/delivery/tasks/task_v2_planning_baseline_update.md`
+- `docs/delivery/handoffs/handoff_2026_04_25_v2_conversational_sales_agent_definition_update.md`
 - `docs/delivery/handoffs/handoff_2026_04_25_v2_planning_baseline_update.md`
 
 ### 5.4 当前工作流
@@ -173,11 +179,12 @@ docs/
 
 - `task_v1_closeout.md`
 - `task_v1_demo_runbook_and_evidence_pack.md`
+- `task_v2_conversational_sales_agent_definition_update.md`
 - `task_v2_planning_baseline_update.md`
 
-当前已排定的 implementation task 已全部收口。下一阶段已进入 V2 planning baseline，但尚未创建 V2 implementation queue。
+当前已排定的 implementation task 已全部收口。下一阶段已进入 V2 对话式专属销售 agent planning baseline，但尚未创建 V2 implementation queue。
 
-下一步需要回到规划层冻结：V2 是否以 MVP 为目标、搜索 provider、数据保留策略、联系方式边界、V2 domain/schema baseline、backend contract，以及是否升级 report_generation。
+下一步需要回到规划层冻结：V2.1 conversational sales agent backend contract、sales agent data model v0.2、`sales_agent_turn_graph` draft schema，以及后续 V2.2 搜索 provider、数据保留策略和联系方式边界。
 
 当前补充建议阅读：
 
@@ -185,5 +192,7 @@ docs/
 - `docs/delivery/README.md`
 - `docs/product/research/v1_closeout_2026_04_25.md`
 - `docs/product/prd/ai_sales_assistant_v2_prd.md`
+- `docs/architecture/data/v2-sales-agent-data-model.md`
+- `docs/adr/ADR-006-v2-conversational-sales-agent-baseline.md`
 - `docs/architecture/data/v2-lead-research-data-model.md`
 - `docs/adr/ADR-005-v2-lead-research-scope-and-search-boundary.md`

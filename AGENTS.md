@@ -209,6 +209,16 @@ Do not merge multiple tasks into one commit just because they were executed in o
 
 ## 9. File Change Rules
 
+### Secret handling
+
+Agents must treat local secrets as high-risk even when they are ignored by Git.
+
+- Never read, print, copy, summarize, or paste `backend/.env` or `backend/.env.*` contents.
+- Never write API keys, Bearer tokens, Authorization headers, private keys, console metric IDs treated as secret, or other credentials into docs, task files, handoffs, PR descriptions, logs, or final answers.
+- Never use `git add -f` to add ignored secret files.
+- To verify local secret setup, only check presence or ignore status, for example `test -f backend/.env` or `git check-ignore -v backend/.env`.
+- If a secret or secret-like identifier may have been committed or pushed, stop normal work and surface the exposure so the human can decide whether to rotate/revoke it and whether history cleanup is required.
+
 ### Safe areas for agent-led drafting
 These are generally safe for structured drafting and iteration:
 

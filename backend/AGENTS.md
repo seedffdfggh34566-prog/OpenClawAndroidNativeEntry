@@ -79,6 +79,17 @@ Use only the subset relevant to the task.
 
 Do not claim backend validation passed unless the command or smoke check actually succeeded.
 
+### Backend secrets and LLM keys
+
+Backend LLM secrets are allowed only through process environment variables or local `backend/.env` files that remain ignored by Git.
+
+- Do not read or print `backend/.env` contents. Presence checks are enough.
+- Do not echo `OPENCLAW_BACKEND_LLM_API_KEY`, Authorization headers, or provider secrets in shell output, logs, docs, task files, handoffs, PR descriptions, or final answers.
+- Do not run backend commands with shell tracing (`set -x`) when `.env` is sourced or secret-bearing environment variables are present.
+- Before real LLM smoke/eval/demo work, confirm `backend/.env` is ignored with `git check-ignore -v backend/.env` if there is any doubt.
+- LLM traces may contain model output for local development, but must not record API keys, Authorization headers, full request bodies, or complete prompt messages unless a future task explicitly changes that policy.
+- Do not stage local DBs, trace JSON, `.env` files, or provider console exports that contain secret-like identifiers.
+
 ---
 
 ## 5. Backend Validation Ladder

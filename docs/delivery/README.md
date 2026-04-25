@@ -55,7 +55,8 @@
 - 真实业务样例库扩展与全链路质量评估已完成，8 个真实中文样例均跑通完整 backend API 链路
 - lead_analysis 质量提升 follow-up 已完成，heuristic 已补齐邻近 / 上下游机会、首轮销售验证建议和不优先建议
 - lead_analysis LLM phase1 已完成，当前 `lead_analysis` 已切到 TokenHub `minimax-m2.5`
-- 后续应由规划层决定是否进入 V1 readiness freeze / demo acceptance，或 report_generation polish
+- V1 readiness freeze 已完成，demo acceptance、known limitations、TTFT 延迟风险和固定 demo 样例已收口
+- 后续继续按任务顺序进入 report_generation polish
 
 ---
 
@@ -96,6 +97,7 @@
 | `task_v1_real_business_sample_library_eval.md` | 扩展真实业务样例库并评估 V1 全链路质量 | `done` |
 | `task_v1_lead_analysis_quality_followup.md` | 增强 lead_analysis heuristic 的销售判断深度 | `done` |
 | `task_v1_lead_analysis_llm_phase1.md` | 将 lead_analysis 切换到真实 LLM draft 生成 | `done` |
+| `task_v1_readiness_freeze_and_demo_acceptance.md` | 冻结 V1 demo acceptance 与 known limitations | `done` |
 
 ---
 

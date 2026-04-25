@@ -51,6 +51,7 @@
 - `task_v1_real_business_sample_library_eval.md`
 - `task_v1_lead_analysis_quality_followup.md`
 - `task_v1_lead_analysis_llm_phase1.md`
+- `task_v1_readiness_freeze_and_demo_acceptance.md`
 
 这些任务当前应视为：
 
@@ -68,6 +69,7 @@
 
 最近完成：
 
+- `task_v1_readiness_freeze_and_demo_acceptance.md`
 - `task_v1_lead_analysis_llm_phase1.md`
 - `task_v1_lead_analysis_quality_followup.md`
 - `task_v1_real_business_sample_library_eval.md`
@@ -116,7 +118,8 @@
 - 真实业务样例库扩展与全链路质量评估已完成，8 个真实中文样例均跑通完整 backend API 链路，并修复了 lead/report 用户可见工程表述泄漏。
 - lead_analysis 质量提升 follow-up 已完成，当前 heuristic 已补齐邻近 / 上下游机会、首轮销售验证建议和不优先建议，并通过 8 个真实中文样例 eval。
 - lead_analysis LLM phase1 已完成，当前 `lead_analysis` 使用 TokenHub `minimax-m2.5` 生成 draft，并通过 8 个真实中文样例 eval。
-- 当前没有已排定的下一项 implementation task；下一步建议由规划层决定是否进入 V1 readiness freeze / demo acceptance，或 report_generation polish。
+- V1 readiness freeze 已完成，当前 V1 具备 demo 条件但仍有 TTFT 延迟、报告交付感和 fallback 未实现等 known limitations。
+- 当前没有已排定的下一项 implementation task；下一步继续执行 report_generation polish。
 
 ### Auto-continue allowed when
 

@@ -69,6 +69,7 @@ def test_create_analysis_run_queues_lead_analysis(db_session) -> None:
     assert run.runtime_metadata["graph_name"] == "lead_analysis_graph"
     assert run.runtime_metadata["prompt_version"] == "heuristic_v1"
     assert run.runtime_metadata["round_index"] == 0
+    assert "llm_usage" not in run.runtime_metadata
 
 
 def test_process_agent_run_marks_failed_for_unsupported_run_type(db_session) -> None:
@@ -133,6 +134,13 @@ def test_process_product_learning_run_updates_same_profile(db_session) -> None:
     assert refreshed_run.runtime_metadata["llm_provider"] == "tencent_tokenhub"
     assert refreshed_run.runtime_metadata["llm_model"] == "minimax-m2.5"
     assert refreshed_run.runtime_metadata["round_index"] == 0
+    assert refreshed_run.runtime_metadata["llm_usage"] == {
+        "prompt_tokens": 40,
+        "completion_tokens": 88,
+        "total_tokens": 128,
+        "cached_tokens": 12,
+        "reasoning_tokens": 0,
+    }
     assert refreshed_profile.version == 2
     assert refreshed_profile.target_customers
     assert refreshed_profile.typical_use_cases
@@ -169,6 +177,7 @@ def test_process_product_learning_run_marks_failed_for_invalid_llm_json(
     refreshed_run = services.get_agent_run_or_404(db_session, created.current_run.id)
     assert refreshed_run.status == "failed"
     assert refreshed_run.runtime_metadata["error_type"] == "ValueError"
+    assert "llm_usage" not in refreshed_run.runtime_metadata
     assert "product_learning_llm_json_object_not_found" in str(
         refreshed_run.error_message
     )

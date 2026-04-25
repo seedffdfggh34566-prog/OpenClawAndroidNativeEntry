@@ -326,6 +326,8 @@ queued → running → succeeded | failed | cancelled
 - 错误与时序：`started_at`、`ended_at`、`error_message`
 - runtime 元信息：`runtime_provider`、`runtime_metadata`
 
+`runtime_metadata` 可包含 provider、graph、trace、prompt version、round index，以及 product learning LLM 成功路径的非敏感 token usage 统计。
+
 ### 读取与产出
 
 - 由产品后端创建

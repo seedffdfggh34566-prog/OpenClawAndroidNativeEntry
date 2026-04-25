@@ -111,6 +111,7 @@ class AgentRunPayload(BaseModel):
     started_at: datetime | None
     ended_at: datetime | None
     error_message: str | None
+    runtime_metadata: dict[str, Any]
 
 
 class AnalysisRunCreateResponse(BaseModel):

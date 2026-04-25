@@ -82,6 +82,10 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertEqual(run_detail.status_code, 200)
         run_payload = run_detail.json()
         self.assertEqual(run_payload["agent_run"]["status"], "succeeded")
+        runtime_metadata = run_payload["agent_run"]["runtime_metadata"]
+        self.assertEqual(runtime_metadata["llm_provider"], "tencent_tokenhub")
+        self.assertEqual(runtime_metadata["llm_model"], "minimax-m2.5")
+        self.assertEqual(runtime_metadata["llm_usage"]["total_tokens"], 128)
         self.assertEqual(
             run_payload["result_summary"]["product_profile_id"],
             product_profile_id,

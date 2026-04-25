@@ -39,6 +39,17 @@ def _build_runtime_metadata(run_type: str, *, round_index: int = 0) -> dict[str,
     return DEFAULT_RUNTIME_PROVIDER.runtime_metadata(run_type, round_index=round_index)
 
 
+def _merge_runtime_metadata(
+    agent_run: models.AgentRun,
+    runtime_metadata: dict[str, object],
+) -> None:
+    if not runtime_metadata:
+        return
+    merged = dict(agent_run.runtime_metadata or {})
+    merged.update(runtime_metadata)
+    agent_run.runtime_metadata = merged
+
+
 def _product_learning_round_index(
     session: Session,
     product_profile_id: str,
@@ -439,10 +450,12 @@ def _process_product_learning(
     )
     product_profile = get_product_profile_or_404(session, str(profile_ref["object_id"]))
 
-    draft = runtime_provider.generate_product_learning_draft(
+    draft_result = runtime_provider.generate_product_learning_draft(
         product_profile,
         run_id=agent_run.id,
     )
+    draft = draft_result.draft
+    _merge_runtime_metadata(agent_run, draft_result.runtime_metadata)
     product_profile.target_customers = _prefer_existing_list(
         product_profile.target_customers,
         draft.target_customers,

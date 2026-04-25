@@ -29,7 +29,13 @@ def _mock_product_learning_completion(*args, **kwargs) -> TokenHubCompletion:
             },
             ensure_ascii=False,
         ),
-        usage={"total_tokens": 128},
+        usage={
+            "prompt_tokens": 40,
+            "completion_tokens": 88,
+            "total_tokens": 128,
+            "prompt_tokens_details": {"cached_tokens": 12},
+            "completion_tokens_details": {"reasoning_tokens": 0},
+        },
     )
 
 

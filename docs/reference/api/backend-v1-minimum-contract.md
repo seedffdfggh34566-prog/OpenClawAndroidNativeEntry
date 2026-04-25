@@ -133,12 +133,18 @@ runtime 负责：
 - `started_at`
 - `ended_at`
 - `error_message`
+- `runtime_metadata`
 
 支持的 `run_type`：
 
 - `product_learning`
 - `lead_analysis`
 - `report_generation`
+
+说明：
+
+- `runtime_metadata` 是向后兼容的运行元信息字段，用于暴露 provider、graph、trace、prompt version、round index 与非敏感 usage。
+- product learning LLM 成功路径可包含 `llm_usage`，仅记录 token 统计，不记录 prompt、用户输入全文、API key 或 secret。
 
 ## 4.3 `ProductProfileSummary`
 
@@ -571,7 +577,17 @@ Android 轮询状态页和 History 页应优先依赖该接口。
     "output_refs": [],
     "started_at": "2026-04-21T10:15:00Z",
     "ended_at": null,
-    "error_message": null
+    "error_message": null,
+    "runtime_metadata": {
+      "provider": "langgraph",
+      "mode": "backend_direct_langgraph",
+      "phase": "phase1",
+      "graph_name": "lead_analysis_graph",
+      "run_type": "lead_analysis",
+      "trace_id": "trace_001",
+      "prompt_version": "heuristic_v1",
+      "round_index": 0
+    }
   },
   "result_summary": null
 }
@@ -603,12 +619,49 @@ Android 轮询状态页和 History 页应优先依赖该接口。
     ],
     "started_at": "2026-04-21T10:15:00Z",
     "ended_at": "2026-04-21T10:18:00Z",
-    "error_message": null
+    "error_message": null,
+    "runtime_metadata": {
+      "provider": "langgraph",
+      "mode": "backend_direct_langgraph",
+      "phase": "phase1",
+      "graph_name": "lead_analysis_graph",
+      "run_type": "lead_analysis",
+      "trace_id": "trace_001",
+      "prompt_version": "heuristic_v1",
+      "round_index": 0
+    }
   },
   "result_summary": {
     "lead_analysis_result_id": "lar_001",
     "status": "published",
     "updated_at": "2026-04-21T10:18:00Z"
+  }
+}
+```
+
+product learning LLM run 成功时，`runtime_metadata` 可包含 `llm_usage`：
+
+```json
+{
+  "runtime_metadata": {
+    "provider": "langgraph",
+    "mode": "backend_direct_langgraph",
+    "phase": "llm_phase1",
+    "graph_name": "product_learning_graph",
+    "run_type": "product_learning",
+    "trace_id": "trace_002",
+    "prompt_version": "product_learning_llm_v1",
+    "round_index": 0,
+    "llm_provider": "tencent_tokenhub",
+    "llm_model": "minimax-m2.5",
+    "llm_base_url": "https://tokenhub.tencentmaas.com/v1",
+    "llm_usage": {
+      "prompt_tokens": 40,
+      "completion_tokens": 88,
+      "total_tokens": 128,
+      "cached_tokens": 12,
+      "reasoning_tokens": 0
+    }
   }
 }
 ```

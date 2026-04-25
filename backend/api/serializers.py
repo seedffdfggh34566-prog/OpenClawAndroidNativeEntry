@@ -53,6 +53,7 @@ def agent_run_payload(model: models.AgentRun) -> schemas.AgentRunPayload:
         started_at=model.started_at,
         ended_at=model.ended_at,
         error_message=model.error_message,
+        runtime_metadata=dict(model.runtime_metadata or {}),
     )
 
 

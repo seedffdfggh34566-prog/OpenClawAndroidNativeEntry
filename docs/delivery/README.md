@@ -21,7 +21,7 @@
 
 当前项目尚未完成：
 
-- 扩大真实业务样例库 / runtime usage metadata follow-up
+- 扩大真实业务样例库
 
 因此，当前阶段的重点是：
 
@@ -51,7 +51,8 @@
 - 完整 V1 真机端到端 smoke 已完成，当前主闭环从空库到报告可复看已跑通
 - Product learning 真实样例评估 / prompt tuning follow-up 已完成，当前 `minimax-m2.5 + product_learning_llm_v1` 在 8 个样例中未触发 prompt tuning
 - ProductLearning 页面表达 polish 与真实中文 create / enrich smoke 已完成
-- 后续应由规划层决定是否进入扩大真实业务样例库、runtime usage metadata follow-up，或更细的 ProductLearning 交互 polish
+- runtime usage metadata follow-up 已完成，后续真实样例评估可记录 token usage
+- 后续应由规划层决定是否进入扩大真实业务样例库，或更细的 ProductLearning 交互 polish
 
 ---
 
@@ -88,6 +89,7 @@
 | `task_v1_product_learning_eval_prompt_tuning_followup.md` | 扩展真实 product learning 样例评估并按阈值决定是否调 prompt | `done` |
 | `task_v1_product_learning_ui_polish_real_chinese_smoke.md` | 收口 ProductLearning 页面表达并执行真实中文 smoke | `done` |
 | `task_android_chinese_input_device_preflight.md` | 一次性准备 jianglab 真机中文输入测试 IME | `done` |
+| `task_v1_runtime_usage_metadata_followup.md` | 补齐 product learning LLM token usage metadata 与 API 可见性 | `done` |
 
 ---
 

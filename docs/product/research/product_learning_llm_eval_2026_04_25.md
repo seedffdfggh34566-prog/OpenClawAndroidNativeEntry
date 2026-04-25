@@ -22,6 +22,7 @@
 - 当前 API response / AgentRun detail 未暴露 token usage。
 - `TokenHubClient` 内部可获得 usage，但当前服务层未写入 runtime metadata 或 public API。
 - 因此本次 `token_usage` 统一记录为 `not_exposed`。
+- 2026-04-25 后续的 `task_v1_runtime_usage_metadata_followup.md` 已补齐该缺口；本表中的 `not_exposed` 表示当次历史评估状态，不代表当前长期 contract。
 
 ---
 

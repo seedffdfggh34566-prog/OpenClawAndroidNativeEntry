@@ -115,6 +115,11 @@ class ProductLearningDraft(BaseModel):
     confidence_score: int = 0
 
 
+class ProductLearningDraftResult(BaseModel):
+    draft: ProductLearningDraft
+    runtime_metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class LeadAnalysisGraphState(TypedDict, total=False):
     run_id: str
     run_type: str

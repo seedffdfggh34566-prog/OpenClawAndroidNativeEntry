@@ -89,9 +89,24 @@
 
 - `error_type`
 
+### 3.6 Product Learning LLM usage
+
+product learning 使用真实 LLM 成功返回时，应在 `AgentRun.runtime_metadata.llm_usage` 中记录非敏感 token 统计：
+
+- `prompt_tokens`
+- `completion_tokens`
+- `total_tokens`
+- `cached_tokens`，如供应商返回
+- `reasoning_tokens`，如供应商返回
+
+不记录：
+
+- prompt 原文
+- 用户输入全文
+- API key 或其他 secret
+
 当前不强制补：
 
-- token usage
 - model latency breakdown
 - tool call list
 - full prompt replay

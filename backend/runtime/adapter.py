@@ -13,7 +13,7 @@ from backend.runtime.types import (
     AnalysisReportDraft,
     LeadAnalysisDraft,
     LeadAnalysisResultRuntimePayload,
-    ProductLearningDraft,
+    ProductLearningDraftResult,
     ProductProfileRuntimePayload,
 )
 
@@ -56,7 +56,7 @@ class RuntimeProvider(ABC):
         profile: models.ProductProfile,
         *,
         run_id: str,
-    ) -> ProductLearningDraft:
+    ) -> ProductLearningDraftResult:
         raise NotImplementedError
 
 
@@ -132,7 +132,7 @@ class LangGraphRuntimeProvider(RuntimeProvider):
         profile: models.ProductProfile,
         *,
         run_id: str,
-    ) -> ProductLearningDraft:
+    ) -> ProductLearningDraftResult:
         return invoke_product_learning_graph(
             run_id=run_id,
             product_profile_payload=ProductProfileRuntimePayload.from_model(profile),

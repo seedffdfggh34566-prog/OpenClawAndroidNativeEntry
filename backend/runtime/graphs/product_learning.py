@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 
@@ -10,6 +11,7 @@ from backend.api.product_learning import DEFAULT_DELIVERY_MODEL
 from backend.runtime.llm_client import TokenHubClient
 from backend.runtime.types import (
     ProductLearningDraft,
+    ProductLearningDraftResult,
     ProductLearningGraphState,
     ProductProfileRuntimePayload,
 )
@@ -127,6 +129,44 @@ def _parse_product_learning_json(content: str) -> dict[str, object]:
     return parsed
 
 
+def _token_count(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value >= 0 else None
+    if isinstance(value, float) and value.is_integer():
+        count = int(value)
+        return count if count >= 0 else None
+    return None
+
+
+def _normalize_llm_usage(usage: dict[str, Any]) -> dict[str, int]:
+    normalized: dict[str, int] = {}
+    for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+        count = _token_count(usage.get(key))
+        if count is not None:
+            normalized[key] = count
+
+    prompt_details = usage.get("prompt_tokens_details")
+    if isinstance(prompt_details, dict):
+        cached_tokens = _token_count(prompt_details.get("cached_tokens"))
+        if cached_tokens is not None:
+            normalized["cached_tokens"] = cached_tokens
+
+    completion_details = usage.get("completion_tokens_details")
+    if isinstance(completion_details, dict):
+        reasoning_tokens = _token_count(completion_details.get("reasoning_tokens"))
+        if reasoning_tokens is not None:
+            normalized["reasoning_tokens"] = reasoning_tokens
+
+    for key in ("cached_tokens", "reasoning_tokens"):
+        count = _token_count(usage.get(key))
+        if count is not None:
+            normalized[key] = count
+
+    return normalized
+
+
 def generate_product_learning_draft(
     state: ProductLearningGraphState,
 ) -> ProductLearningGraphState:
@@ -142,7 +182,11 @@ def generate_product_learning_draft(
     draft = ProductLearningDraft.model_validate(
         _parse_product_learning_json(completion.content)
     )
-    return {"draft_output": draft}
+    llm_usage = _normalize_llm_usage(completion.usage)
+    return {
+        "draft_output": draft,
+        "runtime_metadata": {"llm_usage": llm_usage} if llm_usage else {},
+    }
 
 
 def validate_product_learning_draft(
@@ -155,7 +199,10 @@ def validate_product_learning_draft(
 def return_draft_payload(
     state: ProductLearningGraphState,
 ) -> ProductLearningGraphState:
-    return {"draft_output": state["draft_output"]}
+    return {
+        "draft_output": state["draft_output"],
+        "runtime_metadata": state.get("runtime_metadata", {}),
+    }
 
 
 _builder = StateGraph(ProductLearningGraphState)
@@ -177,7 +224,7 @@ def invoke_product_learning_graph(
     *,
     run_id: str,
     product_profile_payload: ProductProfileRuntimePayload,
-) -> ProductLearningDraft:
+) -> ProductLearningDraftResult:
     state = PRODUCT_LEARNING_GRAPH.invoke(
         {
             "run_id": run_id,
@@ -186,4 +233,7 @@ def invoke_product_learning_graph(
             "product_profile_payload": product_profile_payload,
         }
     )
-    return ProductLearningDraft.model_validate(state["draft_output"])
+    return ProductLearningDraftResult(
+        draft=ProductLearningDraft.model_validate(state["draft_output"]),
+        runtime_metadata=dict(state.get("runtime_metadata", {})),
+    )

@@ -21,7 +21,6 @@
 
 当前项目尚未完成：
 
-- ProductLearning 页面表达 polish
 - 扩大真实业务样例库 / runtime usage metadata follow-up
 
 因此，当前阶段的重点是：
@@ -51,7 +50,8 @@
 - 首页 / 产品画像确认页 / 结果页 / 报告页的 V1 销售闭环产品表达收口已完成
 - 完整 V1 真机端到端 smoke 已完成，当前主闭环从空库到报告可复看已跑通
 - Product learning 真实样例评估 / prompt tuning follow-up 已完成，当前 `minimax-m2.5 + product_learning_llm_v1` 在 8 个样例中未触发 prompt tuning
-- 后续应由规划层决定是否进入 ProductLearning 页面表达 polish、扩大真实业务样例库，或拆 runtime usage metadata follow-up
+- ProductLearning 页面表达 polish 与真实中文 create / enrich smoke 已完成
+- 后续应由规划层决定是否进入扩大真实业务样例库、runtime usage metadata follow-up，或更细的 ProductLearning 交互 polish
 
 ---
 
@@ -86,7 +86,7 @@
 | `task_v1_full_sales_flow_device_smoke.md` | 真机从空库验证 V1 主闭环完整跑通 | `done` |
 | `task_android_chinese_input_smoke_mechanism.md` | 记录 Android 真机中文自动化输入机制与测试 IME 方案 | `done` |
 | `task_v1_product_learning_eval_prompt_tuning_followup.md` | 扩展真实 product learning 样例评估并按阈值决定是否调 prompt | `done` |
-| `task_v1_product_learning_ui_polish_real_chinese_smoke.md` | 收口 ProductLearning 页面表达并执行真实中文 smoke | `in_progress` |
+| `task_v1_product_learning_ui_polish_real_chinese_smoke.md` | 收口 ProductLearning 页面表达并执行真实中文 smoke | `done` |
 | `task_android_chinese_input_device_preflight.md` | 一次性准备 jianglab 真机中文输入测试 IME | `done` |
 
 ---

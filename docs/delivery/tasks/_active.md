@@ -46,6 +46,7 @@
 - `task_v1_product_learning_eval_prompt_tuning_followup.md`
 - `task_android_chinese_input_test_ime_device_smoke.md`
 - `task_android_chinese_input_device_preflight.md`
+- `task_v1_product_learning_ui_polish_real_chinese_smoke.md`
 
 这些任务当前应视为：
 
@@ -55,7 +56,7 @@
 
 ### Current task
 
-- `task_v1_product_learning_ui_polish_real_chinese_smoke.md`
+- 暂无
 
 ### Next queued tasks
 
@@ -63,6 +64,7 @@
 
 最近完成：
 
+- `task_v1_product_learning_ui_polish_real_chinese_smoke.md`
 - `task_android_chinese_input_device_preflight.md`
 - `task_android_chinese_input_test_ime_device_smoke.md`
 - `task_v1_product_learning_eval_prompt_tuning_followup.md`
@@ -98,10 +100,11 @@
 - 真机完整 enrich smoke 已完成，并修复了真实 LLM 耗时下 Android enrich 状态显示滞后的问题。
 - 首页 / 产品画像确认页 / 结果页 / 报告页的 V1 销售闭环产品表达收口任务已完成。
 - 完整 V1 真机端到端 smoke 已完成，主闭环从空库到报告可复看已跑通。
-- Android 中文输入 smoke 机制已验证：当前 Android 16 真机可临时使用 `senzhk/ADBKeyBoard` v2.5-dev，通过 `ADB_INPUT_B64` 注入中文，结束后恢复原输入法并卸载测试 IME。
+- Android 中文输入 smoke 机制已验证：当前 Android 16 真机已保留 `com.android.adbkeyboard`，后续可通过 `ADB_INPUT_B64` 注入中文，结束后恢复原输入法。
 - Product learning 真实样例评估 / prompt tuning follow-up 已完成，8 个真实样例均稳定通过，未触发 prompt tuning。
 - 中文输入设备预检已完成：当前真机已保留 `com.android.adbkeyboard`，日常 smoke 只切换输入法，不再重复安装 / 卸载。
-- 当前恢复 ProductLearning 真实中文 create / enrich smoke；完成后再由规划层决定是否进入 runtime usage metadata follow-up 或扩大真实业务样例库。
+- ProductLearning UI polish 与真实中文 create / enrich smoke 已完成，`工厂设备巡检助手` 样例在真机上跑通 create 和 enrich，最终 ProductProfile 进入 `ready_for_confirmation`。
+- 当前没有已排定的下一项 implementation task；下一步应由规划层决定是否进入 runtime usage metadata follow-up、扩大真实业务样例库或更细的 ProductLearning 交互 polish。
 
 ### Auto-continue allowed when
 

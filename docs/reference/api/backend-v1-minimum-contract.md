@@ -693,7 +693,7 @@ Android 分析结果页应依赖该接口作为主要读取入口。
     "product_profile_id": "pp_001",
     "created_by_agent_run_id": "run_001",
     "title": "第一版获客分析结果",
-    "analysis_scope": "v1_stub",
+    "analysis_scope": "基于已确认产品画像的获客方向分析",
     "summary": "基于 AI 销售助手 V1 的最小占位获客分析结果...",
     "priority_industries": ["企业服务", "教育培训"],
     "priority_customer_types": ["中小企业老板", "销售负责人"],

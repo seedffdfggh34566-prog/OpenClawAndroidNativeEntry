@@ -161,7 +161,7 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertEqual(payload["id"], lead_analysis_result_id)
         self.assertEqual(payload["product_profile_id"], product_profile_id)
         self.assertIn("summary", payload)
-        self.assertEqual(payload["analysis_scope"], "v1_langgraph_phase1")
+        self.assertEqual(payload["analysis_scope"], "基于已确认产品画像的获客方向分析")
         self.assertIn("priority_industries", payload)
         self.assertIsInstance(payload["priority_industries"], list)
         self.assertIn("priority_customer_types", payload)

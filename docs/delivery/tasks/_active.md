@@ -48,6 +48,7 @@
 - `task_android_chinese_input_device_preflight.md`
 - `task_v1_product_learning_ui_polish_real_chinese_smoke.md`
 - `task_v1_runtime_usage_metadata_followup.md`
+- `task_v1_real_business_sample_library_eval.md`
 
 这些任务当前应视为：
 
@@ -65,6 +66,7 @@
 
 最近完成：
 
+- `task_v1_real_business_sample_library_eval.md`
 - `task_v1_runtime_usage_metadata_followup.md`
 - `task_v1_product_learning_ui_polish_real_chinese_smoke.md`
 - `task_android_chinese_input_device_preflight.md`
@@ -107,7 +109,8 @@
 - 中文输入设备预检已完成：当前真机已保留 `com.android.adbkeyboard`，日常 smoke 只切换输入法，不再重复安装 / 卸载。
 - ProductLearning UI polish 与真实中文 create / enrich smoke 已完成，`工厂设备巡检助手` 样例在真机上跑通 create 和 enrich，最终 ProductProfile 进入 `ready_for_confirmation`。
 - runtime usage metadata follow-up 已完成，product learning 真实 LLM token usage 已写入 `AgentRun.runtime_metadata.llm_usage` 并通过 run detail 可见。
-- 当前没有已排定的下一项 implementation task；下一步建议由规划层决定是否进入扩大真实业务样例库或更细的 ProductLearning 交互 polish。
+- 真实业务样例库扩展与全链路质量评估已完成，8 个真实中文样例均跑通完整 backend API 链路，并修复了 lead/report 用户可见工程表述泄漏。
+- 当前没有已排定的下一项 implementation task；下一步建议由规划层决定是否进入 lead_analysis / report_generation 质量提升，或更细的 ProductLearning 交互 polish。
 
 ### Auto-continue allowed when
 

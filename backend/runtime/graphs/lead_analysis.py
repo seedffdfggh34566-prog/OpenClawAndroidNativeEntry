@@ -118,7 +118,7 @@ def generate_lead_analysis_draft(
         [
             f"优先从 {industries[0]} 切入，因为它更容易直接验证“{primary_pain}”这一购买动因。",
             f"优先面对 {customer_types[0]}，因为该角色更容易感知“{primary_advantage}”带来的价值。",
-            "Phase 1 已切到 LangGraph 编排，后续可继续接入外部搜索与更丰富证据。",
+            "后续可结合更多真实客户反馈和外部市场资料继续校准优先级。",
         ]
     )
     recommendations = _compact(
@@ -136,14 +136,14 @@ def generate_lead_analysis_draft(
     )
     limitations = _compact(
         [
-            "当前 Phase 1 以 LangGraph direct runtime 替换 stub，尚未引入外部检索和长期记忆。",
+            "当前分析主要基于已确认的产品画像，尚未接入外部检索和长期客户反馈。",
             "分析结果仍依赖现有 ProductProfile 的完整度和当前已知上下文。",
         ]
     )
 
     draft = LeadAnalysisDraft(
         title=f"{profile.name} 获客分析结果",
-        analysis_scope="v1_langgraph_phase1",
+        analysis_scope="基于已确认产品画像的获客方向分析",
         summary=(
             f"基于 {profile.name} 的当前画像，优先建议从 {industries[0]} 的 "
             f"{customer_types[0]} 入手，围绕“{primary_pain}”组织第一轮销售表达。"

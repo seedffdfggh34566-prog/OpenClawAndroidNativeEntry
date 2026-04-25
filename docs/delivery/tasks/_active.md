@@ -58,6 +58,7 @@
 - `task_v1_demo_release_candidate_hardening.md`
 - `task_v1_report_readability_postprocess_followup.md`
 - `task_v1_developer_llm_run_inspector.md`
+- `task_v1_closeout.md`
 
 这些任务当前应视为：
 
@@ -75,6 +76,7 @@
 
 最近完成：
 
+- `task_v1_closeout.md`
 - `task_v1_demo_runbook_and_evidence_pack.md`
 - `task_v1_extended_business_eval_round2.md`
 - `task_v1_developer_llm_run_inspector.md`
@@ -139,6 +141,7 @@
 - developer LLM run inspector 已完成，当前可用 `/dev/llm-inspector` 查看 ProductLearning / LeadAnalysis 的本地 LLM trace。下一项恢复为 16 个真实业务样例 round 2 eval。
 - extended business eval round2 已完成，16 个真实中文业务样例全链路通过；过程中修复了 LeadAnalysis LLM 尾部 malformed JSON 的最小解析兼容问题。下一项进入 demo runbook and evidence pack。
 - demo runbook and evidence pack 已完成，V1 真机中文 demo 路径、开发者复现 runbook 和 evidence pack 已收口。当前没有下一项已排定 implementation task。
+- V1 closeout 已完成，V1 正式冻结为 demo-ready release candidate / learning milestone，不进入 MVP；当前不定义 V2，不创建 V2 task 队列，下一阶段需要规划层重新决定。
 
 ### Auto-continue allowed when
 

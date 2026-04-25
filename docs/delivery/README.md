@@ -25,7 +25,7 @@
 
 因此，当前阶段的重点是：
 
-> 保持 V1 demo 链路可验证，并按明确任务继续做小闭环质量提升。
+> V1 已收口为 demo-ready release candidate / learning milestone。下一阶段方向尚未定义，执行层不应继续自动追加 V1 功能或创建 V2 队列。
 
 ---
 
@@ -64,6 +64,7 @@
 - developer LLM run inspector 已完成
 - extended business eval round2 已完成，16 个真实中文业务样例全链路通过
 - demo runbook and evidence pack 已完成，V1 真机中文 demo 路径和证据包已收口
+- V1 closeout 已完成，V1 不进入 MVP，下一阶段待规划层重新定义
 
 ---
 
@@ -113,6 +114,7 @@
 | `task_v1_developer_llm_run_inspector.md` | 提供开发者本地 LLM run inspector 以支持样例评估 | `done` |
 | `task_v1_extended_business_eval_round2.md` | 用 16 个真实中文业务样例评估 RC 质量、稳定性和 token 成本 | `done` |
 | `task_v1_demo_runbook_and_evidence_pack.md` | 固化可重复 demo 流程并收集真机证据包 | `done` |
+| `task_v1_closeout.md` | 将 V1 收口为 demo baseline / learning milestone，并停止继续追加 V1 功能 | `done` |
 
 ---
 

@@ -155,16 +155,20 @@ docs/
 
 当前 product learning LLM、Android iteration UI、真机 enrich smoke、Android 销售闭环产品表达收口、完整 V1 真机端到端 smoke、product learning 真实样例评估、runtime usage metadata follow-up、真实业务样例库全链路评估、lead_analysis LLM phase1、V1 readiness freeze、report_generation polish、真机 demo smoke after LLM lead analysis、latency/fallback conditional follow-up、developer LLM run inspector 与 extended business eval round2 均已完成或收口。
 
-当前已排定的 implementation task 已全部收口。
+当前 V1 已正式收口为 demo-ready release candidate / learning milestone，不进入 MVP。
 
 最近完成：
 
+- `task_v1_closeout.md`
 - `task_v1_demo_runbook_and_evidence_pack.md`
 
-当前下一步需要回到规划层重新排定，例如决定是否进入对外 demo 准备、latency / fallback 正式实现、report_generation LLM phase1，或继续扩大真实业务样例库。
+当前已排定的 implementation task 已全部收口。下一阶段方向尚未定义，不应自动创建 V2 task 或继续追加 V1 功能。
+
+下一步需要回到规划层重新回答：是否继续销售助手方向、是否以 MVP 为目标、是否需要正式部署 / 多用户 / fallback / 成本治理，以及是否升级 report_generation。
 
 当前补充建议阅读：
 
 - `docs/delivery/tasks/_active.md`
 - `docs/delivery/README.md`
+- `docs/product/research/v1_closeout_2026_04_25.md`
 - `docs/delivery/handoffs/`

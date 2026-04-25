@@ -5,7 +5,8 @@ import logging
 from time import perf_counter
 from uuid import uuid4
 
-from fastapi import BackgroundTasks, Depends, FastAPI
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from backend.api import serializers, services
@@ -30,8 +31,76 @@ from backend.api.schemas import (
     ProductProfileEnrichResponse,
     ReportDetailResponse,
 )
+from backend.runtime.llm_trace import get_llm_trace, list_llm_trace_summaries
 
 logger = logging.getLogger(__name__)
+
+
+def _dev_llm_inspector_html() -> str:
+    return """<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenClaw LLM Run Inspector</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 24px; color: #1f2937; background: #f8fafc; }
+    main { display: grid; grid-template-columns: minmax(280px, 420px) minmax(0, 1fr); gap: 16px; }
+    button { display: block; width: 100%; padding: 10px 12px; margin: 0 0 8px; text-align: left; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer; }
+    button:hover { border-color: #2563eb; }
+    pre { padding: 16px; overflow: auto; background: #0f172a; color: #e2e8f0; border-radius: 6px; min-height: 480px; }
+    .meta { color: #64748b; font-size: 13px; margin: 4px 0 0; }
+    .toolbar { margin-bottom: 16px; display: flex; gap: 8px; align-items: center; }
+    .toolbar button { width: auto; margin: 0; }
+  </style>
+</head>
+<body>
+  <h1>OpenClaw LLM Run Inspector</h1>
+  <div class="toolbar">
+    <button type="button" onclick="loadRuns()">Refresh</button>
+    <span class="meta">Dev-only local trace viewer</span>
+  </div>
+  <main>
+    <section>
+      <h2>Runs</h2>
+      <div id="runs">Loading...</div>
+    </section>
+    <section>
+      <h2>Detail</h2>
+      <pre id="detail">Select a run.</pre>
+    </section>
+  </main>
+  <script>
+    async function loadRuns() {
+      const container = document.getElementById("runs");
+      container.textContent = "Loading...";
+      const response = await fetch("/dev/llm-runs");
+      const payload = await response.json();
+      const runs = payload.llm_runs || [];
+      if (!runs.length) {
+        container.textContent = "No traces found.";
+        return;
+      }
+      container.innerHTML = "";
+      for (const run of runs) {
+        const button = document.createElement("button");
+        const tokens = run.total_tokens == null ? "-" : run.total_tokens;
+        button.innerHTML = `<strong>${run.run_type}</strong> ${run.run_id}<div class="meta">${run.parse_status} - ${run.model} - ${tokens} tokens - ${run.duration_ms} ms</div>`;
+        button.onclick = () => loadDetail(run.run_id);
+        container.appendChild(button);
+      }
+    }
+
+    async function loadDetail(runId) {
+      const response = await fetch(`/dev/llm-runs/${encodeURIComponent(runId)}`);
+      const payload = await response.json();
+      document.getElementById("detail").textContent = JSON.stringify(payload, null, 2);
+    }
+
+    loadRuns();
+  </script>
+</body>
+</html>"""
 
 
 def create_app() -> FastAPI:
@@ -189,6 +258,30 @@ def create_app() -> FastAPI:
         session: Session = Depends(get_db_session),
     ) -> HistoryResponse:
         return services.build_history(session)
+
+    def require_dev_llm_trace_enabled():
+        request_settings = get_settings()
+        if not request_settings.dev_llm_trace_enabled:
+            raise HTTPException(status_code=404, detail="dev_llm_trace_not_enabled")
+        return request_settings
+
+    @app.get("/dev/llm-runs")
+    def list_dev_llm_runs() -> dict[str, object]:
+        request_settings = require_dev_llm_trace_enabled()
+        return {"llm_runs": list_llm_trace_summaries(request_settings)}
+
+    @app.get("/dev/llm-runs/{run_id}")
+    def get_dev_llm_run(run_id: str) -> dict[str, object]:
+        request_settings = require_dev_llm_trace_enabled()
+        trace = get_llm_trace(request_settings, run_id)
+        if trace is None:
+            raise HTTPException(status_code=404, detail="llm_trace_not_found")
+        return trace
+
+    @app.get("/dev/llm-inspector", response_class=HTMLResponse)
+    def get_dev_llm_inspector() -> HTMLResponse:
+        require_dev_llm_trace_enabled()
+        return HTMLResponse(_dev_llm_inspector_html())
 
     return app
 

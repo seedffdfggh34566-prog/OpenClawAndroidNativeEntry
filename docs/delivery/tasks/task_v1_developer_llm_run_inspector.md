@@ -6,7 +6,7 @@
 
 - 任务名称：V1 Developer LLM Run Inspector
 - 建议路径：`docs/delivery/tasks/task_v1_developer_llm_run_inspector.md`
-- 当前状态：`planned`
+- 当前状态：`done`
 - 优先级：P0
 
 本任务用于在 `task_v1_extended_business_eval_round2.md` 前补齐一个开发者用的最小 LLM 观察面板 / run inspector，让人类开发者能看清每个样例在 ProductLearning 和 LeadAnalysis 环节的 LLM 调用结果、解析状态、usage 和耗时。
@@ -112,3 +112,46 @@ Out of Scope：
 
 1. `task_v1_extended_business_eval_round2.md`
 2. `task_v1_demo_runbook_and_evidence_pack.md`
+
+---
+
+## 8. 实际产出
+
+- 新增默认关闭的开发者 LLM trace 配置：
+  - `OPENCLAW_BACKEND_DEV_LLM_TRACE_ENABLED`
+  - `OPENCLAW_BACKEND_DEV_LLM_TRACE_DIR`
+- 新增本地 JSON trace 写入能力，覆盖：
+  - `product_learning`
+  - `lead_analysis`
+  - 成功输出
+  - JSON 解析失败
+  - typed draft 校验失败
+  - TokenHub request / timeout failure
+- 新增 dev-only 只读接口：
+  - `GET /dev/llm-runs`
+  - `GET /dev/llm-runs/{run_id}`
+  - `GET /dev/llm-inspector`
+- 新增开发者 runbook：`docs/how-to/debug/developer-llm-run-inspector.md`。
+- 未改 Android、数据库 schema、正式 V1 public API contract 或 `AgentRun` 状态模型。
+- raw LLM content 未写入 `AgentRun.runtime_metadata`，只在显式开启 trace 时写入本地 trace 文件。
+
+---
+
+## 9. 验证
+
+- `backend/.venv/bin/python -m pytest backend/tests/test_dev_llm_inspector.py`
+  - 通过，5 passed。
+- `backend/.venv/bin/python -m pytest backend/tests`
+  - 通过，45 passed。
+- backend startup smoke with dev trace enabled
+  - `/health` 返回 `{"status":"ok"}`。
+  - `/dev/llm-runs` 返回空列表。
+  - `/dev/llm-inspector` 返回 HTTP 200。
+- `git diff --check`
+  - 通过。
+
+---
+
+## 10. Handoff
+
+见 `docs/delivery/handoffs/handoff_2026_04_25_developer_llm_run_inspector.md`。

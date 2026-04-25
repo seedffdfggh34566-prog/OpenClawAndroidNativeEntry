@@ -88,6 +88,8 @@ def backend_env(tmp_path, monkeypatch) -> Generator[str, None, None]:
     database_url = f"sqlite:///{tmp_path / 'test.db'}"
     monkeypatch.setenv("OPENCLAW_BACKEND_DATABASE_URL", database_url)
     monkeypatch.delenv("OPENCLAW_BACKEND_DATABASE_PATH", raising=False)
+    monkeypatch.delenv("OPENCLAW_BACKEND_DEV_LLM_TRACE_ENABLED", raising=False)
+    monkeypatch.delenv("OPENCLAW_BACKEND_DEV_LLM_TRACE_DIR", raising=False)
     monkeypatch.setattr(
         "backend.runtime.llm_client.TokenHubClient.complete",
         _mock_tokenhub_completion,

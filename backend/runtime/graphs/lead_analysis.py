@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import re
+from time import perf_counter
 from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 
 from backend.api.config import get_settings
 from backend.runtime.llm_client import TokenHubClient
+from backend.runtime.llm_trace import record_llm_trace, utc_now_iso
 from backend.runtime.types import (
     LeadAnalysisDraft,
     LeadAnalysisDraftResult,
@@ -252,14 +254,63 @@ def generate_lead_analysis_draft(
     settings = get_settings()
     profile = state["product_profile_payload"]
     context = state["normalized_context"]
+    run_id = state["run_id"]
+    run_type = "lead_analysis"
+    prompt_version = "lead_analysis_llm_v1"
     client = TokenHubClient(
         api_key=settings.llm_api_key,
         base_url=settings.llm_base_url,
         model=settings.llm_model,
         timeout_seconds=max(settings.llm_timeout_seconds, 60.0),
     )
-    completion = client.complete(_build_lead_analysis_messages(profile, context))
-    draft = LeadAnalysisDraft.model_validate(_parse_lead_analysis_json(completion.content))
+    started_at = utc_now_iso()
+    started_perf = perf_counter()
+    raw_content: str | None = None
+    parsed_json: dict[str, Any] | None = None
+    usage: dict[str, Any] = {}
+    try:
+        completion = client.complete(_build_lead_analysis_messages(profile, context))
+        raw_content = completion.content
+        usage = completion.usage
+        parsed_json = _parse_lead_analysis_json(completion.content)
+        draft = LeadAnalysisDraft.model_validate(parsed_json)
+    except Exception as exc:  # noqa: BLE001
+        ended_at = utc_now_iso()
+        record_llm_trace(
+            settings,
+            run_id=run_id,
+            run_type=run_type,
+            provider=settings.llm_provider,
+            model=settings.llm_model,
+            prompt_version=prompt_version,
+            started_at=started_at,
+            ended_at=ended_at,
+            duration_ms=round((perf_counter() - started_perf) * 1000, 3),
+            raw_content=raw_content,
+            parsed_draft=parsed_json,
+            usage=usage,
+            parse_status="request_failed" if raw_content is None else "failed",
+            error_type=type(exc).__name__,
+            error_message=str(exc),
+        )
+        raise
+
+    ended_at = utc_now_iso()
+    record_llm_trace(
+        settings,
+        run_id=run_id,
+        run_type=run_type,
+        provider=settings.llm_provider,
+        model=settings.llm_model,
+        prompt_version=prompt_version,
+        started_at=started_at,
+        ended_at=ended_at,
+        duration_ms=round((perf_counter() - started_perf) * 1000, 3),
+        raw_content=raw_content,
+        parsed_draft=draft.model_dump(mode="json"),
+        usage=usage,
+        parse_status="succeeded",
+    )
     llm_usage = _normalize_llm_usage(completion.usage)
     return {
         "draft_output": draft,

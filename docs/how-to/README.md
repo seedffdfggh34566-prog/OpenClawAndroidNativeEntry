@@ -18,3 +18,4 @@
 - `operate/jianglab_codex_ops.md`
 - `operate/agent_skills_boundary_and_index.md`
 - `debug/android-chinese-input-smoke.md`
+- `debug/developer-llm-run-inspector.md`

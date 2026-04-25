@@ -22,7 +22,6 @@
 当前项目尚未完成：
 
 - 首页、结果页和报告页的最终产品表达收口
-- Android 端完整 backend 联通环境下的 product learning enrich 人工 smoke
 
 因此，当前阶段的重点是：
 
@@ -47,7 +46,8 @@
 - runtime observability / eval baseline 已冻结
 - product learning 已切到真实 LLM draft 生成
 - Android 产品学习页已补齐最小“继续补充一轮信息”交互
-- `lead_analysis` / `report_generation` 已完成 runtime Phase 1，后续应由规划层决定是否进入 UI polish、真机完整 enrich smoke 或 V1 表达收口任务
+- Android 端已完成真实 backend 联通环境下的 product learning enrich 真机 smoke
+- 后续应由规划层决定是否进入 UI polish、首页 / 结果页 / 报告页表达收口，或继续拆真实样例评估任务
 
 ---
 
@@ -77,6 +77,7 @@
 | `task_v1_runtime_observability_eval_baseline.md` | 冻结 runtime metadata、样例集与最小评估基线 | `done` |
 | `task_v1_product_learning_llm_phase1.md` | 将 heuristic product learning 切换到真实 LLM draft 生成 | `done` |
 | `task_v1_android_product_learning_iteration_ui.md` | 让 Android 学习页支持继续补充一轮信息 | `done` |
+| `task_v1_android_product_learning_enrich_device_smoke.md` | 真机跑通 Android product learning enrich 完整链路 | `done` |
 
 ---
 

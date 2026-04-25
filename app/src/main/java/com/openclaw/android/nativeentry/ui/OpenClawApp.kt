@@ -36,6 +36,7 @@ import com.openclaw.android.nativeentry.data.backend.BackendReadResult
 import com.openclaw.android.nativeentry.data.backend.HistoryResponseDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileCreateRequestDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichRequestDto
+import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichResponseDto
 import com.openclaw.android.nativeentry.data.backend.V1BackendClient
 import com.openclaw.android.nativeentry.navigation.OpenClawDestination
 import com.openclaw.android.nativeentry.navigation.OpenClawNavHost
@@ -62,7 +63,7 @@ import kotlinx.coroutines.launch
 
 private const val GatewayLaunchTimeoutMillis = 75_000L
 private const val GatewayLaunchPollIntervalMillis = 1_500L
-private const val AnalysisRunPollAttempts = 10
+private const val AnalysisRunPollAttempts = 30
 private const val AnalysisRunPollIntervalMillis = 1_000L
 private val DashboardUrlPattern = Regex("""http://127\.0\.0\.1:18789[^\s]*#token=[^\s]+""")
 
@@ -425,6 +426,9 @@ fun OpenClawApp() {
 
                     is BackendReadResult.Success -> {
                         backendState = backendState.copy(
+                            productProfileEnrich = V1SectionState.Loaded(
+                                ProductProfileEnrichResponseDto(detailResult.value.agentRun),
+                            ),
                             productLearningRun = V1SectionState.Loaded(detailResult.value),
                         )
                         val run = detailResult.value.agentRun

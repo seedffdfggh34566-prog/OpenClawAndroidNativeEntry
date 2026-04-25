@@ -39,6 +39,7 @@
 - `task_v1_product_learning_backend_preflight.md`
 - `task_v1_product_learning_llm_phase1.md`
 - `task_v1_android_product_learning_iteration_ui.md`
+- `task_v1_android_product_learning_enrich_device_smoke.md`
 
 这些任务当前应视为：
 
@@ -56,6 +57,7 @@
 
 最近完成：
 
+- `task_v1_android_product_learning_enrich_device_smoke.md`
 - `task_v1_android_product_learning_iteration_ui.md`
 - `task_v1_product_learning_llm_phase1.md`
 - `task_v1_product_learning_backend_preflight.md`
@@ -81,6 +83,8 @@
   - heuristic 与真实 LLM 的差异是否可被样例集约束
   - Android 是否会在 runtime 未稳定时被过早拉进交互重写
 - 当前 product learning LLM Phase 1 与 Android iteration UI 均已完成最小实现与收口；下一步需要规划层决定是否进入 UI polish、真机完整 enrich smoke、或新的 V1 表达收口任务。
+- 真机完整 enrich smoke 已完成，并修复了真实 LLM 耗时下 Android enrich 状态显示滞后的问题。
+- 下一步需要规划层决定是否进入 UI polish、首页 / 结果页 / 报告页表达收口，或拆后续真实样例评估任务。
 
 ### Auto-continue allowed when
 

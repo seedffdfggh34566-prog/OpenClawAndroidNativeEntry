@@ -153,15 +153,16 @@ docs/
 
 ## 8. 当前最推荐的下一步
 
-当前最推荐的下一步执行顺序为：
+当前 product learning LLM、Android iteration UI 与真机 enrich smoke 已完成。
 
-1. 参考 `task_v1_product_learning_llm_phase1.md`
-2. 在 `runtime-v1-observability-eval-baseline.md` 约束下接入 product learning LLM
-3. 先完成 heuristic vs LLM 最小对比
-4. 最后再做 Android iteration UI
+下一步需要规划层决定优先进入哪条路线：
+
+1. ProductLearning UI polish
+2. 首页、结果页、报告页最终产品表达收口
+3. 真实样例评估 / prompt tuning follow-up
 
 当前补充建议阅读：
 
-- `docs/product/research/v1_repo_and_product_gap_planning_note.md`
-- `docs/architecture/runtime/langgraph-runtime-architecture.md`
-- `docs/reference/runtime-v1-llm-provider-selection.md`
+- `docs/delivery/tasks/_active.md`
+- `docs/delivery/README.md`
+- `docs/delivery/handoffs/`

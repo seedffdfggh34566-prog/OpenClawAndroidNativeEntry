@@ -52,6 +52,7 @@
 - `task_v1_lead_analysis_quality_followup.md`
 - `task_v1_lead_analysis_llm_phase1.md`
 - `task_v1_readiness_freeze_and_demo_acceptance.md`
+- `task_v1_report_generation_polish.md`
 
 这些任务当前应视为：
 
@@ -69,6 +70,7 @@
 
 最近完成：
 
+- `task_v1_report_generation_polish.md`
 - `task_v1_readiness_freeze_and_demo_acceptance.md`
 - `task_v1_lead_analysis_llm_phase1.md`
 - `task_v1_lead_analysis_quality_followup.md`
@@ -119,7 +121,8 @@
 - lead_analysis 质量提升 follow-up 已完成，当前 heuristic 已补齐邻近 / 上下游机会、首轮销售验证建议和不优先建议，并通过 8 个真实中文样例 eval。
 - lead_analysis LLM phase1 已完成，当前 `lead_analysis` 使用 TokenHub `minimax-m2.5` 生成 draft，并通过 8 个真实中文样例 eval。
 - V1 readiness freeze 已完成，当前 V1 具备 demo 条件但仍有 TTFT 延迟、报告交付感和 fallback 未实现等 known limitations。
-- 当前没有已排定的下一项 implementation task；下一步继续执行 report_generation polish。
+- report_generation polish 已完成，最终报告 sections 已收口为更像可复看的销售分析交付物。
+- 当前没有已排定的下一项 implementation task；下一步继续执行 demo device smoke after LLM lead analysis。
 
 ### Auto-continue allowed when
 

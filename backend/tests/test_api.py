@@ -354,11 +354,20 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertEqual(report_payload["id"], report_id)
         self.assertEqual(report_payload["status"], "published")
         self.assertGreaterEqual(len(report_payload["sections"]), 1)
-        self.assertIn("下一步建议", [section["title"] for section in report_payload["sections"]])
+        section_titles = [section["title"] for section in report_payload["sections"]]
+        self.assertIn("产品理解", section_titles)
+        self.assertIn("优先行业与客户", section_titles)
+        self.assertIn("场景机会", section_titles)
+        self.assertIn("上下游与邻近机会", section_titles)
+        self.assertIn("首轮销售验证计划", section_titles)
+        self.assertIn("不建议优先方向", section_titles)
+        self.assertIn("风险与限制", section_titles)
+        self.assertIn("下一步行动清单", section_titles)
         report_text = json.dumps(report_payload, ensure_ascii=False)
         self.assertIn("判断依据", report_text)
         self.assertIn("邻近机会", report_text)
         self.assertIn("不建议优先", report_text)
+        self.assertIn("目标客户", report_text)
         for blocked_word in ["Phase 1", "LangGraph", "runtime", "v1_langgraph_phase1"]:
             self.assertNotIn(blocked_word, report_text)
 

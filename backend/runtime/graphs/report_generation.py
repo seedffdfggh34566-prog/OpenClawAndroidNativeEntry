@@ -22,6 +22,17 @@ def _compact(values: list[str]) -> list[str]:
     return result
 
 
+def _join_points(values: list[str], *, fallback: str) -> str:
+    compacted = _compact(values)
+    if not compacted:
+        return fallback
+    return "\n".join(f"- {value}" for value in compacted)
+
+
+def _contains_any(value: str, needles: list[str]) -> bool:
+    return any(needle in value for needle in needles)
+
+
 def load_product_profile_and_analysis_result(
     state: ReportGenerationGraphState,
 ) -> ReportGenerationGraphState:
@@ -62,9 +73,14 @@ def build_report_context(
             "top_scenario": top_scenario,
             "recommendations": analysis_result.recommendations,
             "ranking_explanations": analysis_result.ranking_explanations,
+            "scenario_opportunities": analysis_result.scenario_opportunities,
             "risks": analysis_result.risks,
             "limitations": analysis_result.limitations,
             "profile_summary": profile.one_line_description,
+            "target_customers": profile.target_customers,
+            "target_industries": profile.target_industries,
+            "pain_points": profile.pain_points_solved,
+            "advantages": profile.core_advantages,
         }
     }
 
@@ -77,43 +93,112 @@ def generate_report_draft(
     context = state["normalized_context"]
     recommendations = _compact(context["recommendations"]) or ["继续补齐缺失画像并验证首轮销售表达。"]
     ranking_explanations = _compact(context["ranking_explanations"])
+    scenario_opportunities = _compact(context["scenario_opportunities"])
+    neighbor_opportunities = [
+        item
+        for item in scenario_opportunities
+        if _contains_any(item, ["邻近", "上下游"])
+    ]
+    core_scenarios = [
+        item
+        for item in scenario_opportunities
+        if item not in neighbor_opportunities
+    ]
+    validation_recommendations = [
+        item
+        for item in recommendations
+        if _contains_any(item, ["首轮销售验证", "访谈", "试用", "验证"])
+    ]
+    not_priority_recommendations = [
+        item for item in recommendations if item.startswith("不建议优先")
+    ]
+    action_items = [
+        item
+        for item in recommendations
+        if item not in not_priority_recommendations
+    ]
     risks = _compact(context["risks"] + context["limitations"])
+    product_understanding = _compact(
+        [
+            context["profile_summary"],
+            f"目标客户：{'、'.join(context['target_customers'])}"
+            if context["target_customers"]
+            else "",
+            f"解决痛点：{'、'.join(context['pain_points'])}"
+            if context["pain_points"]
+            else "",
+            f"核心优势：{'、'.join(context['advantages'])}"
+            if context["advantages"]
+            else "",
+        ]
+    )
 
     draft = AnalysisReportDraft(
         title=f"{profile.name} 获客分析报告",
         summary=(
-            f"当前建议围绕 {context['top_industry']} 的 {context['top_customer']} 推进，"
-            f"优先场景是“{context['top_scenario']}”。"
+            f"当前建议优先围绕 {context['top_industry']} 的 {context['top_customer']} 推进，"
+            f"先用“{context['top_scenario']}”验证购买动因、触达难度和销售表达。"
         ),
         sections=[
             {
-                "title": "产品理解摘要",
-                "body": context["profile_summary"],
-            },
-            {
-                "title": "优先行业与客户",
-                "body": (
-                    f"优先从 {context['top_industry']} 切入，首先面向 {context['top_customer']} 展开验证。"
-                    + (
-                        f" 判断依据：{'；'.join(ranking_explanations)}"
-                        if ranking_explanations
-                        else ""
-                    )
+                "title": "产品理解",
+                "body": _join_points(
+                    product_understanding,
+                    fallback="当前产品理解仍需继续补齐。",
                 ),
             },
             {
-                "title": "关键场景机会",
-                "body": "；".join(analysis_result.scenario_opportunities)
-                if analysis_result.scenario_opportunities
-                else "当前仍需继续补齐场景信息。",
+                "title": "优先行业与客户",
+                "body": _join_points(
+                    [
+                        f"优先行业：{context['top_industry']}",
+                        f"优先客户：{context['top_customer']}",
+                    ]
+                    + [f"判断依据：{item}" for item in ranking_explanations],
+                    fallback="当前仍需继续补齐行业和客户优先级判断。",
+                ),
             },
             {
-                "title": "下一步建议",
-                "body": "；".join(recommendations),
+                "title": "场景机会",
+                "body": _join_points(
+                    core_scenarios,
+                    fallback="当前仍需继续补齐场景信息。",
+                ),
+            },
+            {
+                "title": "上下游与邻近机会",
+                "body": _join_points(
+                    neighbor_opportunities,
+                    fallback="当前暂未识别出明确的上下游或邻近机会。",
+                ),
+            },
+            {
+                "title": "首轮销售验证计划",
+                "body": _join_points(
+                    validation_recommendations,
+                    fallback="先选取 5 到 10 个目标客户访谈，验证痛点强度、决策角色和替代方案。",
+                ),
+            },
+            {
+                "title": "不建议优先方向",
+                "body": _join_points(
+                    not_priority_recommendations,
+                    fallback="暂不建议同时铺开过多行业、客户角色或销售叙事。",
+                ),
             },
             {
                 "title": "风险与限制",
-                "body": "；".join(risks) if risks else "当前未发现新的高优先级风险。",
+                "body": _join_points(
+                    risks,
+                    fallback="当前未发现新的高优先级风险。",
+                ),
+            },
+            {
+                "title": "下一步行动清单",
+                "body": _join_points(
+                    action_items,
+                    fallback="继续积累真实客户反馈，验证优先方向。",
+                ),
             },
         ],
     )

@@ -56,7 +56,8 @@
 - lead_analysis 质量提升 follow-up 已完成，heuristic 已补齐邻近 / 上下游机会、首轮销售验证建议和不优先建议
 - lead_analysis LLM phase1 已完成，当前 `lead_analysis` 已切到 TokenHub `minimax-m2.5`
 - V1 readiness freeze 已完成，demo acceptance、known limitations、TTFT 延迟风险和固定 demo 样例已收口
-- 后续继续按任务顺序进入 report_generation polish
+- report_generation polish 已完成，报告 sections 已收口为可复看的销售分析交付物结构
+- 后续继续按任务顺序进入真机 demo smoke
 
 ---
 
@@ -98,6 +99,7 @@
 | `task_v1_lead_analysis_quality_followup.md` | 增强 lead_analysis heuristic 的销售判断深度 | `done` |
 | `task_v1_lead_analysis_llm_phase1.md` | 将 lead_analysis 切换到真实 LLM draft 生成 | `done` |
 | `task_v1_readiness_freeze_and_demo_acceptance.md` | 冻结 V1 demo acceptance 与 known limitations | `done` |
+| `task_v1_report_generation_polish.md` | 增强最终报告交付物表达 | `done` |
 
 ---
 

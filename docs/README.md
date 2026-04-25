@@ -153,12 +153,12 @@ docs/
 
 ## 8. 当前最推荐的下一步
 
-当前 product learning LLM、Android iteration UI 与真机 enrich smoke 已完成。
+当前 product learning LLM、Android iteration UI、真机 enrich smoke 与 Android 销售闭环产品表达收口已完成。
 
 下一步需要规划层决定优先进入哪条路线：
 
-1. ProductLearning UI polish
-2. 首页、结果页、报告页最终产品表达收口
+1. 完整 V1 真机端到端 smoke
+2. ProductLearning UI polish
 3. 真实样例评估 / prompt tuning follow-up
 
 当前补充建议阅读：

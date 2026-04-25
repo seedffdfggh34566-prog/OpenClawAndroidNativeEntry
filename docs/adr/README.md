@@ -7,3 +7,7 @@
 - `ADR-001-...`
 - `ADR-002-...`
 - `ADR-003-...`
+
+当前 V2 planning baseline 决策入口：
+
+- `ADR-005-v2-lead-research-scope-and-search-boundary.md`

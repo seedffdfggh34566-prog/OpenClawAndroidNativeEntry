@@ -1,6 +1,6 @@
 # 文档导航
 
-更新时间：2026-04-24
+更新时间：2026-04-25
 
 ## 1. 文档定位
 
@@ -21,7 +21,9 @@
 
 当前正式主线为：
 
-> **AI 销售助手 App V1：后端为正式主真相，多端入口作为控制层。**
+> **AI 销售助手 App：V1 已冻结为 demo-ready baseline，当前进入 V2 planning baseline。**
+
+当前 V2 仍是规划基线阶段，不是 MVP、schema baseline、API contract 或 implementation queue。
 
 ---
 
@@ -31,13 +33,20 @@
 
 1. 根目录 `AGENTS.md`
 2. `docs/product/overview.md`
-3. `docs/product/prd/ai_sales_assistant_v1_prd.md`
-4. `docs/adr/ADR-001-backend-deployment-baseline.md`
-5. `docs/adr/ADR-002-v1-runtime-and-product-learning-baseline.md`
-6. `docs/adr/ADR-003-v1-product-learning-runtime-boundary.md`
-7. `docs/adr/ADR-004-v1-product-learning-iteration-contract.md`
-8. `docs/delivery/tasks/_active.md`
-9. 当前 task 引用的 spec / runbook / handoff
+3. `docs/product/research/v1_closeout_2026_04_25.md`
+4. `docs/product/prd/ai_sales_assistant_v2_prd.md`
+5. `docs/architecture/data/v2-lead-research-data-model.md`
+6. `docs/adr/ADR-005-v2-lead-research-scope-and-search-boundary.md`
+7. `docs/delivery/tasks/_active.md`
+8. 当前 task 引用的 spec / runbook / handoff
+
+V1 细节可继续参考：
+
+- `docs/product/prd/ai_sales_assistant_v1_prd.md`
+- `docs/adr/ADR-001-backend-deployment-baseline.md`
+- `docs/adr/ADR-002-v1-runtime-and-product-learning-baseline.md`
+- `docs/adr/ADR-003-v1-product-learning-runtime-boundary.md`
+- `docs/adr/ADR-004-v1-product-learning-iteration-contract.md`
 
 ---
 
@@ -62,6 +71,10 @@
 ### 5.1 项目方向
 
 - `docs/product/overview.md`
+- `docs/product/research/v1_closeout_2026_04_25.md`
+- `docs/product/prd/ai_sales_assistant_v2_prd.md`
+- `docs/architecture/data/v2-lead-research-data-model.md`
+- `docs/adr/ADR-005-v2-lead-research-scope-and-search-boundary.md`
 - `docs/product/prd/ai_sales_assistant_v1_prd.md`
 - `docs/adr/ADR-001-backend-deployment-baseline.md`
 - `docs/adr/ADR-002-v1-runtime-and-product-learning-baseline.md`
@@ -82,9 +95,8 @@
 
 - `docs/delivery/tasks/_active.md`
 - `docs/delivery/README.md`
-- `docs/delivery/tasks/task_v1_product_learning_runtime_decision_freeze.md`
-- `docs/delivery/tasks/task_v1_product_learning_runtime_followup.md`
-- `docs/delivery/handoffs/handoff_2026_04_24_product_learning_runtime_decision_freeze.md`
+- `docs/delivery/tasks/task_v2_planning_baseline_update.md`
+- `docs/delivery/handoffs/handoff_2026_04_25_v2_planning_baseline_update.md`
 
 ### 5.4 当前工作流
 
@@ -161,14 +173,17 @@ docs/
 
 - `task_v1_closeout.md`
 - `task_v1_demo_runbook_and_evidence_pack.md`
+- `task_v2_planning_baseline_update.md`
 
-当前已排定的 implementation task 已全部收口。下一阶段方向尚未定义，不应自动创建 V2 task 或继续追加 V1 功能。
+当前已排定的 implementation task 已全部收口。下一阶段已进入 V2 planning baseline，但尚未创建 V2 implementation queue。
 
-下一步需要回到规划层重新回答：是否继续销售助手方向、是否以 MVP 为目标、是否需要正式部署 / 多用户 / fallback / 成本治理，以及是否升级 report_generation。
+下一步需要回到规划层冻结：V2 是否以 MVP 为目标、搜索 provider、数据保留策略、联系方式边界、V2 domain/schema baseline、backend contract，以及是否升级 report_generation。
 
 当前补充建议阅读：
 
 - `docs/delivery/tasks/_active.md`
 - `docs/delivery/README.md`
 - `docs/product/research/v1_closeout_2026_04_25.md`
-- `docs/delivery/handoffs/`
+- `docs/product/prd/ai_sales_assistant_v2_prd.md`
+- `docs/architecture/data/v2-lead-research-data-model.md`
+- `docs/adr/ADR-005-v2-lead-research-scope-and-search-boundary.md`

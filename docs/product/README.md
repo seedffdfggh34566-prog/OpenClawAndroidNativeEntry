@@ -9,6 +9,10 @@
 - `research/`
 - `roadmap.md`
 
+当前 V2 规划草案：
+
+- `prd/ai_sales_assistant_v2_prd.md`
+
 当前与 V1 收口直接相关的补充文档：
 
 - `research/v1_repo_and_product_gap_planning_note.md`

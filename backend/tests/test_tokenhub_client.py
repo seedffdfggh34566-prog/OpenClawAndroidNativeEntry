@@ -162,6 +162,28 @@ def test_parse_lead_analysis_json_skips_invalid_prefix_braces() -> None:
     assert parsed["priority_industries"] == ["制造业"]
 
 
+def test_parse_lead_analysis_json_repairs_extra_tail_object_brace() -> None:
+    parsed = _parse_lead_analysis_json(
+        """
+        <think>模型没有关闭 think 标签。
+
+        {"title":"门店会员复购助手获客方向分析","analysis_scope":"基于已确认产品画像的获客方向分析","summary":"优先验证本地生活门店。","priority_industries":["美容美发"],"priority_customer_types":["门店老板"],"scenario_opportunities":["邻近机会：拓展社区零售","上下游机会：联动 POS 服务商"],"ranking_explanations":["会员复购痛点明确。"],"recommendations":["首轮销售验证建议：访谈门店老板。","不建议优先覆盖大型连锁。"],"risks":["价格敏感。"],"limitations":["跨区域复制需考虑各地消费习惯"}]}
+        """
+    )
+
+    assert parsed["limitations"] == ["跨区域复制需考虑各地消费习惯"]
+
+
+def test_parse_lead_analysis_json_repairs_missing_array_close_at_tail() -> None:
+    parsed = _parse_lead_analysis_json(
+        """
+        {"title":"门店经营异常助手获客方向分析","analysis_scope":"基于已确认产品画像的获客方向分析","summary":"优先验证多门店服务业。","priority_industries":["餐饮服务"],"priority_customer_types":["多店老板"],"scenario_opportunities":["邻近机会：拓展洗衣门店","上下游机会：联动 POS 服务商"],"ranking_explanations":["多门店管理痛点明确。"],"recommendations":["首轮销售验证建议：访谈区域经理。","不建议优先覆盖单店客户。"],"risks":["数据接入成本。"],"limitations":["产品细节功能文档需补充完整"}
+        """
+    )
+
+    assert parsed["limitations"] == ["产品细节功能文档需补充完整"]
+
+
 def test_parse_lead_analysis_json_rejects_non_json() -> None:
     with pytest.raises(ValueError, match="lead_analysis_llm_json_object_not_found"):
         _parse_lead_analysis_json("<think>only thinking</think>没有 JSON")

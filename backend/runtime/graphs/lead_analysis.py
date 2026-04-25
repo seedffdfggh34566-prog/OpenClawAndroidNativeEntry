@@ -167,18 +167,35 @@ def _parse_lead_analysis_json(content: str) -> dict[str, object]:
         if char != "{":
             continue
         saw_json_start = True
-        try:
-            parsed, _ = decoder.raw_decode(text[index:])
-        except json.JSONDecodeError as exc:
-            last_error = exc
-            continue
-        if not isinstance(parsed, dict):
-            raise ValueError("lead_analysis_llm_json_object_required")
-        return parsed
+        for candidate in _lead_analysis_json_candidates(text[index:]):
+            try:
+                parsed, _ = decoder.raw_decode(candidate)
+            except json.JSONDecodeError as exc:
+                last_error = exc
+                continue
+            if not isinstance(parsed, dict):
+                raise ValueError("lead_analysis_llm_json_object_required")
+            return parsed
 
     if saw_json_start:
         raise ValueError("lead_analysis_llm_json_decode_failed") from last_error
     raise ValueError("lead_analysis_llm_json_object_not_found")
+
+
+def _lead_analysis_json_candidates(candidate: str) -> list[str]:
+    text = candidate.strip()
+    candidates = [text]
+
+    repaired_extra_object_brace = re.sub(r'"\}\]\}\s*$', r'"]}', text)
+    if repaired_extra_object_brace != text:
+        candidates.append(repaired_extra_object_brace)
+
+    if text.count("[") > text.count("]"):
+        repaired_missing_array_close = re.sub(r'"\}\s*$', r'"]}', text)
+        if repaired_missing_array_close != text:
+            candidates.append(repaired_missing_array_close)
+
+    return candidates
 
 
 def _token_count(value: object) -> int | None:

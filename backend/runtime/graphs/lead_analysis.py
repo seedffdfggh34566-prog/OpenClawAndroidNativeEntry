@@ -72,6 +72,38 @@ def _infer_scenarios(profile: ProductProfileRuntimePayload) -> list[str]:
     return _compact(scenarios)[:4]
 
 
+def _infer_neighbor_opportunities(
+    *,
+    industries: list[str],
+    customer_types: list[str],
+    scenarios: list[str],
+    primary_pain: str,
+) -> list[str]:
+    top_industry = industries[0]
+    top_customer = customer_types[0]
+    top_scenario = scenarios[0]
+    return _compact(
+        [
+            f"邻近机会：寻找与 {top_industry} 业务流程相近、同样存在“{primary_pain}”的团队，作为第二批验证对象。",
+            f"上下游机会：从 {top_customer} 的协作对象切入，观察采购、运营、服务或交付环节是否也受“{top_scenario}”影响。",
+        ]
+    )
+
+
+def _build_not_priority_guidance(
+    *,
+    industries: list[str],
+    customer_types: list[str],
+    scenarios: list[str],
+) -> str:
+    later_industries = "、".join(industries[1:]) if len(industries) > 1 else "跨度过大的行业"
+    later_customers = "、".join(customer_types[1:]) if len(customer_types) > 1 else "离一线问题较远的角色"
+    return (
+        f"不建议优先同时铺开 {later_industries} 或 {later_customers}；"
+        f"先把“{scenarios[0]}”这一场景跑出清晰反馈后再扩展。"
+    )
+
+
 def load_confirmed_product_profile(
     state: LeadAnalysisGraphState,
 ) -> LeadAnalysisGraphState:
@@ -113,18 +145,41 @@ def generate_lead_analysis_draft(
     primary_pain = context["primary_pain"]
     missing_fields = context["missing_fields"]
     constraints = context["constraints"]
+    neighbor_opportunities = _infer_neighbor_opportunities(
+        industries=industries,
+        customer_types=customer_types,
+        scenarios=scenarios,
+        primary_pain=primary_pain,
+    )
+    not_priority_guidance = _build_not_priority_guidance(
+        industries=industries,
+        customer_types=customer_types,
+        scenarios=scenarios,
+    )
 
     ranking_explanations = _compact(
         [
-            f"优先从 {industries[0]} 切入，因为它更容易直接验证“{primary_pain}”这一购买动因。",
-            f"优先面对 {customer_types[0]}，因为该角色更容易感知“{primary_advantage}”带来的价值。",
+            (
+                f"{industries[0]} 应排在首位：该行业更容易直接暴露“{primary_pain}”，"
+                f"也更适合用“{scenarios[0]}”做第一轮验证。"
+            ),
+            (
+                f"{customer_types[0]} 是首批沟通对象：该角色更接近预算、流程或一线执行问题，"
+                f"更容易判断“{primary_advantage}”是否足够形成购买理由。"
+            ),
+            (
+                f"优先级应先看痛点强度、触达难度和反馈速度；若首轮反馈集中，再扩展到"
+                f"邻近行业和上下游角色。"
+            ),
             "后续可结合更多真实客户反馈和外部市场资料继续校准优先级。",
         ]
     )
     recommendations = _compact(
         [
             f"先围绕 {industries[0]} + {customer_types[0]} 组合验证第一轮销售表达。",
+            f"首轮销售验证建议：准备 5 到 10 次访谈或试用沟通，重点确认“{primary_pain}”是否紧急、谁负责决策、现有替代方案是什么。",
             f"把场景说明收口到“{scenarios[0]}”，避免首轮叙事过宽。",
+            not_priority_guidance,
             f"继续补齐缺失信息：{', '.join(missing_fields)}。" if missing_fields else "继续积累更多真实客户反馈，验证优先方向。",
         ]
     )
@@ -137,7 +192,7 @@ def generate_lead_analysis_draft(
     limitations = _compact(
         [
             "当前分析主要基于已确认的产品画像，尚未接入外部检索和长期客户反馈。",
-            "分析结果仍依赖现有 ProductProfile 的完整度和当前已知上下文。",
+            "分析结果仍依赖现有产品画像的完整度和当前已知上下文。",
         ]
     )
 
@@ -150,7 +205,7 @@ def generate_lead_analysis_draft(
         ),
         priority_industries=industries,
         priority_customer_types=customer_types,
-        scenario_opportunities=scenarios,
+        scenario_opportunities=_compact(scenarios + neighbor_opportunities),
         ranking_explanations=ranking_explanations,
         recommendations=recommendations,
         risks=risks,

@@ -170,6 +170,21 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertIn("recommendations", payload)
         self.assertIn("risks", payload)
         self.assertIn("limitations", payload)
+        visible_text = json.dumps(payload, ensure_ascii=False)
+        for blocked_word in ["Phase 1", "LangGraph", "runtime", "v1_langgraph_phase1"]:
+            self.assertNotIn(blocked_word, visible_text)
+        self.assertTrue(
+            any(
+                ("邻近" in item or "上下游" in item)
+                for item in payload["scenario_opportunities"]
+            )
+        )
+        self.assertTrue(
+            any("首轮销售验证建议" in item for item in payload["recommendations"])
+        )
+        self.assertTrue(
+            any("不建议优先" in item for item in payload["recommendations"])
+        )
 
         not_found_response = self.client.get("/lead-analysis-results/lar_missing")
         self.assertEqual(not_found_response.status_code, 404)
@@ -293,6 +308,12 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertEqual(report_payload["status"], "published")
         self.assertGreaterEqual(len(report_payload["sections"]), 1)
         self.assertIn("下一步建议", [section["title"] for section in report_payload["sections"]])
+        report_text = json.dumps(report_payload, ensure_ascii=False)
+        self.assertIn("判断依据", report_text)
+        self.assertIn("邻近机会", report_text)
+        self.assertIn("不建议优先", report_text)
+        for blocked_word in ["Phase 1", "LangGraph", "runtime", "v1_langgraph_phase1"]:
+            self.assertNotIn(blocked_word, report_text)
 
     def test_history_empty_and_populated(self) -> None:
         empty_history_response = self.client.get("/history")

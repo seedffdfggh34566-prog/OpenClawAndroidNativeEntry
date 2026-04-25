@@ -49,6 +49,7 @@
 - `task_v1_product_learning_ui_polish_real_chinese_smoke.md`
 - `task_v1_runtime_usage_metadata_followup.md`
 - `task_v1_real_business_sample_library_eval.md`
+- `task_v1_lead_analysis_quality_followup.md`
 
 这些任务当前应视为：
 
@@ -66,6 +67,7 @@
 
 最近完成：
 
+- `task_v1_lead_analysis_quality_followup.md`
 - `task_v1_real_business_sample_library_eval.md`
 - `task_v1_runtime_usage_metadata_followup.md`
 - `task_v1_product_learning_ui_polish_real_chinese_smoke.md`
@@ -110,7 +112,8 @@
 - ProductLearning UI polish 与真实中文 create / enrich smoke 已完成，`工厂设备巡检助手` 样例在真机上跑通 create 和 enrich，最终 ProductProfile 进入 `ready_for_confirmation`。
 - runtime usage metadata follow-up 已完成，product learning 真实 LLM token usage 已写入 `AgentRun.runtime_metadata.llm_usage` 并通过 run detail 可见。
 - 真实业务样例库扩展与全链路质量评估已完成，8 个真实中文样例均跑通完整 backend API 链路，并修复了 lead/report 用户可见工程表述泄漏。
-- 当前没有已排定的下一项 implementation task；下一步建议由规划层决定是否进入 lead_analysis / report_generation 质量提升，或更细的 ProductLearning 交互 polish。
+- lead_analysis 质量提升 follow-up 已完成，当前 heuristic 已补齐邻近 / 上下游机会、首轮销售验证建议和不优先建议，并通过 8 个真实中文样例 eval。
+- 当前没有已排定的下一项 implementation task；下一步建议由规划层决定是否进入 lead_analysis LLM phase1，或更细的 ProductLearning / report polish。
 
 ### Auto-continue allowed when
 

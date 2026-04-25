@@ -61,6 +61,7 @@ def build_report_context(
             "top_customer": top_customer,
             "top_scenario": top_scenario,
             "recommendations": analysis_result.recommendations,
+            "ranking_explanations": analysis_result.ranking_explanations,
             "risks": analysis_result.risks,
             "limitations": analysis_result.limitations,
             "profile_summary": profile.one_line_description,
@@ -75,6 +76,7 @@ def generate_report_draft(
     analysis_result = state["lead_analysis_result_payload"]
     context = state["normalized_context"]
     recommendations = _compact(context["recommendations"]) or ["继续补齐缺失画像并验证首轮销售表达。"]
+    ranking_explanations = _compact(context["ranking_explanations"])
     risks = _compact(context["risks"] + context["limitations"])
 
     draft = AnalysisReportDraft(
@@ -92,6 +94,11 @@ def generate_report_draft(
                 "title": "优先行业与客户",
                 "body": (
                     f"优先从 {context['top_industry']} 切入，首先面向 {context['top_customer']} 展开验证。"
+                    + (
+                        f" 判断依据：{'；'.join(ranking_explanations)}"
+                        if ranking_explanations
+                        else ""
+                    )
                 ),
             },
             {

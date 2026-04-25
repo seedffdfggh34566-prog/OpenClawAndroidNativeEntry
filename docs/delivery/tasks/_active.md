@@ -54,11 +54,11 @@
 
 ### Current task
 
-- 暂无正在执行中的正式 implementation task
+- `task_android_chinese_input_device_preflight.md`
 
 ### Next queued tasks
 
-- 暂无已排定的下一项 implementation task
+- `task_v1_product_learning_ui_polish_real_chinese_smoke.md`（blocked，等待测试 IME 设备预检完成后恢复真实中文 smoke）
 
 最近完成：
 
@@ -98,7 +98,9 @@
 - 完整 V1 真机端到端 smoke 已完成，主闭环从空库到报告可复看已跑通。
 - Android 中文输入 smoke 机制已验证：当前 Android 16 真机可临时使用 `senzhk/ADBKeyBoard` v2.5-dev，通过 `ADB_INPUT_B64` 注入中文，结束后恢复原输入法并卸载测试 IME。
 - Product learning 真实样例评估 / prompt tuning follow-up 已完成，8 个真实样例均稳定通过，未触发 prompt tuning。
-- 下一步需要规划层决定是否继续 ProductLearning 页面表达 polish、扩大真实业务样例库，或拆 runtime usage metadata follow-up。
+- ProductLearning 页面表达收口 host build 已通过，但真实中文真机 smoke 被 OnePlus / OPlus 未知来源安装安全验证阻塞。
+- 当前优先执行中文输入设备预检：测试 IME 改为一次性安装并保留，日常 smoke 只切换输入法，不再重复安装 / 卸载。
+- 设备预检完成后，恢复 ProductLearning 真实中文 create / enrich smoke；再由规划层决定是否进入 runtime usage metadata follow-up 或扩大真实业务样例库。
 
 ### Auto-continue allowed when
 

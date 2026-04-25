@@ -43,6 +43,7 @@
 - `task_v1_android_sales_flow_expression_closeout.md`
 - `task_v1_full_sales_flow_device_smoke.md`
 - `task_android_chinese_input_smoke_mechanism.md`
+- `task_v1_product_learning_eval_prompt_tuning_followup.md`
 
 这些任务当前应视为：
 
@@ -60,6 +61,7 @@
 
 最近完成：
 
+- `task_v1_product_learning_eval_prompt_tuning_followup.md`
 - `task_android_chinese_input_smoke_mechanism.md`
 - `task_v1_full_sales_flow_device_smoke.md`
 - `task_v1_android_sales_flow_expression_closeout.md`
@@ -93,7 +95,8 @@
 - 首页 / 产品画像确认页 / 结果页 / 报告页的 V1 销售闭环产品表达收口任务已完成。
 - 完整 V1 真机端到端 smoke 已完成，主闭环从空库到报告可复看已跑通。
 - Android 中文输入 smoke 机制已记录为 runbook；当前设备仅有 `com.baidu.input_oppo/.ImeService`，正式中文自动化输入需后续准备测试 IME。
-- 下一步需要规划层决定是否进入真实样例评估 / prompt tuning follow-up，或继续 ProductLearning 页面表达 polish。
+- Product learning 真实样例评估 / prompt tuning follow-up 已完成，8 个真实样例均稳定通过，未触发 prompt tuning。
+- 下一步需要规划层决定是否继续 ProductLearning 页面表达 polish、扩大真实业务样例库，或拆 runtime usage metadata follow-up。
 
 ### Auto-continue allowed when
 

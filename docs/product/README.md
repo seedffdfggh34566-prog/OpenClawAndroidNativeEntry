@@ -12,3 +12,4 @@
 当前与 V1 收口直接相关的补充文档：
 
 - `research/v1_repo_and_product_gap_planning_note.md`
+- `research/product_learning_llm_eval_2026_04_25.md`

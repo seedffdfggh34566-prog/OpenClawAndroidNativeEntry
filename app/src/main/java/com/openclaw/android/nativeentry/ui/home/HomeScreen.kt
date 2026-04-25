@@ -121,6 +121,10 @@ private fun CurrentWorkCard(
     onRefreshBackendClick: () -> Unit,
     onUseDebugFallbackClick: () -> Unit,
 ) {
+    val canOpenProductProfile = (backendState.history as? V1SectionState.Loaded)
+        ?.value
+        ?.latestProductProfile != null
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -135,7 +139,7 @@ private fun CurrentWorkCard(
             when (val history = backendState.history) {
                 V1SectionState.Idle,
                 V1SectionState.Loading -> {
-                    Text(text = "正在读取真实后端 /history。", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "正在同步当前销售分析进度。", style = MaterialTheme.typography.bodyMedium)
                     Text(
                         text = backendState.backendBaseUrl,
                         style = MaterialTheme.typography.bodySmall,
@@ -144,9 +148,9 @@ private fun CurrentWorkCard(
                 }
 
                 V1SectionState.Empty -> {
-                    Text(text = "后端已连接，但当前没有 ProductProfile、AnalysisResult 或 Report。", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "还没有销售分析记录。", style = MaterialTheme.typography.bodyMedium)
                     Text(
-                        text = "这是空库状态，不再展示样例数据冒充真实结果。",
+                        text = "从产品学习开始，先让系统理解你要卖的产品。",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -165,18 +169,42 @@ private fun CurrentWorkCard(
 
                 is V1SectionState.Loaded -> {
                     val currentRun = history.value.currentRun
-                    if (currentRun != null) {
-                        Text(text = "当前运行：${currentRun.runType}", style = MaterialTheme.typography.bodyLarge)
-                        Text(text = "状态：${currentRun.status}", style = MaterialTheme.typography.bodyMedium)
-                        Text(text = "来源：${currentRun.triggerSource}", style = MaterialTheme.typography.bodyMedium)
-                    } else {
-                        Text(text = "当前没有运行中的 AgentRun。", style = MaterialTheme.typography.bodyMedium)
-                    }
-
                     val profile = history.value.latestProductProfile
+                    val analysis = history.value.latestAnalysisResult
+                    val report = history.value.latestReport
+
+                    Text(
+                        text = when {
+                            currentRun != null -> "正在处理：${currentRun.runType.toFlowName()}"
+                            report != null -> "销售分析报告已生成。"
+                            analysis != null -> "获客分析结果已生成。"
+                            profile?.status == "confirmed" -> "产品画像已确认。"
+                            profile?.learningStage == "ready_for_confirmation" -> "产品画像已可确认。"
+                            profile != null -> "产品画像还在补充中。"
+                            else -> "还没有开始产品学习。"
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = when {
+                            currentRun != null -> "当前状态：${currentRun.status.toUserStatusLabel()}。完成后回到这里查看下一步。"
+                            report != null -> "下一步：复看报告，或回到结果页继续对齐销售动作。"
+                            analysis != null -> "下一步：查看分析结果，必要时生成可复看的报告。"
+                            profile?.status == "confirmed" -> "下一步：生成获客分析，找出优先切入的客户方向。"
+                            profile?.learningStage == "ready_for_confirmation" -> "下一步：确认产品画像，然后生成获客分析。"
+                            profile != null -> "下一步：继续补充产品信息，让画像达到可确认状态。"
+                            else -> "下一步：点击“开始分析”，创建第一版产品画像。"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     if (profile != null) {
-                        Text(text = "最新产品画像：${profile.name}", style = MaterialTheme.typography.bodyMedium)
-                        Text(text = "状态：${profile.status} · v${profile.version}", style = MaterialTheme.typography.bodyMedium)
+                        Text(text = "当前产品：${profile.name}", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = "进度：${profile.status.toUserStatusLabel()} · ${profile.learningStage.toLearningStageLabel()} · v${profile.version}",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
                     }
                 }
             }
@@ -199,9 +227,10 @@ private fun CurrentWorkCard(
             }
             OutlinedButton(
                 onClick = onContinueFlowClick,
+                enabled = canOpenProductProfile,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(text = "继续当前流程")
+                Text(text = if (canOpenProductProfile) "查看或确认产品画像" else "先开始产品学习")
             }
         }
     }
@@ -231,21 +260,21 @@ private fun RecentResultsCard(
                     val analysis = history.value.latestAnalysisResult
                     val report = history.value.latestReport
                     Text(
-                        text = "ProductProfile：${profile?.name ?: "暂无"} (${profile?.status ?: "none"})",
+                        text = "产品理解：${profile?.name ?: "暂无"}（${profile?.status?.toUserStatusLabel() ?: "未开始"}）",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Text(
-                        text = "LeadAnalysisResult：${analysis?.title ?: "暂无"} (${analysis?.status ?: "none"})",
+                        text = "获客分析：${analysis?.title ?: "暂无"}（${analysis?.status?.toUserStatusLabel() ?: "未生成"}）",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Text(
-                        text = "AnalysisReport：${report?.title ?: "暂无"} (${report?.status ?: "none"})",
+                        text = "分析报告：${report?.title ?: "暂无"}（${report?.status?.toUserStatusLabel() ?: "未生成"}）",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
 
                 V1SectionState.Empty -> {
-                    Text(text = "真实后端当前没有最近对象。", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "暂无可复看的销售分析结果。", style = MaterialTheme.typography.bodyMedium)
                 }
 
                 is V1SectionState.Failed -> {
@@ -268,16 +297,47 @@ private fun RecentResultsCard(
 
             OutlinedButton(
                 onClick = onViewLatestAnalysisClick,
+                enabled = (backendState.history as? V1SectionState.Loaded)?.value?.latestAnalysisResult != null,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(text = "查看最新分析结果")
+                Text(text = "查看获客分析结果")
             }
             OutlinedButton(
                 onClick = onViewLatestReportClick,
+                enabled = (backendState.history as? V1SectionState.Loaded)?.value?.latestReport != null,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(text = "查看最新分析报告")
+                Text(text = "查看分析报告")
             }
         }
     }
 }
+
+private fun String.toFlowName(): String =
+    when (this) {
+        "product_learning" -> "产品学习"
+        "lead_analysis" -> "获客分析"
+        "report_generation" -> "分析报告生成"
+        else -> this
+    }
+
+private fun String.toUserStatusLabel(): String =
+    when (this) {
+        "draft" -> "待确认"
+        "confirmed" -> "已确认"
+        "succeeded" -> "已完成"
+        "failed" -> "失败"
+        "running" -> "处理中"
+        "pending" -> "等待中"
+        "cancelled" -> "已取消"
+        "published" -> "可复看"
+        else -> this
+    }
+
+private fun String.toLearningStageLabel(): String =
+    when (this) {
+        "collecting" -> "继续补充"
+        "ready_for_confirmation" -> "可确认"
+        "confirmed" -> "已确认"
+        else -> this
+    }

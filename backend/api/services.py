@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import timezone
 import logging
 from uuid import uuid4
@@ -8,22 +9,97 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.api import models, schemas
+from backend.api import models, schemas, serializers
 from backend.api.config import get_settings
 from backend.api.database import get_session_factory
-from backend.runtime.adapter import StubRuntimeAdapter
+from backend.api.product_learning import (
+    DEFAULT_DELIVERY_MODEL,
+    canonical_missing_fields,
+    derive_learning_stage,
+)
+from backend.runtime.adapter import RuntimeProvider, get_runtime_provider
 
 logger = logging.getLogger(__name__)
+
+
+DEFAULT_RUNTIME_PROVIDER = get_runtime_provider()
+
+
+@dataclass
+class ProductProfileCreationResult:
+    product_profile: models.ProductProfile
+    current_run: models.AgentRun
 
 
 def generate_prefixed_id(prefix: str) -> str:
     return f"{prefix}_{uuid4().hex[:8]}"
 
 
+def _build_runtime_metadata(run_type: str, *, round_index: int = 0) -> dict[str, object]:
+    return DEFAULT_RUNTIME_PROVIDER.runtime_metadata(run_type, round_index=round_index)
+
+
+def _merge_runtime_metadata(
+    agent_run: models.AgentRun,
+    runtime_metadata: dict[str, object],
+) -> None:
+    if not runtime_metadata:
+        return
+    merged = dict(agent_run.runtime_metadata or {})
+    merged.update(runtime_metadata)
+    agent_run.runtime_metadata = merged
+
+
+def _product_learning_round_index(
+    session: Session,
+    product_profile_id: str,
+) -> int:
+    product_learning_runs = session.scalars(
+        select(models.AgentRun).where(models.AgentRun.run_type == "product_learning")
+    ).all()
+    return sum(
+        1
+        for run in product_learning_runs
+        if any(
+            ref.get("object_type") == "product_profile"
+            and ref.get("object_id") == product_profile_id
+            for ref in run.input_refs
+        )
+    )
+
+
+def _create_product_learning_agent_run(
+    session: Session,
+    product_profile: models.ProductProfile,
+    *,
+    trigger_source: str,
+    round_index: int,
+) -> models.AgentRun:
+    agent_run = models.AgentRun(
+        id=generate_prefixed_id("run"),
+        run_type="product_learning",
+        triggered_by="user",
+        trigger_source=trigger_source,
+        input_refs=[
+            {
+                "object_type": "product_profile",
+                "object_id": product_profile.id,
+                "version": product_profile.version,
+            }
+        ],
+        output_refs=[],
+        status="queued",
+        runtime_provider=DEFAULT_RUNTIME_PROVIDER.provider_name,
+        runtime_metadata=_build_runtime_metadata("product_learning", round_index=round_index),
+    )
+    session.add(agent_run)
+    return agent_run
+
+
 def create_product_profile(
     session: Session,
     payload: schemas.ProductProfileCreateRequest,
-) -> models.ProductProfile:
+) -> ProductProfileCreationResult:
     profile = models.ProductProfile(
         id=generate_prefixed_id("pp"),
         name=payload.name,
@@ -34,28 +110,104 @@ def create_product_profile(
         typical_use_cases=[],
         pain_points_solved=[],
         core_advantages=[],
-        constraints=["当前仍是 V1 最小闭环"],
-        missing_fields=["价格区间", "销售区域"],
+        delivery_model=DEFAULT_DELIVERY_MODEL,
+        constraints=[],
+        missing_fields=[],
+        confidence_score=20,
         status="draft",
         version=1,
     )
     session.add(profile)
+    session.flush()
+
+    profile.missing_fields = canonical_missing_fields(profile)
+
+    agent_run = _create_product_learning_agent_run(
+        session,
+        profile,
+        trigger_source="android_product_learning",
+        round_index=0,
+    )
     session.commit()
     session.refresh(profile)
+    session.refresh(agent_run)
     logger.info(
         "product_profile.created",
         extra={
             "event": "product_profile.created",
+            "product_profile_id": profile.id,
             "status": profile.status,
+            "learning_stage": derive_learning_stage(profile),
+            "current_run_id": agent_run.id,
         },
     )
-    return profile
+    return ProductProfileCreationResult(product_profile=profile, current_run=agent_run)
+
+
+def enrich_product_profile(
+    session: Session,
+    product_profile_id: str,
+    payload: schemas.ProductProfileEnrichRequest,
+) -> models.AgentRun:
+    product_profile = get_product_profile_or_404(session, product_profile_id)
+    if product_profile.status != "draft":
+        raise HTTPException(status_code=409, detail="product_profile_enrich_requires_draft")
+
+    existing_notes = (product_profile.source_notes or "").strip()
+    supplemental_notes = payload.supplemental_notes.strip()
+    product_profile.source_notes = (
+        f"{existing_notes}\n{supplemental_notes}" if existing_notes else supplemental_notes
+    )
+
+    round_index = _product_learning_round_index(session, product_profile.id)
+    agent_run = _create_product_learning_agent_run(
+        session,
+        product_profile,
+        trigger_source=payload.trigger_source,
+        round_index=round_index,
+    )
+    session.commit()
+    session.refresh(agent_run)
+    logger.info(
+        "product_profile.enrich_queued",
+        extra={
+            "event": "product_profile.enrich_queued",
+            "product_profile_id": product_profile.id,
+            "agent_run_id": agent_run.id,
+            "round_index": round_index,
+        },
+    )
+    return agent_run
 
 
 def get_product_profile_or_404(session: Session, product_profile_id: str) -> models.ProductProfile:
     product_profile = session.get(models.ProductProfile, product_profile_id)
     if product_profile is None:
         raise HTTPException(status_code=404, detail="product_profile_not_found")
+    return product_profile
+
+
+def confirm_product_profile(session: Session, product_profile_id: str) -> models.ProductProfile:
+    product_profile = get_product_profile_or_404(session, product_profile_id)
+    if product_profile.status == "draft":
+        if derive_learning_stage(product_profile) != "ready_for_confirmation":
+            raise HTTPException(
+                status_code=409,
+                detail="product_profile_not_ready_for_confirmation",
+            )
+        product_profile.status = "confirmed"
+        product_profile.version += 1
+        product_profile.missing_fields = canonical_missing_fields(product_profile)
+        session.commit()
+        session.refresh(product_profile)
+        logger.info(
+            "product_profile.confirmed",
+            extra={
+                "event": "product_profile.confirmed",
+                "product_profile_id": product_profile.id,
+                "version": product_profile.version,
+            },
+        )
     return product_profile
 
 
@@ -99,14 +251,10 @@ def create_analysis_run(
 
     if payload.run_type == "lead_analysis":
         if product_profile.status != "confirmed":
-            settings = get_settings()
-            if not (settings.runtime_allow_draft_profiles and product_profile.status == "draft"):
-                raise HTTPException(
-                    status_code=409,
-                    detail="lead_analysis_requires_confirmed_product_profile",
-                )
-        # Development-only relaxation: allow draft profiles so the stub chain can run
-        # before the dedicated confirmation endpoint exists.
+            raise HTTPException(
+                status_code=409,
+                detail="lead_analysis_requires_confirmed_product_profile",
+            )
 
     if payload.run_type == "report_generation":
         if not payload.lead_analysis_result_id:
@@ -131,8 +279,8 @@ def create_analysis_run(
         input_refs=input_refs,
         output_refs=[],
         status="queued",
-        runtime_provider="stub",
-        runtime_metadata={"adapter": "stub", "phase": "pre-openclaw"},
+        runtime_provider=DEFAULT_RUNTIME_PROVIDER.provider_name,
+        runtime_metadata=_build_runtime_metadata(payload.run_type, round_index=0),
     )
     session.add(agent_run)
     session.commit()
@@ -151,7 +299,7 @@ def create_analysis_run(
 
 
 def process_agent_run(run_id: str) -> None:
-    adapter = StubRuntimeAdapter()
+    runtime_provider = get_runtime_provider()
     session = get_session_factory()()
 
     try:
@@ -161,8 +309,13 @@ def process_agent_run(run_id: str) -> None:
 
         agent_run.status = "running"
         agent_run.started_at = models.utcnow()
-        agent_run.runtime_provider = adapter.provider_name
-        agent_run.runtime_metadata = adapter.runtime_metadata()
+        agent_run.runtime_provider = runtime_provider.provider_name
+        existing_metadata = dict(agent_run.runtime_metadata or {})
+        agent_run.runtime_metadata = runtime_provider.runtime_metadata(
+            agent_run.run_type,
+            round_index=int(existing_metadata.get("round_index", 0)),
+            trace_id=existing_metadata.get("trace_id"),
+        )
         session.commit()
         logger.info(
             "analysis_run.started",
@@ -177,9 +330,11 @@ def process_agent_run(run_id: str) -> None:
         )
 
         if agent_run.run_type == "lead_analysis":
-            _process_lead_analysis(session, agent_run, adapter)
+            _process_lead_analysis(session, agent_run, runtime_provider)
+        elif agent_run.run_type == "product_learning":
+            _process_product_learning(session, agent_run, runtime_provider)
         elif agent_run.run_type == "report_generation":
-            _process_report_generation(session, agent_run, adapter)
+            _process_report_generation(session, agent_run, runtime_provider)
         else:
             raise ValueError(f"unsupported_run_type: {agent_run.run_type}")
 
@@ -201,8 +356,11 @@ def process_agent_run(run_id: str) -> None:
         session.rollback()
         failed_run = session.get(models.AgentRun, run_id)
         if failed_run is not None:
+            runtime_metadata = dict(failed_run.runtime_metadata or {})
+            runtime_metadata["error_type"] = type(exc).__name__
             failed_run.status = "failed"
             failed_run.error_message = str(exc)
+            failed_run.runtime_metadata = runtime_metadata
             if failed_run.started_at is None:
                 failed_run.started_at = models.utcnow()
             failed_run.ended_at = models.utcnow()
@@ -228,20 +386,22 @@ def process_agent_run(run_id: str) -> None:
 def _process_lead_analysis(
     session: Session,
     agent_run: models.AgentRun,
-    adapter: StubRuntimeAdapter,
+    runtime_provider: RuntimeProvider,
 ) -> None:
     profile_ref = next(
         ref for ref in agent_run.input_refs if ref["object_type"] == "product_profile"
     )
     product_profile = get_product_profile_or_404(session, str(profile_ref["object_id"]))
 
-    settings = get_settings()
-    if product_profile.status != "confirmed" and not (
-        settings.runtime_allow_draft_profiles and product_profile.status == "draft"
-    ):
+    if product_profile.status != "confirmed":
         raise ValueError("lead_analysis_requires_confirmed_product_profile")
 
-    draft = adapter.generate_lead_analysis_draft(product_profile)
+    draft_result = runtime_provider.generate_lead_analysis_draft(
+        product_profile,
+        run_id=agent_run.id,
+    )
+    draft = draft_result.draft
+    _merge_runtime_metadata(agent_run, draft_result.runtime_metadata)
     analysis_result = models.LeadAnalysisResult(
         id=generate_prefixed_id("lar"),
         product_profile_id=product_profile.id,
@@ -270,10 +430,79 @@ def _process_lead_analysis(
     ]
 
 
+def _prefer_existing_list(existing: list[str], generated: list[str]) -> list[str]:
+    return existing if existing else generated
+
+
+def _prefer_existing_value(existing: str | None, generated: str | None) -> str | None:
+    if existing and existing.strip() and existing != DEFAULT_DELIVERY_MODEL:
+        return existing
+    if existing == DEFAULT_DELIVERY_MODEL and not generated:
+        return existing
+    return generated or existing
+
+
+def _process_product_learning(
+    session: Session,
+    agent_run: models.AgentRun,
+    runtime_provider: RuntimeProvider,
+) -> None:
+    profile_ref = next(
+        ref for ref in agent_run.input_refs if ref["object_type"] == "product_profile"
+    )
+    product_profile = get_product_profile_or_404(session, str(profile_ref["object_id"]))
+
+    draft_result = runtime_provider.generate_product_learning_draft(
+        product_profile,
+        run_id=agent_run.id,
+    )
+    draft = draft_result.draft
+    _merge_runtime_metadata(agent_run, draft_result.runtime_metadata)
+    product_profile.target_customers = _prefer_existing_list(
+        product_profile.target_customers,
+        draft.target_customers,
+    )
+    product_profile.target_industries = _prefer_existing_list(
+        product_profile.target_industries,
+        draft.target_industries,
+    )
+    product_profile.typical_use_cases = _prefer_existing_list(
+        product_profile.typical_use_cases,
+        draft.typical_use_cases,
+    )
+    product_profile.pain_points_solved = _prefer_existing_list(
+        product_profile.pain_points_solved,
+        draft.pain_points_solved,
+    )
+    product_profile.core_advantages = _prefer_existing_list(
+        product_profile.core_advantages,
+        draft.core_advantages,
+    )
+    product_profile.constraints = _prefer_existing_list(
+        product_profile.constraints,
+        draft.constraints,
+    )
+    product_profile.delivery_model = (
+        _prefer_existing_value(product_profile.delivery_model, draft.delivery_model)
+        or DEFAULT_DELIVERY_MODEL
+    )
+    product_profile.confidence_score = max(0, min(draft.confidence_score, 100))
+    product_profile.missing_fields = canonical_missing_fields(product_profile)
+    product_profile.version += 1
+    session.flush()
+    agent_run.output_refs = [
+        {
+            "object_type": "product_profile",
+            "object_id": product_profile.id,
+            "version": product_profile.version,
+        }
+    ]
+
+
 def _process_report_generation(
     session: Session,
     agent_run: models.AgentRun,
-    adapter: StubRuntimeAdapter,
+    runtime_provider: RuntimeProvider,
 ) -> None:
     profile_ref = next(
         ref for ref in agent_run.input_refs if ref["object_type"] == "product_profile"
@@ -285,7 +514,11 @@ def _process_report_generation(
     product_profile = get_product_profile_or_404(session, str(profile_ref["object_id"]))
     analysis_result = get_lead_analysis_result_or_404(session, str(analysis_ref["object_id"]))
 
-    draft = adapter.generate_report_draft(product_profile, analysis_result)
+    draft = runtime_provider.generate_report_draft(
+        product_profile,
+        analysis_result,
+        run_id=agent_run.id,
+    )
     report = models.AnalysisReport(
         id=generate_prefixed_id("rep"),
         product_profile_id=product_profile.id,
@@ -326,6 +559,15 @@ def build_result_summary(session: Session, agent_run: models.AgentRun) -> dict[s
             "lead_analysis_result_id": result.id,
             "status": result.status,
             "updated_at": result.updated_at.astimezone(timezone.utc),
+        }
+
+    if object_type == "product_profile":
+        product_profile = get_product_profile_or_404(session, object_id)
+        return {
+            "product_profile_id": product_profile.id,
+            "learning_stage": derive_learning_stage(product_profile),
+            "status": product_profile.status,
+            "updated_at": product_profile.updated_at.astimezone(timezone.utc),
         }
 
     if object_type == "analysis_report":
@@ -405,14 +647,7 @@ def build_history(session: Session) -> schemas.HistoryResponse:
             else None
         ),
         latest_product_profile=(
-            schemas.ProductProfileSummary(
-                id=latest_product_profile.id,
-                name=latest_product_profile.name,
-                one_line_description=latest_product_profile.one_line_description,
-                status=latest_product_profile.status,
-                version=latest_product_profile.version,
-                updated_at=latest_product_profile.updated_at,
-            )
+            serializers.product_profile_summary(latest_product_profile)
             if latest_product_profile
             else None
         ),

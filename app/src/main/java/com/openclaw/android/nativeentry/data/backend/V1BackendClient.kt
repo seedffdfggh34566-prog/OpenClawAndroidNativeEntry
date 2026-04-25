@@ -27,6 +27,17 @@ class V1BackendClient(
             parser = ::parseProductProfileCreateResponse,
         )
 
+    suspend fun enrichProductProfile(
+        id: String,
+        payload: ProductProfileEnrichRequestDto,
+    ): BackendReadResult<ProductProfileEnrichResponseDto> =
+        requestJson(
+            method = "POST",
+            path = "/product-profiles/${id.encodePathSegment()}/enrich",
+            body = payload.toJsonBody(),
+            parser = ::parseProductProfileEnrichResponse,
+        )
+
     suspend fun createAnalysisRun(
         payload: AnalysisRunCreateRequestDto,
     ): BackendReadResult<AnalysisRunCreateResponseDto> =
@@ -66,6 +77,13 @@ class V1BackendClient(
             method = "GET",
             path = "/lead-analysis-results/${id.encodePathSegment()}",
             parser = ::parseLeadAnalysisResultDetail,
+        )
+
+    suspend fun confirmProductProfile(id: String): BackendReadResult<ProductProfileConfirmResponseDto> =
+        requestJson(
+            method = "POST",
+            path = "/product-profiles/${id.encodePathSegment()}/confirm",
+            parser = ::parseProductProfileConfirmResponse,
         )
 
     private suspend fun <T> requestJson(

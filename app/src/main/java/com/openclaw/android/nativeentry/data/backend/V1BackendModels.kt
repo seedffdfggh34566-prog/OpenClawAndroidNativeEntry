@@ -33,6 +33,7 @@ data class ProductProfileSummaryDto(
     val name: String,
     val oneLineDescription: String,
     val status: String,
+    val learningStage: String,
     val version: Int,
     val updatedAt: String,
 )
@@ -45,7 +46,21 @@ data class ProductProfileCreateRequestDto(
 
 data class ProductProfileCreateResponseDto(
     val productProfile: ProductProfileSummaryDto,
+    val currentRun: AgentRunDto?,
     val links: Map<String, String>,
+)
+
+data class ProductProfileEnrichRequestDto(
+    val supplementalNotes: String,
+    val triggerSource: String,
+)
+
+data class ProductProfileEnrichResponseDto(
+    val agentRun: AgentRunDto,
+)
+
+data class ProductProfileConfirmResponseDto(
+    val productProfile: ProductProfileSummaryDto,
 )
 
 data class AnalysisRunCreateRequestDto(
@@ -142,6 +157,7 @@ data class ProductProfileDetailDto(
     val name: String,
     val oneLineDescription: String,
     val status: String,
+    val learningStage: String,
     val version: Int,
     val targetCustomers: List<String>,
     val targetIndustries: List<String>,

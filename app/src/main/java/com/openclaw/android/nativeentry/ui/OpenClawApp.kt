@@ -35,6 +35,8 @@ import com.openclaw.android.nativeentry.data.backend.BackendReadError
 import com.openclaw.android.nativeentry.data.backend.BackendReadResult
 import com.openclaw.android.nativeentry.data.backend.HistoryResponseDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileCreateRequestDto
+import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichRequestDto
+import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichResponseDto
 import com.openclaw.android.nativeentry.data.backend.V1BackendClient
 import com.openclaw.android.nativeentry.navigation.OpenClawDestination
 import com.openclaw.android.nativeentry.navigation.OpenClawNavHost
@@ -61,7 +63,7 @@ import kotlinx.coroutines.launch
 
 private const val GatewayLaunchTimeoutMillis = 75_000L
 private const val GatewayLaunchPollIntervalMillis = 1_500L
-private const val AnalysisRunPollAttempts = 10
+private const val AnalysisRunPollAttempts = 30
 private const val AnalysisRunPollIntervalMillis = 1_000L
 private val DashboardUrlPattern = Regex("""http://127\.0\.0\.1:18789[^\s]*#token=[^\s]+""")
 
@@ -82,6 +84,7 @@ fun OpenClawApp() {
     var productName by remember { mutableStateOf("") }
     var productDescription by remember { mutableStateOf("") }
     var sourceNotes by remember { mutableStateOf("") }
+    var supplementalNotes by remember { mutableStateOf("") }
     var gatewaySnapshot by remember { mutableStateOf(GatewayCheckSnapshot()) }
     var launchSnapshot by remember { mutableStateOf(OpenClawLaunchSnapshot()) }
     var chatEntryState by remember { mutableStateOf(OpenClawChatEntryState()) }
@@ -91,6 +94,7 @@ fun OpenClawApp() {
     var backendRefreshJob by remember { mutableStateOf<Job?>(null) }
     var productProfileLoadJob by remember { mutableStateOf<Job?>(null) }
     var productProfileCreateJob by remember { mutableStateOf<Job?>(null) }
+    var productProfileEnrichJob by remember { mutableStateOf<Job?>(null) }
     var analysisRunJob by remember { mutableStateOf<Job?>(null) }
     var reportRunJob by remember { mutableStateOf<Job?>(null) }
     var reportLoadJob by remember { mutableStateOf<Job?>(null) }
@@ -134,6 +138,9 @@ fun OpenClawApp() {
         backendState = backendState.copy(
             history = V1SectionState.Loading,
             productProfile = V1SectionState.Idle,
+            productProfileConfirm = V1SectionState.Idle,
+            productProfileEnrich = V1SectionState.Idle,
+            productLearningRun = V1SectionState.Idle,
             report = V1SectionState.Idle,
             isDebugFallbackEnabled = false,
         )
@@ -232,7 +239,10 @@ fun OpenClawApp() {
         }
 
         productProfileCreateJob?.cancel()
-        backendState = backendState.copy(productProfileCreate = V1SectionState.Loading)
+        backendState = backendState.copy(
+            productProfileCreate = V1SectionState.Loading,
+            productLearningRun = V1SectionState.Idle,
+        )
         productProfileCreateJob = scope.launch {
             val createResult = backendClient.createProductProfile(
                 ProductProfileCreateRequestDto(
@@ -250,13 +260,273 @@ fun OpenClawApp() {
                 }
 
                 is BackendReadResult.Success -> {
-                    val createdProfile = createResult.value.productProfile
+                    val createPayload = createResult.value
+                    val createdProfile = createPayload.productProfile
                     backendState = backendState.copy(
-                        productProfileCreate = V1SectionState.Loaded(createResult.value),
+                        productProfileCreate = V1SectionState.Loaded(createPayload),
                         productProfile = V1SectionState.Loading,
+                        productProfileConfirm = V1SectionState.Idle,
+                        productLearningRun = if (createPayload.currentRun != null) {
+                            V1SectionState.Loading
+                        } else {
+                            V1SectionState.Idle
+                        },
                     )
 
+                    val currentRun = createPayload.currentRun
+                    if (currentRun != null) {
+                        var finalSucceeded = false
+                        var attempt = 0
+                        while (attempt < AnalysisRunPollAttempts && !finalSucceeded) {
+                            when (val detailResult = backendClient.getAnalysisRun(currentRun.id)) {
+                                is BackendReadResult.Failure -> {
+                                    backendState = backendState.copy(
+                                        productLearningRun = V1SectionState.Failed(detailResult.error),
+                                    )
+                                    return@launch
+                                }
+
+                                is BackendReadResult.Success -> {
+                                    backendState = backendState.copy(
+                                        productLearningRun = V1SectionState.Loaded(detailResult.value),
+                                    )
+                                    val run = detailResult.value.agentRun
+                                    if (run.status == "succeeded") {
+                                        finalSucceeded = true
+                                    } else if (run.status == "failed" || run.status == "cancelled") {
+                                        backendState = backendState.copy(
+                                            productLearningRun = V1SectionState.Failed(
+                                                BackendReadError(
+                                                    title = "产品学习运行未成功",
+                                                    detail = run.errorMessage
+                                                        ?: "product_learning 已进入 ${run.status} 状态。",
+                                                ),
+                                            ),
+                                        )
+                                        return@launch
+                                    }
+                                }
+                            }
+
+                            attempt += 1
+                            if (attempt < AnalysisRunPollAttempts && !finalSucceeded) {
+                                delay(AnalysisRunPollIntervalMillis)
+                            }
+                        }
+
+                        if (!finalSucceeded) {
+                            backendState = backendState.copy(
+                                productLearningRun = V1SectionState.Failed(
+                                    BackendReadError(
+                                        title = "产品学习运行未在轮询窗口内完成",
+                                        detail = "请稍后重新进入产品画像页查看最新状态。",
+                                    ),
+                                ),
+                            )
+                            return@launch
+                        }
+                    }
+
                     when (val profileResult = backendClient.getProductProfile(createdProfile.id)) {
+                        is BackendReadResult.Failure -> {
+                            backendState = backendState.copy(
+                                productProfile = V1SectionState.Failed(profileResult.error),
+                            )
+                            return@launch
+                        }
+
+                        is BackendReadResult.Success -> {
+                            backendState = backendState.copy(
+                                productProfile = V1SectionState.Loaded(profileResult.value),
+                            )
+                        }
+                    }
+
+                    when (val historyResult = backendClient.getHistory()) {
+                        is BackendReadResult.Failure -> {
+                            backendState = backendState.copy(
+                                history = V1SectionState.Failed(historyResult.error),
+                            )
+                        }
+
+                        is BackendReadResult.Success -> {
+                            backendState = backendState.copy(
+                                history = if (historyResult.value.isEmpty) {
+                                    V1SectionState.Empty
+                                } else {
+                                    V1SectionState.Loaded(historyResult.value)
+                                },
+                                isDebugFallbackEnabled = false,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun submitProductProfileEnrich() {
+        val profileId = when (val profileState = backendState.productProfile) {
+            is V1SectionState.Loaded -> profileState.value.id
+            else -> backendState.loadedHistory()?.latestProductProfile?.id
+        }
+        val trimmedNotes = supplementalNotes.trim()
+
+        if (profileId.isNullOrBlank()) {
+            backendState = backendState.copy(productProfileEnrich = V1SectionState.Empty)
+            return
+        }
+
+        if (trimmedNotes.isBlank()) {
+            return
+        }
+
+        productProfileEnrichJob?.cancel()
+        backendState = backendState.copy(
+            productProfileEnrich = V1SectionState.Loading,
+            productLearningRun = V1SectionState.Idle,
+            productProfileConfirm = V1SectionState.Idle,
+        )
+        productProfileEnrichJob = scope.launch {
+            val enrichResult = backendClient.enrichProductProfile(
+                id = profileId,
+                payload = ProductProfileEnrichRequestDto(
+                    supplementalNotes = trimmedNotes,
+                    triggerSource = "android_product_learning_iteration",
+                ),
+            )
+
+            val runId = when (enrichResult) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(
+                        productProfileEnrich = V1SectionState.Failed(enrichResult.error),
+                    )
+                    return@launch
+                }
+
+                is BackendReadResult.Success -> {
+                    backendState = backendState.copy(
+                        productProfileEnrich = V1SectionState.Loaded(enrichResult.value),
+                        productLearningRun = V1SectionState.Loading,
+                    )
+                    enrichResult.value.agentRun.id
+                }
+            }
+
+            var finalSucceeded = false
+            var attempt = 0
+            while (attempt < AnalysisRunPollAttempts && !finalSucceeded) {
+                when (val detailResult = backendClient.getAnalysisRun(runId)) {
+                    is BackendReadResult.Failure -> {
+                        backendState = backendState.copy(
+                            productLearningRun = V1SectionState.Failed(detailResult.error),
+                        )
+                        return@launch
+                    }
+
+                    is BackendReadResult.Success -> {
+                        backendState = backendState.copy(
+                            productProfileEnrich = V1SectionState.Loaded(
+                                ProductProfileEnrichResponseDto(detailResult.value.agentRun),
+                            ),
+                            productLearningRun = V1SectionState.Loaded(detailResult.value),
+                        )
+                        val run = detailResult.value.agentRun
+                        if (run.status == "succeeded") {
+                            finalSucceeded = true
+                        } else if (run.status == "failed" || run.status == "cancelled") {
+                            backendState = backendState.copy(
+                                productLearningRun = V1SectionState.Failed(
+                                    BackendReadError(
+                                        title = "产品学习补充未成功",
+                                        detail = run.errorMessage
+                                            ?: "product_learning 已进入 ${run.status} 状态。",
+                                    ),
+                                ),
+                            )
+                            return@launch
+                        }
+                    }
+                }
+
+                attempt += 1
+                if (attempt < AnalysisRunPollAttempts && !finalSucceeded) {
+                    delay(AnalysisRunPollIntervalMillis)
+                }
+            }
+
+            if (!finalSucceeded) {
+                backendState = backendState.copy(
+                    productLearningRun = V1SectionState.Failed(
+                        BackendReadError(
+                            title = "产品学习补充未在轮询窗口内完成",
+                            detail = "请稍后刷新产品学习页或产品画像页查看最新状态。",
+                        ),
+                    ),
+                )
+                return@launch
+            }
+
+            backendState = backendState.copy(productProfile = V1SectionState.Loading)
+            when (val profileResult = backendClient.getProductProfile(profileId)) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(
+                        productProfile = V1SectionState.Failed(profileResult.error),
+                    )
+                    return@launch
+                }
+
+                is BackendReadResult.Success -> {
+                    backendState = backendState.copy(
+                        productProfile = V1SectionState.Loaded(profileResult.value),
+                    )
+                    supplementalNotes = ""
+                }
+            }
+
+            when (val historyResult = backendClient.getHistory()) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(history = V1SectionState.Failed(historyResult.error))
+                }
+
+                is BackendReadResult.Success -> {
+                    backendState = backendState.copy(
+                        history = if (historyResult.value.isEmpty) {
+                            V1SectionState.Empty
+                        } else {
+                            V1SectionState.Loaded(historyResult.value)
+                        },
+                        isDebugFallbackEnabled = false,
+                    )
+                }
+            }
+        }
+    }
+
+    fun confirmProductProfile() {
+        val profileId = when (val profileState = backendState.productProfile) {
+            is V1SectionState.Loaded -> profileState.value.id
+            else -> backendState.loadedHistory()?.latestProductProfile?.id
+        }
+
+        if (profileId.isNullOrBlank()) {
+            backendState = backendState.copy(productProfileConfirm = V1SectionState.Empty)
+            return
+        }
+
+        backendState = backendState.copy(productProfileConfirm = V1SectionState.Loading)
+        scope.launch {
+            when (val result = backendClient.confirmProductProfile(profileId)) {
+                is BackendReadResult.Failure -> {
+                    backendState = backendState.copy(productProfileConfirm = V1SectionState.Failed(result.error))
+                }
+
+                is BackendReadResult.Success -> {
+                    backendState = backendState.copy(
+                        productProfileConfirm = V1SectionState.Loaded(result.value),
+                        productProfile = V1SectionState.Loading,
+                    )
+                    when (val profileResult = backendClient.getProductProfile(profileId)) {
                         is BackendReadResult.Failure -> {
                             backendState = backendState.copy(
                                 productProfile = V1SectionState.Failed(profileResult.error),
@@ -287,10 +557,6 @@ fun OpenClawApp() {
                                 isDebugFallbackEnabled = false,
                             )
                         }
-                    }
-
-                    navController.navigate(OpenClawDestination.ProductProfile.route) {
-                        launchSingleTop = true
                     }
                 }
             }
@@ -743,7 +1009,10 @@ fun OpenClawApp() {
     }
 
     LaunchedEffect(currentScreen, latestProductProfileId) {
-        if (currentScreen == OpenClawDestination.ProductProfile) {
+        if (
+            currentScreen == OpenClawDestination.ProductProfile ||
+            currentScreen == OpenClawDestination.ProductLearning
+        ) {
             loadLatestProductProfile()
         }
     }
@@ -822,13 +1091,17 @@ fun OpenClawApp() {
             onLoadLatestProductProfile = ::loadLatestProductProfile,
             onLoadLatestReport = ::loadLatestReport,
             onLoadLatestAnalysisResult = ::loadLatestAnalysisResult,
+            onConfirmProductProfile = ::confirmProductProfile,
             productName = productName,
             productDescription = productDescription,
             sourceNotes = sourceNotes,
+            supplementalNotes = supplementalNotes,
             onProductNameChange = { productName = it },
             onProductDescriptionChange = { productDescription = it },
             onSourceNotesChange = { sourceNotes = it },
+            onSupplementalNotesChange = { supplementalNotes = it },
             onSubmitProductProfile = ::submitProductProfile,
+            onSubmitProductProfileEnrich = ::submitProductProfileEnrich,
             onTriggerLeadAnalysis = ::triggerLeadAnalysis,
             onTriggerReportGeneration = ::triggerReportGeneration,
             modifier = Modifier.padding(innerPadding),

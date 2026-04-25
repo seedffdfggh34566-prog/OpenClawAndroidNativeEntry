@@ -30,14 +30,24 @@ fun ProductLearningScreen(
     productName: String,
     productDescription: String,
     sourceNotes: String,
+    supplementalNotes: String,
     onProductNameChange: (String) -> Unit,
     onProductDescriptionChange: (String) -> Unit,
     onSourceNotesChange: (String) -> Unit,
+    onSupplementalNotesChange: (String) -> Unit,
     onSubmitProductProfileClick: () -> Unit,
+    onSubmitProductProfileEnrichClick: () -> Unit,
     onContinueClick: () -> Unit,
     onOpenOpsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val currentProfile = (backendState.productProfile as? V1SectionState.Loaded)?.value
+    val canSubmitEnrich = currentProfile?.status == "draft" &&
+        supplementalNotes.isNotBlank() &&
+        backendState.productProfileEnrich !is V1SectionState.Loading &&
+        backendState.productLearningRun !is V1SectionState.Loading
+    val isReadyForConfirmation = currentProfile
+        ?.let { it.status == "draft" && it.learningStage == "ready_for_confirmation" } == true
     val canSubmit = productName.isNotBlank() &&
         productDescription.isNotBlank() &&
         backendState.productProfileCreate !is V1SectionState.Loading
@@ -49,12 +59,12 @@ fun ProductLearningScreen(
             fontWeight = FontWeight.SemiBold,
         )
         Text(
-            text = "填写最小产品信息后创建 ProductProfile 草稿。当前只创建画像，不触发分析。",
+            text = "先让系统理解你要卖的产品，再生成获客分析和可复看的销售报告。",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        ScreenSection(title = "创建产品画像草稿") {
+        ScreenSection(title = "先讲清楚你要卖什么") {
             OutlinedTextField(
                 value = productName,
                 onValueChange = onProductNameChange,
@@ -66,13 +76,15 @@ fun ProductLearningScreen(
                 value = productDescription,
                 onValueChange = onProductDescriptionChange,
                 label = { Text(text = "一句话描述") },
+                supportingText = { Text(text = "用一句话说明产品帮谁解决什么问题。") },
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = sourceNotes,
                 onValueChange = onSourceNotesChange,
-                label = { Text(text = "补充材料（可选）") },
+                label = { Text(text = "客户、场景、痛点和优势") },
+                supportingText = { Text(text = "可以写目标客户、行业场景、主要痛点、核心优势或限制条件。") },
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -80,18 +92,18 @@ fun ProductLearningScreen(
             when (val createState = backendState.productProfileCreate) {
                 V1SectionState.Idle -> {
                     Text(
-                        text = "提交后会调用真实 POST /product-profiles，创建 draft 状态 ProductProfile。",
+                        text = "提交后会生成第一版产品画像，并自动提炼客户、场景和优势。",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 V1SectionState.Loading -> {
-                    Text(text = "正在提交到真实后端。", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "正在整理第一版产品画像。", style = MaterialTheme.typography.bodyMedium)
                 }
 
                 V1SectionState.Empty -> {
-                    Text(text = "尚未创建 ProductProfile。", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "还没有开始整理产品画像。", style = MaterialTheme.typography.bodyMedium)
                 }
 
                 is V1SectionState.Failed -> {
@@ -101,8 +113,37 @@ fun ProductLearningScreen(
 
                 is V1SectionState.Loaded -> {
                     val profile = createState.value.productProfile
-                    Text(text = "已创建：${profile.name}", style = MaterialTheme.typography.bodyLarge)
-                    Text(text = "状态：${profile.status} · v${profile.version}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "已开始整理：${profile.name}", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = "当前进度：${profile.status.toUserStatusLabel()} · ${profile.learningStage.toLearningStageLabel()} · v${profile.version}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            when (val runState = backendState.productLearningRun) {
+                V1SectionState.Idle -> Unit
+                V1SectionState.Loading -> {
+                    Text(
+                        text = "正在富化产品画像，请稍候。",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+
+                V1SectionState.Empty -> {
+                    Text(text = "当前没有正在整理的产品信息。", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                is V1SectionState.Failed -> {
+                    Text(text = runState.error.title, style = MaterialTheme.typography.bodyLarge)
+                    Text(text = runState.error.detail, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                is V1SectionState.Loaded -> {
+                    val run = runState.value.agentRun
+                    Text(text = "产品信息已提交整理。", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "状态：${run.status.toUserStatusLabel()}", style = MaterialTheme.typography.bodyMedium)
                 }
             }
 
@@ -115,23 +156,126 @@ fun ProductLearningScreen(
                     text = if (backendState.productProfileCreate is V1SectionState.Loading) {
                         "提交中"
                     } else {
-                        "创建 ProductProfile 草稿"
+                        "创建并学习产品"
                     },
                 )
             }
         }
 
-        ScreenSection(title = "占位调试参考") {
-            DebugFallbackBanner()
-            Text(text = "产品：${placeholderState.productProfile.name}", style = MaterialTheme.typography.bodyLarge)
-            Text(text = "一句话描述：${placeholderState.productProfile.oneLineDescription}", style = MaterialTheme.typography.bodyMedium)
+        ScreenSection(title = "我们目前理解的是") {
+            when (val profileState = backendState.productProfile) {
+                V1SectionState.Idle,
+                V1SectionState.Loading -> StateNotice("正在读取最新产品画像。")
+
+                V1SectionState.Empty -> StateNotice("当前还没有可继续学习的产品画像。")
+
+                is V1SectionState.Failed -> FailureNotice(
+                    title = profileState.error.title,
+                    detail = profileState.error.detail,
+                )
+
+                is V1SectionState.Loaded -> {
+                    val profile = profileState.value
+                    Text(text = profile.name, style = MaterialTheme.typography.titleMedium)
+                    Text(text = profile.oneLineDescription, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "当前进度：${profile.status.toUserStatusLabel()} · ${profile.learningStage.toLearningStageLabel()} · v${profile.version}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(text = "适合卖给谁：${profile.targetCustomers.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "优先行业：${profile.targetIndustries.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "优先场景：${profile.typicalUseCases.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "解决什么问题：${profile.painPointsSolved.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "核心优势：${profile.coreAdvantages.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "限制条件：${profile.constraints.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
         }
 
-        OutlinedButton(
+        ScreenSection(title = "还差哪些关键信息") {
+            val missingFields = currentProfile?.missingFields.orEmpty()
+            missingFields.ifEmpty { listOf("目前没有必须补充的信息") }
+                .map { it.toMissingFieldPrompt() }
+                .forEach { BulletText(text = it) }
+            if (isReadyForConfirmation) {
+                Text(
+                    text = "当前产品画像已经可以确认，确认后即可生成获客分析。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+
+        ScreenSection(title = "继续补充信息") {
+            OutlinedTextField(
+                value = supplementalNotes,
+                onValueChange = onSupplementalNotesChange,
+                label = { Text(text = "补充材料") },
+                supportingText = { Text(text = "可以补充客户、行业、痛点、优势或暂时不做的范围。") },
+                minLines = 3,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            when (val enrichState = backendState.productProfileEnrich) {
+                V1SectionState.Idle -> {
+                    Text(
+                        text = "提交后会重新整理产品画像，并刷新上面的理解结果。",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                V1SectionState.Loading -> {
+                    Text(text = "正在根据补充材料刷新产品画像。", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                V1SectionState.Empty -> {
+                    Text(text = "当前还没有可继续补充的产品画像。", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                is V1SectionState.Failed -> FailureNotice(
+                    title = enrichState.error.title,
+                    detail = enrichState.error.detail,
+                )
+
+                is V1SectionState.Loaded -> {
+                    val run = enrichState.value.agentRun
+                    Text(text = "补充材料已提交。", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "状态：${run.status.toUserStatusLabel()}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            Button(
+                onClick = onSubmitProductProfileEnrichClick,
+                enabled = canSubmitEnrich,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = if (backendState.productProfileEnrich is V1SectionState.Loading) {
+                        "刷新中"
+                    } else {
+                        "提交补充并刷新产品画像"
+                    },
+                )
+            }
+        }
+
+        if (backendState.isDebugFallbackEnabled) {
+            ScreenSection(title = "占位调试参考") {
+                DebugFallbackBanner()
+                Text(text = "产品：${placeholderState.productProfile.name}", style = MaterialTheme.typography.bodyLarge)
+                Text(text = "一句话描述：${placeholderState.productProfile.oneLineDescription}", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+
+        Button(
             onClick = onContinueClick,
+            enabled = currentProfile != null,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(text = "查看最新产品画像")
+            Text(text = if (isReadyForConfirmation) "查看并确认产品画像" else "查看最新产品画像")
         }
 
         OutlinedButton(
@@ -149,11 +293,24 @@ fun ProductProfileScreen(
     placeholderState: V1ShellPlaceholderState,
     onContinueClick: () -> Unit,
     onRefreshClick: () -> Unit,
+    onConfirmProductProfileClick: () -> Unit,
     onTriggerLeadAnalysisClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val canTriggerLeadAnalysis = backendState.productProfile is V1SectionState.Loaded &&
+    val profileIsConfirmed = (backendState.productProfile as? V1SectionState.Loaded)
+        ?.value
+        ?.status == "confirmed"
+
+    val canTriggerLeadAnalysis = profileIsConfirmed &&
         backendState.analysisRun !is V1SectionState.Loading
+
+    val canConfirm = (backendState.productProfile as? V1SectionState.Loaded)
+        ?.value
+        ?.let { profile ->
+            profile.status == "draft" &&
+                profile.learningStage == "ready_for_confirmation" &&
+                backendState.productProfileConfirm !is V1SectionState.Loading
+        } == true
 
     ScreenFrame(modifier = modifier) {
         Text(
@@ -162,16 +319,16 @@ fun ProductProfileScreen(
             fontWeight = FontWeight.SemiBold,
         )
         Text(
-            text = "该页面读取真实 GET /product-profiles/{id}。当前仍不做编辑与提交。",
+            text = "先确认系统对产品、客户和切入场景的理解，再进入获客分析。",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         when (val profileState = backendState.productProfile) {
             V1SectionState.Idle,
-            V1SectionState.Loading -> StateNotice("正在读取最新 ProductProfile 详情。")
+            V1SectionState.Loading -> StateNotice("正在读取最新产品画像。")
 
-            V1SectionState.Empty -> StateNotice("真实后端当前没有可打开的 ProductProfile。")
+            V1SectionState.Empty -> StateNotice("当前还没有可确认的产品画像。")
 
             is V1SectionState.Failed -> FailureNotice(
                 title = profileState.error.title,
@@ -180,22 +337,31 @@ fun ProductProfileScreen(
 
             is V1SectionState.Loaded -> {
                 val profile = profileState.value
-                ScreenSection(title = "概要") {
-                    Text(text = "名称：${profile.name}", style = MaterialTheme.typography.bodyLarge)
-                    Text(text = "状态：${profile.status} · v${profile.version}", style = MaterialTheme.typography.bodyMedium)
-                    Text(text = "一句话描述：${profile.oneLineDescription}", style = MaterialTheme.typography.bodyMedium)
-                    Text(text = "更新时间：${profile.updatedAt}", style = MaterialTheme.typography.bodyMedium)
+                ScreenSection(title = "我们理解你的产品") {
+                    Text(text = profile.name, style = MaterialTheme.typography.titleMedium)
+                    Text(text = profile.oneLineDescription, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "当前进度：${profile.status.toUserStatusLabel()} · ${profile.learningStage.toLearningStageLabel()} · v${profile.version}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(text = "更新时间：${profile.updatedAt}", style = MaterialTheme.typography.bodySmall)
                 }
 
-                ScreenSection(title = "客户与场景") {
-                    Text(text = "目标客户：${profile.targetCustomers.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                ScreenSection(title = "适合卖给谁") {
+                    Text(text = "客户类型：${profile.targetCustomers.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
                     Text(text = "目标行业：${profile.targetIndustries.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
-                    Text(text = "典型场景：${profile.typicalUseCases.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "主要痛点：${profile.painPointsSolved.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
                 }
 
-                ScreenSection(title = "优势与限制") {
-                    profile.coreAdvantages.ifEmpty { listOf("暂无") }.forEach { BulletText(text = it) }
+                ScreenSection(title = "优先场景") {
+                    Text(text = "典型场景：${profile.typicalUseCases.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
                     Text(text = "交付模式：${profile.deliveryModel}", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                ScreenSection(title = "核心优势与限制") {
+                    profile.coreAdvantages.ifEmpty { listOf("暂无") }.forEach { BulletText(text = it) }
+                    Text(text = "限制条件：${profile.constraints.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
                 }
 
                 ScreenSection(title = "仍需补充") {
@@ -208,22 +374,81 @@ fun ProductProfileScreen(
             PlaceholderProductProfileSection(placeholderState)
         }
 
-        ScreenSection(title = "获客分析运行") {
-            when (val runState = backendState.analysisRun) {
+        ScreenSection(title = "产品画像确认") {
+            when (val confirmState = backendState.productProfileConfirm) {
                 V1SectionState.Idle -> {
+                    val profile = (backendState.productProfile as? V1SectionState.Loaded)?.value
                     Text(
-                        text = "点击后会创建 lead_analysis AgentRun，并轮询运行状态。",
+                        text = if (profileIsConfirmed) {
+                            "当前产品画像已确认，可以进入获客分析。"
+                        } else if (profile?.learningStage == "ready_for_confirmation") {
+                            "当前画像已达到可确认状态。确认后即可生成获客分析。"
+                        } else {
+                            "当前仍需补齐关键信息，先回到产品学习页继续补充。"
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 V1SectionState.Loading -> {
-                    Text(text = "正在创建并轮询 lead_analysis。", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "正在提交确认请求。", style = MaterialTheme.typography.bodyMedium)
                 }
 
                 V1SectionState.Empty -> {
-                    Text(text = "没有可用于分析的 ProductProfile。", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "没有可确认的产品画像。", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                is V1SectionState.Failed -> {
+                    Text(text = confirmState.error.title, style = MaterialTheme.typography.bodyLarge)
+                    Text(text = confirmState.error.detail, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                is V1SectionState.Loaded -> {
+                    val profile = confirmState.value.productProfile
+                    Text(text = "确认成功：${profile.name}", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = "新状态：${profile.status} · ${profile.learningStage} · v${profile.version}",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+
+            Button(
+                onClick = onConfirmProductProfileClick,
+                enabled = canConfirm,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = when {
+                        backendState.productProfileConfirm is V1SectionState.Loading -> "确认中"
+                        profileIsConfirmed -> "已确认"
+                        else -> "确认产品画像"
+                    },
+                )
+            }
+        }
+
+        ScreenSection(title = "获客分析运行") {
+            when (val runState = backendState.analysisRun) {
+                V1SectionState.Idle -> {
+                    Text(
+                        text = if (profileIsConfirmed) {
+                            "点击后会基于已确认的产品画像生成获客分析。"
+                        } else {
+                            "请先确认产品画像，再触发获客分析。"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                V1SectionState.Loading -> {
+                    Text(text = "正在生成获客分析。", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                V1SectionState.Empty -> {
+                    Text(text = "没有可用于分析的已确认产品画像。", style = MaterialTheme.typography.bodyMedium)
                 }
 
                 is V1SectionState.Failed -> {
@@ -233,8 +458,8 @@ fun ProductProfileScreen(
 
                 is V1SectionState.Loaded -> {
                     val run = runState.value.agentRun
-                    Text(text = "运行：${run.runType}", style = MaterialTheme.typography.bodyLarge)
-                    Text(text = "状态：${run.status}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "获客分析已提交。", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "状态：${run.status.toUserStatusLabel()}", style = MaterialTheme.typography.bodyMedium)
                     Text(text = "Run ID：${run.id}", style = MaterialTheme.typography.bodyMedium)
                     run.errorMessage?.let {
                         Text(text = "错误：$it", style = MaterialTheme.typography.bodyMedium)
@@ -293,16 +518,16 @@ fun AnalysisResultScreen(
             fontWeight = FontWeight.SemiBold,
         )
         Text(
-            text = "该页面读取真实 GET /lead-analysis-results/{id}，展示完整获客分析详情。",
+            text = "这里汇总优先行业、客户类型、切入场景和下一步销售动作。",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         when (val resultState = backendState.analysisResult) {
             V1SectionState.Idle,
-            V1SectionState.Loading -> StateNotice("正在读取最新 LeadAnalysisResult 详情。")
+            V1SectionState.Loading -> StateNotice("正在读取最新获客分析结果。")
 
-            V1SectionState.Empty -> StateNotice("真实后端当前没有 LeadAnalysisResult。")
+            V1SectionState.Empty -> StateNotice("当前还没有获客分析结果。")
 
             is V1SectionState.Failed -> FailureNotice(
                 title = resultState.error.title,
@@ -311,15 +536,27 @@ fun AnalysisResultScreen(
 
             is V1SectionState.Loaded -> {
                 val result = resultState.value
-                ScreenSection(title = "结果概要") {
+                ScreenSection(title = "优先尝试方向") {
                     Text(text = result.title, style = MaterialTheme.typography.titleMedium)
-                    Text(text = "状态：${result.status} · v${result.version}", style = MaterialTheme.typography.bodyMedium)
-                    Text(text = "分析范围：${result.analysisScope}", style = MaterialTheme.typography.bodyMedium)
-                    Text(text = "更新时间：${result.updatedAt}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = result.summary, style = MaterialTheme.typography.bodyMedium)
+                    result.priorityIndustries.firstOrNull()?.let {
+                        Text(text = "优先行业：$it", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    result.priorityCustomerTypes.firstOrNull()?.let {
+                        Text(text = "优先客户：$it", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    result.scenarioOpportunities.firstOrNull()?.let {
+                        Text(text = "优先场景：$it", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Text(
+                        text = "状态：${result.status.toUserStatusLabel()} · v${result.version} · ${result.updatedAt}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
 
-                ScreenSection(title = "分析摘要") {
-                    Text(text = result.summary, style = MaterialTheme.typography.bodyMedium)
+                ScreenSection(title = "分析范围") {
+                    Text(text = result.analysisScope, style = MaterialTheme.typography.bodyMedium)
                 }
 
                 if (result.priorityIndustries.isNotEmpty()) {
@@ -341,25 +578,20 @@ fun AnalysisResultScreen(
                 }
 
                 if (result.rankingExplanations.isNotEmpty()) {
-                    ScreenSection(title = "排序说明") {
+                    ScreenSection(title = "判断依据") {
                         result.rankingExplanations.forEach { BulletText(text = it) }
                     }
                 }
 
                 if (result.recommendations.isNotEmpty()) {
-                    ScreenSection(title = "建议") {
+                    ScreenSection(title = "下一步建议") {
                         result.recommendations.forEach { BulletText(text = it) }
                     }
                 }
 
-                if (result.risks.isNotEmpty()) {
-                    ScreenSection(title = "风险") {
+                if (result.risks.isNotEmpty() || result.limitations.isNotEmpty()) {
+                    ScreenSection(title = "风险和限制") {
                         result.risks.forEach { BulletText(text = it) }
-                    }
-                }
-
-                if (result.limitations.isNotEmpty()) {
-                    ScreenSection(title = "限制") {
                         result.limitations.forEach { BulletText(text = it) }
                     }
                 }
@@ -381,18 +613,18 @@ fun AnalysisResultScreen(
             when (val runState = backendState.reportRun) {
                 V1SectionState.Idle -> {
                     Text(
-                        text = "点击后会创建 report_generation AgentRun，并轮询运行状态。",
+                        text = "生成报告后，可以把当前分析作为一份稳定材料复看。",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 V1SectionState.Loading -> {
-                    Text(text = "正在创建并轮询 report_generation。", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "正在生成分析报告。", style = MaterialTheme.typography.bodyMedium)
                 }
 
                 V1SectionState.Empty -> {
-                    Text(text = "没有可用于生成报告的 LeadAnalysisResult。", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "没有可用于生成报告的获客分析结果。", style = MaterialTheme.typography.bodyMedium)
                 }
 
                 is V1SectionState.Failed -> {
@@ -402,8 +634,8 @@ fun AnalysisResultScreen(
 
                 is V1SectionState.Loaded -> {
                     val run = runState.value.agentRun
-                    Text(text = "运行：${run.runType}", style = MaterialTheme.typography.bodyLarge)
-                    Text(text = "状态：${run.status}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "报告生成已提交。", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "状态：${run.status.toUserStatusLabel()}", style = MaterialTheme.typography.bodyMedium)
                     Text(text = "Run ID：${run.id}", style = MaterialTheme.typography.bodyMedium)
                     run.errorMessage?.let {
                         Text(text = "错误：$it", style = MaterialTheme.typography.bodyMedium)
@@ -420,7 +652,7 @@ fun AnalysisResultScreen(
                     text = if (backendState.reportRun is V1SectionState.Loading) {
                         "运行中"
                     } else {
-                        "生成分析报告"
+                        "生成可复看的分析报告"
                     },
                 )
             }
@@ -449,16 +681,16 @@ fun AnalysisReportScreen(
             fontWeight = FontWeight.SemiBold,
         )
         Text(
-            text = "该页面读取真实 GET /reports/{id}，用于复看后端沉淀的 AnalysisReport。",
+            text = "这是一份可复看的销售分析交付物，用于对齐目标客户、切入场景和下一步行动。",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         when (val reportState = backendState.report) {
             V1SectionState.Idle,
-            V1SectionState.Loading -> StateNotice("正在读取最新 AnalysisReport 详情。")
+            V1SectionState.Loading -> StateNotice("正在读取最新分析报告。")
 
-            V1SectionState.Empty -> StateNotice("真实后端当前没有可打开的 AnalysisReport。")
+            V1SectionState.Empty -> StateNotice("当前还没有可复看的分析报告。")
 
             is V1SectionState.Failed -> FailureNotice(
                 title = reportState.error.title,
@@ -467,14 +699,28 @@ fun AnalysisReportScreen(
 
             is V1SectionState.Loaded -> {
                 val report = reportState.value
-                ScreenSection(title = "报告摘要") {
+                ScreenSection(title = "执行摘要") {
                     Text(text = report.title, style = MaterialTheme.typography.titleMedium)
-                    Text(text = "状态：${report.status} · v${report.version}", style = MaterialTheme.typography.bodyMedium)
-                    Text(text = "更新时间：${report.updatedAt}", style = MaterialTheme.typography.bodyMedium)
                     Text(text = report.summary, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "状态：${report.status.toUserStatusLabel()} · v${report.version} · ${report.updatedAt}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
 
-                report.sections.forEach { section ->
+                val recommendationSections = report.sections.filter { section ->
+                    section.title.contains("建议") || section.title.contains("行动")
+                }
+                if (recommendationSections.isNotEmpty()) {
+                    ScreenSection(title = "重点建议") {
+                        recommendationSections.forEach { section ->
+                            Text(text = section.body, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+
+                report.sections.filterNot { section -> section in recommendationSections }.forEach { section ->
                     ScreenSection(title = section.title) {
                         Text(text = section.body, style = MaterialTheme.typography.bodyMedium)
                     }
@@ -750,3 +996,38 @@ private fun ScreenSection(
 
 private fun List<String>.joinToDisplayText(): String =
     if (isEmpty()) "暂无" else joinToString("、")
+
+private fun String.toUserStatusLabel(): String =
+    when (this) {
+        "draft" -> "待确认"
+        "confirmed" -> "已确认"
+        "succeeded" -> "已完成"
+        "failed" -> "失败"
+        "running" -> "处理中"
+        "pending" -> "等待中"
+        "cancelled" -> "已取消"
+        "published" -> "可复看"
+        else -> this
+    }
+
+private fun String.toLearningStageLabel(): String =
+    when (this) {
+        "collecting" -> "继续补充"
+        "ready_for_confirmation" -> "可确认"
+        "confirmed" -> "已确认"
+        else -> this
+    }
+
+private fun String.toMissingFieldPrompt(): String =
+    when (this) {
+        "产品名称" -> "产品名称"
+        "一句话描述" -> "一句话说明"
+        "目标客户" -> "适合卖给谁"
+        "典型场景" -> "优先使用场景"
+        "解决痛点" -> "客户正在遇到的问题"
+        "核心优势" -> "为什么会选择你"
+        "目标行业" -> "优先行业"
+        "限制条件" -> "暂时不做或需要说明的限制"
+        "交付方式" -> "如何交付或部署"
+        else -> this
+    }

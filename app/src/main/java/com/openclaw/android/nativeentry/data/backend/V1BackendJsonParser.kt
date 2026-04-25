@@ -21,6 +21,7 @@ fun parseProductProfileDetail(rawJson: String): ProductProfileDetailDto {
         name = profile.getString("name"),
         oneLineDescription = profile.getString("one_line_description"),
         status = profile.getString("status"),
+        learningStage = profile.getString("learning_stage"),
         version = profile.getInt("version"),
         targetCustomers = profile.optJSONArray("target_customers").toStringList(),
         targetIndustries = profile.optJSONArray("target_industries").toStringList(),
@@ -39,7 +40,22 @@ fun parseProductProfileCreateResponse(rawJson: String): ProductProfileCreateResp
     val json = JSONObject(rawJson)
     return ProductProfileCreateResponseDto(
         productProfile = json.getJSONObject("product_profile").toProductProfileSummaryDto(),
+        currentRun = json.optJSONObject("current_run")?.toAgentRunDto(),
         links = json.optJSONObject("links").toStringMap(),
+    )
+}
+
+fun parseProductProfileEnrichResponse(rawJson: String): ProductProfileEnrichResponseDto {
+    val json = JSONObject(rawJson)
+    return ProductProfileEnrichResponseDto(
+        agentRun = json.getJSONObject("agent_run").toAgentRunDto(),
+    )
+}
+
+fun parseProductProfileConfirmResponse(rawJson: String): ProductProfileConfirmResponseDto {
+    val json = JSONObject(rawJson)
+    return ProductProfileConfirmResponseDto(
+        productProfile = json.getJSONObject("product_profile").toProductProfileSummaryDto(),
     )
 }
 
@@ -56,6 +72,12 @@ fun ProductProfileCreateRequestDto.toJsonBody(): String {
 
     return json.toString()
 }
+
+fun ProductProfileEnrichRequestDto.toJsonBody(): String =
+    JSONObject()
+        .put("supplemental_notes", supplementalNotes)
+        .put("trigger_source", triggerSource)
+        .toString()
 
 fun parseAnalysisRunCreateResponse(rawJson: String): AnalysisRunCreateResponseDto {
     val json = JSONObject(rawJson)
@@ -163,6 +185,7 @@ private fun JSONObject.toProductProfileSummaryDto(): ProductProfileSummaryDto =
         name = getString("name"),
         oneLineDescription = getString("one_line_description"),
         status = getString("status"),
+        learningStage = getString("learning_stage"),
         version = getInt("version"),
         updatedAt = getString("updated_at"),
     )

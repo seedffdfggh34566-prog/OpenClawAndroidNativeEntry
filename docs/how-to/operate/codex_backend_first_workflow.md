@@ -1,17 +1,17 @@
-# 后端优先阶段的 Codex 工作流
+# 后端优先阶段的 agent 工作流
 
-更新时间：2026-04-23
+更新时间：2026-04-24
 
 ## 1. 文档定位
 
-本文档用于说明在“后端优先、多端入口”的新阶段，开发者与 Codex 应如何使用当前仓库和文档体系推进开发。
+本文档用于说明在“后端优先、多端入口”的新阶段，开发者与 agent 应如何使用当前仓库和文档体系推进开发。
 
 它重点回答：
 
 - 进入仓库后先看哪些文件
 - 什么时候改方向文档，什么时候改 task
 - agent 做完任务后必须回写哪些文件
-- 当前如何从人工调度走向后续自动化
+- 当前如何从人工调度走向受控自治
 
 ---
 
@@ -22,12 +22,14 @@
 1. 读取 `AGENTS.md`
 2. 读取 `docs/README.md`
 3. 查看 `docs/delivery/tasks/_active.md`
-4. 打开对应 task
+4. 打开当前 task
 5. 阅读 task 引用的 PRD / spec / decision
 6. 实施最小可行改动
 7. 做最轻量但有意义的验证
 8. 更新 task 状态
 9. 写 handoff
+10. 创建一个原子 commit
+11. 若 next queued task 已写明且未命中 stop conditions，则继续
 
 ---
 
@@ -41,12 +43,13 @@
 - `docs/product/prd/ai_sales_assistant_v1_prd.md`
 - `docs/adr/ADR-001-backend-deployment-baseline.md`
 
-### 3.2 判断当前任务
+### 3.2 判断当前任务队列
 
 再看：
 
 - `docs/delivery/tasks/_active.md`
 - 当前 task 文件
+- next queued tasks
 
 ### 3.3 判断当前实现边界
 
@@ -94,78 +97,72 @@
 
 ---
 
-## 5. agent 应维护什么
+## 5. 当前 agent 职责模型
 
-当前默认由 agent 主动维护：
+当前默认采用 3 层职责：
 
-- `docs/architecture/*`
-- `docs/reference/*`
-- `docs/delivery/tasks/*`
-- `docs/how-to/*`
-- `docs/delivery/handoffs/*`
+- **执行 agent**：执行当前 task，验证，更新 task，写 handoff，提交 commit
+- **规划层**：维护方向、优先级、task 队列、stop conditions
+- **人工层**：方向变化、关键架构、部署、发布与高风险最终决策
 
-当前不应由 agent 静默改写：
-
-- `docs/product/overview.md`
-- `docs/product/*`
-- `docs/adr/*`
-
-如果需要调整这些文件，应在回复中明确说明这是方向或决策层变更。
+这里的规则按职责写，不绑定具体工具身份。
 
 ---
 
 ## 6. 当前推荐的任务粒度
 
-Codex 当前最适合的任务粒度应满足：
+当前最适合的任务粒度应满足：
 
 - 单任务目标清楚
 - 文件范围相对集中
-- 可在一次 thread 中收口
-- 最好在一小时左右的人类工作量内可以描述清楚
+- 可在一次连续执行中收口
+- 完成后能形成一个独立 commit
 
 当前不建议：
 
-- 一次线程混入多个大目标
+- 一次连续运行混入多个未排定大目标
 - 一边改方向一边写实现
-- 让 agent 自己猜当前活跃任务
+- 让执行 agent 自己猜当前活跃任务
 
 ---
 
 ## 7. 从人工调度走向自动化的路径
 
-## 7.1 当前阶段：人工调度
+## 7.1 当前阶段：轻约束自治
 
-你负责：
+人工层负责：
 
 - 确认方向
-- 选择当前任务
-- review 结果
+- 决定队列的起点和边界
+- review 阶段性结果
 
-Codex 负责：
+规划层负责：
+
+- 写清当前 task
+- 写清 next queued tasks
+- 写清 auto-continue allowed when
+- 写清 stop conditions
+
+执行 agent 负责：
 
 - 读取文档
-- 执行任务
+- 执行 task
 - 回写 task 与 handoff
+- 创建原子 commit
+- 在边界内继续下一个已排定 task
 
-## 7.2 下一阶段：半自动执行
+## 7.2 下一阶段：受控自治
 
-后续可以先把以下工作交给定时 automation：
+后续可以把以下工作进一步交给自动化：
 
 - 检查 `docs/delivery/tasks/_active.md` 是否与任务状态一致
 - 汇总构建失败与测试失败
 - 扫描 stale handoff / stale task
 - 对低风险文档漂移提出修复建议
 
-## 7.3 再下一阶段：受控自治
+## 7.3 保留人工批准的事项
 
-后续允许 agent 定时执行：
-
-- 小型文档修复
-- 小型测试补全
-- 低风险重构建议
-- task 巡检与状态更新建议
-
-但以下内容仍建议保留人工批准：
+以下内容仍建议保留人工批准：
 
 - 版本方向变化
 - 关键架构变更
@@ -175,48 +172,65 @@ Codex 负责：
 
 ---
 
-## 8. 当前最推荐的下一步工作方式
+## 8. 当前最推荐的推进方式
 
 当前最推荐的推进方式为：
 
-1. 用 `docs/delivery/tasks/_active.md` 明确当前唯一活跃任务
-2. 让 Codex 只围绕该任务推进
-3. 任务结束后写 handoff
-4. 再切下一个任务
+1. 用 `docs/delivery/tasks/_active.md` 明确当前 task 与 next queued tasks
+2. 让执行 agent 围绕该队列推进
+3. 每个 task 结束后写 handoff
+4. 每个 task 独立提交
+5. 命中 stop conditions 时再回到规划层
 
 这样做的目的是：
 
 - 降低上下文漂移
 - 降低超范围修改
+- 保持连续开发能力
 - 为未来自动化留下稳定接口
 
 ---
 
-## 9. 当前后端本地命令
+## 9. Stop Conditions
+
+执行 agent 应停止并把控制权交回规划层，当出现以下情况时：
+
+- 方向变化
+- task 队列耗尽或不明确
+- docs / contract / code 冲突
+- 需要新基础设施、迁移或部署变化
+- 连续验证失败说明任务边界可能错误
+- 需要 push、merge 或其他高风险不可逆动作
+
+只要未命中 stop conditions，执行 agent 就可以继续已排定 task 队列。
+
+---
+
+## 10. 当前后端本地命令
 
 当前最小后端已落地后，推荐使用以下命令：
 
-### 9.1 初始化后端环境
+### 10.1 初始化后端环境
 
 ```bash
 python3 -m venv backend/.venv
 backend/.venv/bin/pip install -e backend
 ```
 
-### 9.2 启动后端
+### 10.2 启动后端
 
 ```bash
 backend/.venv/bin/alembic upgrade head
 backend/.venv/bin/python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8013
 ```
 
-### 9.3 运行后端测试
+### 10.3 运行后端测试
 
 ```bash
 backend/.venv/bin/python -m pytest backend/tests
 ```
 
-### 9.4 最小手工验证
+### 10.4 最小手工验证
 
 至少验证：
 
@@ -226,7 +240,7 @@ backend/.venv/bin/python -m pytest backend/tests
 4. `POST /analysis-runs` with `report_generation`
 5. `GET /history`
 
-### 9.5 数据库迁移检查
+### 10.5 数据库迁移检查
 
 ```bash
 backend/.venv/bin/alembic check

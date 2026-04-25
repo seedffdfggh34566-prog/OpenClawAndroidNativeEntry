@@ -3,11 +3,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 ObjectType = Literal["product_profile", "lead_analysis_result", "analysis_report"]
-RunType = Literal["lead_analysis", "report_generation"]
+RunType = Literal["product_learning", "lead_analysis", "report_generation"]
 
 
 class ObjectRef(BaseModel):
@@ -32,6 +32,7 @@ class ProductProfileSummary(BaseModel):
     name: str
     one_line_description: str
     status: str
+    learning_stage: str
     version: int
     updated_at: datetime
 
@@ -41,6 +42,7 @@ class ProductProfileDetail(BaseModel):
     name: str
     one_line_description: str
     status: str
+    learning_stage: str
     version: int
     target_customers: list[str]
     target_industries: list[str]
@@ -56,12 +58,33 @@ class ProductProfileDetail(BaseModel):
 
 class ProductProfileCreateResponse(BaseModel):
     product_profile: ProductProfileSummary
-    current_run: None = None
+    current_run: AgentRunPayload | None = None
     links: dict[str, str]
+
+
+class ProductProfileEnrichRequest(BaseModel):
+    supplemental_notes: str = Field(min_length=1)
+    trigger_source: str = Field(min_length=1)
+
+    @field_validator("supplemental_notes", "trigger_source")
+    @classmethod
+    def validate_non_blank(cls, value: str) -> str:
+        text = value.strip()
+        if not text:
+            raise ValueError("field must not be blank")
+        return text
+
+
+class ProductProfileEnrichResponse(BaseModel):
+    agent_run: AgentRunPayload
 
 
 class ProductProfileDetailResponse(BaseModel):
     product_profile: ProductProfileDetail
+
+
+class ProductProfileConfirmResponse(BaseModel):
+    product_profile: ProductProfileSummary
 
 
 class AnalysisRunCreateRequest(BaseModel):
@@ -88,6 +111,7 @@ class AgentRunPayload(BaseModel):
     started_at: datetime | None
     ended_at: datetime | None
     error_message: str | None
+    runtime_metadata: dict[str, Any]
 
 
 class AnalysisRunCreateResponse(BaseModel):

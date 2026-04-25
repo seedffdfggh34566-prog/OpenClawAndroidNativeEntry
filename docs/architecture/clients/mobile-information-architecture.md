@@ -1,6 +1,6 @@
 # V1 信息架构与入口重定义
 
-更新时间：2026-04-21
+更新时间：2026-04-24
 
 ## 1. 文档定位
 
@@ -101,8 +101,9 @@ V1 建议采用以下最小页面结构：
 
 作用：
 
-- 承载产品学习对话或问答过程
-- 显示当前信息收集进度
+- 承载产品学习对话主界面
+- 显示当前产品理解摘要与缺失字段
+- 显示当前阶段状态
 - 在最低完整度达到后，引导进入 `ProductProfile` 确认
 
 ### 产品画像确认页
@@ -169,7 +170,7 @@ V1 不做完整工作台，只做轻量历史与状态聚合页。
 ### P1：当前工作摘要
 
 - 当前 `AgentRun` 状态
-- 当前处于哪一阶段
+- 当前处于哪一阶段（`collecting` / `ready_for_confirmation` / `confirmed` / `analysis_running` / `report_ready`）
 - 最近更新时间
 - 若当前有 `ProductProfile` draft，直接进入确认页
 
@@ -253,12 +254,18 @@ V1 建议默认主路径为：
 开始分析
   ↓
 产品学习页
+  （collecting）
+  ↓
+达到最低完整度或用户主动生成草稿
   ↓
 产品画像确认页
+  （ready_for_confirmation / confirmed）
   ↓
 获客分析结果页
+  （analysis_running -> succeeded）
   ↓
 分析报告页
+  （report_ready）
 ```
 
 历史回访路径为：
@@ -280,6 +287,71 @@ Ops
   ↓
 Gateway / Dashboard / Logs
 ```
+
+---
+
+## 7.1 产品学习与状态基线
+
+当前产品学习交互基线为：
+
+- 聊天优先
+- 结构化摘要辅助
+- 阶段门控确认
+
+产品学习页至少应持续显示：
+
+- AI 问答区
+- 当前产品理解摘要
+- 缺失字段提示
+- 当前阶段状态
+
+当前阶段状态至少包括：
+
+- `collecting`
+- `ready_for_confirmation`
+- `confirmed`
+- `analysis_running`
+- `report_ready`
+
+当前这些阶段状态默认由 backend 暴露，其中产品学习页读取 `learning_stage`，而不是端侧自行从 `status + missing_fields` 推断。
+
+进入确认页的条件当前固定为：
+
+- 达到最低完整度，或
+- 用户主动要求先生成草稿
+
+第一版 product learning runtime 默认采用：
+
+- 现有 `POST /product-profiles` 创建入口
+- 非空 `current_run` 承接 runtime 执行状态
+- `GET /analysis-runs/{id}` 轮询
+- `GET /product-profiles/{id}` 读取富化后的 draft
+
+下一轮 iteration 默认采用：
+
+- `POST /product-profiles/{id}/enrich`
+- 一次补充输入框承接 `supplemental_notes`
+- `GET /analysis-runs/{id}` 继续轮询
+- 学习页继续展示：
+  - 当前理解摘要
+  - 缺失字段
+  - 当前 run 状态
+- 当前不引入消息持久化时间线
+
+最低完整度门槛：
+
+- `name`
+- `one_line_description`
+- `target_customers >= 1`
+- `typical_use_cases >= 1`
+- `pain_points_solved >= 1`
+- `core_advantages >= 1`
+
+允许缺省但应显式保留在 missing 列表中的字段：
+
+- `target_industries`
+- `delivery_model`
+- `constraints`
 
 ---
 

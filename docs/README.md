@@ -1,6 +1,6 @@
 # 文档导航
 
-更新时间：2026-04-23
+更新时间：2026-04-24
 
 ## 1. 文档定位
 
@@ -33,8 +33,11 @@
 2. `docs/product/overview.md`
 3. `docs/product/prd/ai_sales_assistant_v1_prd.md`
 4. `docs/adr/ADR-001-backend-deployment-baseline.md`
-5. `docs/delivery/tasks/_active.md`
-6. 当前 task 引用的 spec / runbook / handoff
+5. `docs/adr/ADR-002-v1-runtime-and-product-learning-baseline.md`
+6. `docs/adr/ADR-003-v1-product-learning-runtime-boundary.md`
+7. `docs/adr/ADR-004-v1-product-learning-iteration-contract.md`
+8. `docs/delivery/tasks/_active.md`
+9. 当前 task 引用的 spec / runbook / handoff
 
 ---
 
@@ -61,21 +64,27 @@
 - `docs/product/overview.md`
 - `docs/product/prd/ai_sales_assistant_v1_prd.md`
 - `docs/adr/ADR-001-backend-deployment-baseline.md`
+- `docs/adr/ADR-002-v1-runtime-and-product-learning-baseline.md`
+- `docs/adr/ADR-003-v1-product-learning-runtime-boundary.md`
+- `docs/adr/ADR-004-v1-product-learning-iteration-contract.md`
 
 ### 5.2 当前架构与后端方向
 
 - `docs/architecture/system-context.md`
 - `docs/reference/api/backend-v1-minimum-contract.md`
+- `docs/reference/runtime-v1-observability-eval-baseline.md`
 - `docs/architecture/repository-layout.md`
 - `docs/architecture/backend/backend-agent-stack-phased-adoption.md`
+- `docs/architecture/runtime/langgraph-runtime-architecture.md`
 - `docs/architecture/clients/android-client-implementation-constraints.md`
 
 ### 5.3 当前执行入口
 
 - `docs/delivery/tasks/_active.md`
 - `docs/delivery/README.md`
-- `docs/delivery/tasks/task_v1_analysis_result_detail_contract.md`
-- `docs/delivery/tasks/task_v1_android_report_generation_trigger_poll.md`
+- `docs/delivery/tasks/task_v1_product_learning_runtime_decision_freeze.md`
+- `docs/delivery/tasks/task_v1_product_learning_runtime_followup.md`
+- `docs/delivery/handoffs/handoff_2026_04_24_product_learning_runtime_decision_freeze.md`
 
 ### 5.4 当前工作流
 
@@ -144,8 +153,22 @@ docs/
 
 ## 8. 当前最推荐的下一步
 
-当前最推荐的下一步执行顺序为：
+当前 product learning LLM、Android iteration UI、真机 enrich smoke、Android 销售闭环产品表达收口、完整 V1 真机端到端 smoke、product learning 真实样例评估、runtime usage metadata follow-up、真实业务样例库全链路评估、lead_analysis LLM phase1、V1 readiness freeze、report_generation polish、真机 demo smoke after LLM lead analysis、latency/fallback conditional follow-up、developer LLM run inspector 与 extended business eval round2 均已完成或收口。
 
-1. 执行 `task_v1_analysis_result_detail_contract.md`
-2. 冻结并实现 `GET /lead-analysis-results/{id}` contract
-3. 在客户端对象链路稳定后，再拆真实 OpenClaw runtime 接入任务
+当前 V1 已正式收口为 demo-ready release candidate / learning milestone，不进入 MVP。
+
+最近完成：
+
+- `task_v1_closeout.md`
+- `task_v1_demo_runbook_and_evidence_pack.md`
+
+当前已排定的 implementation task 已全部收口。下一阶段方向尚未定义，不应自动创建 V2 task 或继续追加 V1 功能。
+
+下一步需要回到规划层重新回答：是否继续销售助手方向、是否以 MVP 为目标、是否需要正式部署 / 多用户 / fallback / 成本治理，以及是否升级 report_generation。
+
+当前补充建议阅读：
+
+- `docs/delivery/tasks/_active.md`
+- `docs/delivery/README.md`
+- `docs/product/research/v1_closeout_2026_04_25.md`
+- `docs/delivery/handoffs/`

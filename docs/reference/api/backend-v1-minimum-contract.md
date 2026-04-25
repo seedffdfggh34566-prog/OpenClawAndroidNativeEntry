@@ -1,6 +1,6 @@
 # V1 后端最小 API contract
 
-更新时间：2026-04-21
+更新时间：2026-04-25
 
 ## 1. 文档定位
 
@@ -32,9 +32,11 @@
 
 ## 2. 当前结论
 
-V1 当前只冻结以下 7 个最小接口：
+V1 当前已实现以下 9 个最小接口：
 
 - `POST /product-profiles`
+- `POST /product-profiles/{id}/enrich`
+- `POST /product-profiles/{id}/confirm`
 - `GET /product-profiles/{id}`
 - `POST /analysis-runs`
 - `GET /analysis-runs/{id}`
@@ -47,10 +49,12 @@ V1 当前只冻结以下 7 个最小接口：
 1. 后端是正式对象权威真相
 2. runtime 只返回草稿形态和执行结果，不直接定义正式对象生命周期
 3. `POST /analysis-runs` 采用统一入口，用 `run_type` 区分：
+   - `product_learning`
    - `lead_analysis`
    - `report_generation`
-4. `/history` 采用首页聚合结构，优先服务 Android 首页与 History 页
-5. 正式对象状态与 `AgentRun` 状态严格分离
+4. product learning iteration 默认通过 `POST /product-profiles/{id}/enrich` 承接
+5. `/history` 采用首页聚合结构，优先服务 Android 首页与 History 页
+6. 正式对象状态与 `AgentRun` 状态严格分离
 
 ---
 
@@ -129,6 +133,18 @@ runtime 负责：
 - `started_at`
 - `ended_at`
 - `error_message`
+- `runtime_metadata`
+
+支持的 `run_type`：
+
+- `product_learning`
+- `lead_analysis`
+- `report_generation`
+
+说明：
+
+- `runtime_metadata` 是向后兼容的运行元信息字段，用于暴露 provider、graph、trace、prompt version、round index 与非敏感 usage。
+- product learning / lead analysis LLM 成功路径可包含 `llm_usage`，仅记录 token 统计，不记录 prompt、用户输入全文、API key 或 secret。
 
 ## 4.3 `ProductProfileSummary`
 
@@ -137,6 +153,7 @@ runtime 负责：
 - `id`
 - `name`
 - `one_line_description`
+- `learning_stage`
 - `status`
 - `version`
 - `updated_at`
@@ -148,6 +165,7 @@ runtime 负责：
 - `id`
 - `name`
 - `one_line_description`
+- `learning_stage`
 - `status`
 - `version`
 - `target_customers`
@@ -195,6 +213,31 @@ runtime 负责：
 - `latest_report`
 - `recent_items`
 
+## 4.8 `ProductProfileCreateResponse`
+
+最小字段：
+
+- `product_profile`
+- `current_run`
+- `links`
+
+说明：
+
+- 当前已实现：`current_run` 允许返回一个 `run_type = product_learning` 的 `AgentRunSummary`
+
+## 4.9 `ProductProfileEnrichRequest`
+
+最小字段：
+
+- `supplemental_notes`
+- `trigger_source`
+
+## 4.10 `ProductProfileEnrichResponse`
+
+最小字段：
+
+- `agent_run`
+
 ---
 
 ## 5. 状态与对象关系
@@ -212,6 +255,7 @@ draft → confirmed → superseded
 - `draft`：已写回正式对象，但仍待用户确认
 - `confirmed`：可作为正式分析输入
 - `superseded`：被更新版本替代
+- 产品学习阶段表达通过 `learning_stage` 暴露，而不是扩展 `status`
 
 ### `LeadAnalysisResult`
 
@@ -247,6 +291,7 @@ queued → running → succeeded | failed | cancelled
 
 - 失败、重试、取消只体现在 `AgentRun`
 - `superseded` 不表示失败，只表示新版本替代
+- `product_learning` 执行继续复用 `AgentRun`
 
 ## 5.2 `AgentRun` 与正式对象的关系
 
@@ -256,6 +301,9 @@ queued → running → succeeded | failed | cancelled
 
 当前最小关系约定：
 
+- `product_learning`：
+  - 输入：一次产品描述与当前 `ProductProfile` draft
+  - 输出：同一个 `ProductProfile` 的富化版本
 - `lead_analysis`：
   - 输入：一个 `confirmed` 的 `ProductProfile`
   - 输出：一个 `LeadAnalysisResult`
@@ -293,11 +341,29 @@ queued → running → succeeded | failed | cancelled
     "id": "pp_001",
     "name": "AI 销售助手 V1",
     "one_line_description": "帮助用户先讲清产品，再生成获客分析结果。",
+    "learning_stage": "collecting",
     "status": "draft",
     "version": 1,
     "updated_at": "2026-04-21T10:00:00Z"
   },
-  "current_run": null,
+ "current_run": {
+    "id": "run_001",
+    "run_type": "product_learning",
+    "status": "queued",
+    "triggered_by": "user",
+    "trigger_source": "android_product_learning",
+    "input_refs": [
+      {
+        "object_type": "product_profile",
+        "object_id": "pp_001",
+        "version": 1
+      }
+    ],
+    "output_refs": [],
+    "started_at": null,
+    "ended_at": null,
+    "error_message": null
+  },
   "links": {
     "self": "/product-profiles/pp_001"
   }
@@ -306,11 +372,89 @@ queued → running → succeeded | failed | cancelled
 
 ### 说明
 
-- 本轮不扩展 `PATCH /product-profiles/{id}`
-- 本轮不扩展确认接口
 - 创建成功后默认 `status = draft`
+- 当前已实现：创建成功后会同步返回一个 `run_type = product_learning` 的 `AgentRunPayload`
+- 需要通过 `POST /product-profiles/{id}/confirm` 将状态升级为 `confirmed`
 
-## 6.2 `GET /product-profiles/{id}`
+## 6.2 `POST /product-profiles/{id}/enrich`
+
+### 职责
+
+在已有 `ProductProfile draft` 基础上承接一轮补充输入，并重新触发一次 `product_learning`。
+
+### 最小请求字段
+
+```json
+{
+  "supplemental_notes": "补充一轮产品、客户或场景说明。",
+  "trigger_source": "android_product_learning_iteration"
+}
+```
+
+### 最小响应字段
+
+```json
+{
+  "agent_run": {
+    "id": "run_002",
+    "run_type": "product_learning",
+    "status": "queued",
+    "triggered_by": "user",
+    "trigger_source": "android_product_learning_iteration",
+    "input_refs": [
+      {
+        "object_type": "product_profile",
+        "object_id": "pp_001",
+        "version": 2
+      }
+    ],
+    "output_refs": [],
+    "started_at": null,
+    "ended_at": null,
+    "error_message": null
+  }
+}
+```
+
+### 说明
+
+- backend 先将 `supplemental_notes` 追加到同一个 `ProductProfile.source_notes`
+- backend 再创建新的 `run_type = product_learning` `AgentRun`
+- 首次 create 对应 `round_index = 0`，enrich 轮次从 `1` 开始递增
+- 当前仅允许 `draft` `ProductProfile` 调用，非 draft 返回 `409`
+- 客户端继续使用 `GET /analysis-runs/{id}` 轮询
+- 富化结果继续通过 `GET /product-profiles/{id}` 读取
+- 当前不引入消息持久化与新的 public `/product-learning/*` 路径
+
+## 6.3 `POST /product-profiles/{id}/confirm`
+
+### 职责
+
+将 `ProductProfile` 从 `draft` 状态升级为 `confirmed`。
+
+### 最小响应字段
+
+```json
+{
+  "product_profile": {
+    "id": "pp_001",
+    "name": "AI 销售助手 V1",
+    "one_line_description": "帮助用户先讲清产品，再生成获客分析结果。",
+    "status": "confirmed",
+    "version": 2,
+    "updated_at": "2026-04-21T10:15:00Z"
+  }
+}
+```
+
+### 说明
+
+- 幂等：对已经是 `confirmed` 的状态再次调用仍返回成功
+- 确认后版本号 `version` 自动递增
+- 若 `learning_stage != ready_for_confirmation`，backend 返回 `409`
+- 只有 `confirmed` 的 `ProductProfile` 才能作为 `lead_analysis` 的输入
+
+## 6.4 `GET /product-profiles/{id}`
 
 ### 职责
 
@@ -326,6 +470,7 @@ Android 产品画像确认页应依赖该接口作为主要读取入口。
     "id": "pp_001",
     "name": "AI 销售助手 V1",
     "one_line_description": "帮助用户先讲清产品，再生成获客分析结果。",
+    "learning_stage": "ready_for_confirmation",
     "status": "draft",
     "version": 1,
     "target_customers": ["中小企业老板", "销售负责人"],
@@ -335,7 +480,7 @@ Android 产品画像确认页应依赖该接口作为主要读取入口。
     "core_advantages": ["对话式澄清", "结构化沉淀"],
     "delivery_model": "移动端控制入口 + 本地后端处理",
     "constraints": ["当前仍是 V1 最小闭环"],
-    "missing_fields": ["价格区间", "销售区域"],
+    "missing_fields": ["目标行业", "限制条件"],
     "created_at": "2026-04-21T10:00:00Z",
     "updated_at": "2026-04-21T10:12:00Z"
   }
@@ -346,8 +491,9 @@ Android 产品画像确认页应依赖该接口作为主要读取入口。
 
 - 可返回 `draft` 或 `confirmed` 的正式对象形态
 - `missing_fields` 用于帮助 Android 确认页展示“仍待补充”的信息
+- `learning_stage` 由 backend 计算并显式返回
 
-## 6.3 `POST /analysis-runs`
+## 6.5 `POST /analysis-runs`
 
 ### 职责
 
@@ -403,7 +549,7 @@ Android 产品画像确认页应依赖该接口作为主要读取入口。
 - `report_generation` 只能接受已有 `LeadAnalysisResult`
 - 创建成功后默认 `AgentRun.status = queued`
 
-## 6.4 `GET /analysis-runs/{id}`
+## 6.6 `GET /analysis-runs/{id}`
 
 ### 职责
 
@@ -431,7 +577,20 @@ Android 轮询状态页和 History 页应优先依赖该接口。
     "output_refs": [],
     "started_at": "2026-04-21T10:15:00Z",
     "ended_at": null,
-    "error_message": null
+    "error_message": null,
+    "runtime_metadata": {
+      "provider": "langgraph",
+      "mode": "backend_direct_langgraph",
+      "phase": "llm_phase1",
+      "graph_name": "lead_analysis_graph",
+      "run_type": "lead_analysis",
+      "trace_id": "trace_001",
+      "prompt_version": "lead_analysis_llm_v1",
+      "round_index": 0,
+      "llm_provider": "tencent_tokenhub",
+      "llm_model": "minimax-m2.5",
+      "llm_base_url": "https://tokenhub.tencentmaas.com/v1"
+    }
   },
   "result_summary": null
 }
@@ -463,12 +622,59 @@ Android 轮询状态页和 History 页应优先依赖该接口。
     ],
     "started_at": "2026-04-21T10:15:00Z",
     "ended_at": "2026-04-21T10:18:00Z",
-    "error_message": null
+    "error_message": null,
+    "runtime_metadata": {
+      "provider": "langgraph",
+      "mode": "backend_direct_langgraph",
+      "phase": "llm_phase1",
+      "graph_name": "lead_analysis_graph",
+      "run_type": "lead_analysis",
+      "trace_id": "trace_001",
+      "prompt_version": "lead_analysis_llm_v1",
+      "round_index": 0,
+      "llm_provider": "tencent_tokenhub",
+      "llm_model": "minimax-m2.5",
+      "llm_base_url": "https://tokenhub.tencentmaas.com/v1",
+      "llm_usage": {
+        "prompt_tokens": 800,
+        "completion_tokens": 1000,
+        "total_tokens": 1800,
+        "cached_tokens": 0,
+        "reasoning_tokens": 0
+      }
+    }
   },
   "result_summary": {
     "lead_analysis_result_id": "lar_001",
     "status": "published",
     "updated_at": "2026-04-21T10:18:00Z"
+  }
+}
+```
+
+product learning / lead analysis LLM run 成功时，`runtime_metadata` 可包含 `llm_usage`：
+
+```json
+{
+  "runtime_metadata": {
+    "provider": "langgraph",
+    "mode": "backend_direct_langgraph",
+    "phase": "llm_phase1",
+    "graph_name": "product_learning_graph",
+    "run_type": "product_learning",
+    "trace_id": "trace_002",
+    "prompt_version": "product_learning_llm_v1",
+    "round_index": 0,
+    "llm_provider": "tencent_tokenhub",
+    "llm_model": "minimax-m2.5",
+    "llm_base_url": "https://tokenhub.tencentmaas.com/v1",
+    "llm_usage": {
+      "prompt_tokens": 40,
+      "completion_tokens": 88,
+      "total_tokens": 128,
+      "cached_tokens": 12,
+      "reasoning_tokens": 0
+    }
   }
 }
 ```
@@ -483,7 +689,7 @@ Android 轮询状态页和 History 页应优先依赖该接口。
   - 不在同一 `AgentRun` 内复用状态
   - 建议重新创建新的 `AgentRun`
 
-## 6.5 `GET /lead-analysis-results/{id}`
+## 6.7 `GET /lead-analysis-results/{id}`
 
 ### 职责
 
@@ -500,7 +706,7 @@ Android 分析结果页应依赖该接口作为主要读取入口。
     "product_profile_id": "pp_001",
     "created_by_agent_run_id": "run_001",
     "title": "第一版获客分析结果",
-    "analysis_scope": "v1_stub",
+    "analysis_scope": "基于已确认产品画像的获客方向分析",
     "summary": "基于 AI 销售助手 V1 的最小占位获客分析结果...",
     "priority_industries": ["企业服务", "教育培训"],
     "priority_customer_types": ["中小企业老板", "销售负责人"],
@@ -523,7 +729,7 @@ Android 分析结果页应依赖该接口作为主要读取入口。
 - 字段列表与 `LeadAnalysisResult` 模型一一对应
 - Android 端使用该接口展示完整分析结果，不再仅依赖 `/history` 摘要
 
-## 6.6 `GET /reports/{id}`
+## 6.8 `GET /reports/{id}`
 
 ### 职责
 
@@ -560,7 +766,7 @@ Android 分析结果页应依赖该接口作为主要读取入口。
 }
 ```
 
-## 6.6 `GET /history`
+## 6.9 `GET /history`
 
 ### 职责
 
@@ -585,6 +791,7 @@ Android 分析结果页应依赖该接口作为主要读取入口。
     "id": "pp_001",
     "name": "AI 销售助手 V1",
     "one_line_description": "帮助用户先讲清产品，再生成获客分析结果。",
+    "learning_stage": "confirmed",
     "status": "confirmed",
     "version": 1,
     "updated_at": "2026-04-21T10:12:00Z"

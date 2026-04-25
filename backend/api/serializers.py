@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from backend.api import models, schemas
+from backend.api.product_learning import derive_learning_stage
 
 
 def to_object_ref(payload: dict[str, object]) -> schemas.ObjectRef:
@@ -13,6 +14,7 @@ def product_profile_summary(model: models.ProductProfile) -> schemas.ProductProf
         name=model.name,
         one_line_description=model.one_line_description,
         status=model.status,
+        learning_stage=derive_learning_stage(model),
         version=model.version,
         updated_at=model.updated_at,
     )
@@ -24,6 +26,7 @@ def product_profile_detail(model: models.ProductProfile) -> schemas.ProductProfi
         name=model.name,
         one_line_description=model.one_line_description,
         status=model.status,
+        learning_stage=derive_learning_stage(model),
         version=model.version,
         target_customers=model.target_customers,
         target_industries=model.target_industries,
@@ -50,6 +53,7 @@ def agent_run_payload(model: models.AgentRun) -> schemas.AgentRunPayload:
         started_at=model.started_at,
         ended_at=model.ended_at,
         error_message=model.error_message,
+        runtime_metadata=dict(model.runtime_metadata or {}),
     )
 
 

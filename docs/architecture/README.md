@@ -18,3 +18,4 @@
 当前与后端 / runtime 演进直接相关的重点文档包括：
 
 - `backend/backend-agent-stack-phased-adoption.md`
+- `runtime/langgraph-runtime-architecture.md`

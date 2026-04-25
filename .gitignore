@@ -23,8 +23,11 @@ captures/
 
 # Local tooling / agent workspace
 .codex/
+.claude/settings.json
 .tmp/
 backend/.venv/
+backend/.env
+backend/.env.*
 backend/data/*.db
 
 # Python generated artifacts

@@ -46,7 +46,7 @@
 
 ### Current task
 
-- `task_v1_product_learning_llm_phase1.md`
+- 暂无正在执行中的正式 implementation task
 
 ### Next queued tasks
 
@@ -54,6 +54,7 @@
 
 最近完成：
 
+- `task_v1_product_learning_llm_phase1.md`
 - `task_v1_product_learning_backend_preflight.md`
 - `task_v1_runtime_observability_eval_baseline.md`
 - `task_v1_product_learning_iteration_contract.md`

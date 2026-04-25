@@ -40,6 +40,7 @@ class TokenHubClient:
             "model": self.model,
             "messages": messages,
             "stream": False,
+            "temperature": 0.2,
         }
         try:
             with httpx.Client(

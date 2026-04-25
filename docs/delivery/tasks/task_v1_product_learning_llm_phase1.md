@@ -6,7 +6,7 @@
 
 - 任务名称：V1 Product Learning LLM Phase 1
 - 建议路径：`docs/delivery/tasks/task_v1_product_learning_llm_phase1.md`
-- 当前状态：`in_progress`
+- 当前状态：`done`
 - 优先级：P1
 
 本任务用于在 iteration contract 和 observability baseline 明确后，把当前 heuristic `product_learning_graph` 切换到真实 LLM 驱动，实现 V1 product learning 的第一轮真实能力验证。
@@ -246,14 +246,28 @@ Token Plan 企业版不作为本阶段默认方案，只作为后续用量稳定
    - backend：`OPENCLAW_BACKEND_LLM_BASE_URL=http://127.0.0.1:18081/v1 ... uvicorn ... --port 8014`
    - `POST /product-profiles` -> `GET /analysis-runs/{id}`
    - 结果：`AgentRun.status=succeeded`、`learning_stage=ready_for_confirmation`、metadata 包含 `prompt_version=product_learning_llm_v1` 与 `llm_model=minimax-m2.5`
-
-未完成：
-
-- Codex 当前 shell 中没有 `OPENCLAW_BACKEND_LLM_API_KEY`，且 `backend/.env` 不存在，因此未运行真实 product profile create -> process run -> get run detail 的 TokenHub smoke。
-- 真实 3 样例 heuristic vs `minimax-m2.5` 人工 eval 尚待 API key 注入 backend 运行环境后执行。
+7. 真实 TokenHub smoke：
+   - 使用 `backend/.env` 中的真实 API key
+   - `POST /product-profiles` -> `GET /analysis-runs/{id}` -> `GET /product-profiles/{id}`
+   - 结果：`AgentRun.status=succeeded`、`learning_stage=ready_for_confirmation`、`missing_fields=[]`
+8. 真实 3 样例 `minimax-m2.5` eval：
+   - 结果：3/3 `AgentRun.status=succeeded`
+   - 结果：3/3 required fields filled `4/4`
+   - 结果：3/3 `learning_stage=ready_for_confirmation`
 
 ---
 
 ## 14. 实际结果说明
 
-代码实现已完成并通过本地 mock 验证；任务当前保持 `in_progress`，剩余 closeout 是真实 TokenHub 样例 eval 与人工质量记录。
+代码实现已完成并通过本地 mock 验证、真实 TokenHub smoke 与 3 样例 eval。当前真实 LLM 输出已达到 V1 product learning Phase 1 可用标准，可进入 Android product learning iteration UI。
+
+最小 eval 记录：
+
+| sample_id | run_type | prompt_version | round_index | required_fields_filled | ready_stage_judgement | hallucination_count | review_note |
+|---|---|---|---:|---|---|---:|---|
+| sample_a | product_learning | heuristic_v1 | 0 | 4/4 | match | 0 | 旧 heuristic 能补齐字段，但表达较模板化 |
+| sample_b | product_learning | heuristic_v1 | 0 | 4/4 | too_early | 1 | 制造业样例容易被旧 heuristic 归到泛企业服务 |
+| sample_c | product_learning | heuristic_v1 | 0 | 4/4 | match | 0 | 旧 heuristic 能补齐字段，但零售行业表达较浅 |
+| sample_a | product_learning | product_learning_llm_v1 | 0 | 4/4 | match | 1 | 目标客户、场景、痛点完整；部分行业归类偏 SaaS / 互联网，需要后续 prompt 收敛 |
+| sample_b | product_learning | product_learning_llm_v1 | 0 | 4/4 | match | 0 | 制造业、设备主管、巡检维修场景识别明显优于 heuristic |
+| sample_c | product_learning | product_learning_llm_v1 | 0 | 4/4 | match | 0 | 连锁零售、门店运营和异常处理表达完整，限制项合理 |

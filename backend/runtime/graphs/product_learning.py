@@ -80,6 +80,8 @@ def _build_product_learning_messages(
                 "你是 AI 销售助手 V1 的产品学习节点。"
                 "你的任务是基于用户提供的产品材料生成结构化 ProductLearningDraft。"
                 "只根据输入材料做合理归纳，不要编造价格、客户名称、具体案例或未提供事实。"
+                "当输入信息足以推断时，必须补齐目标客户、目标行业、典型场景、解决痛点、核心优势和限制条件。"
+                "core_advantages 表示可从材料确认或合理归纳的产品价值与能力优势，不要求必须有竞品对比。"
                 "只输出一个 JSON object，不要输出 markdown、解释或额外文本。"
             ),
         },
@@ -88,7 +90,11 @@ def _build_product_learning_messages(
             "content": (
                 "请补全以下产品学习草稿。\n"
                 "输出必须是单个 JSON object，字段必须严格匹配 output_schema。\n"
-                "如果信息不足，数组可为空；missing_fields 固定输出空数组，"
+                "target_customers、target_industries、typical_use_cases、"
+                "pain_points_solved、core_advantages、constraints 应尽量各输出 2 到 4 条。"
+                "这些字段不要留空；如果缺少差异化竞品信息，core_advantages 仍应输出从产品描述可归纳出的核心价值。"
+                "constraints 可以写当前信息不足、需人工确认、V1 范围限制等真实限制。"
+                "只有完全无法从输入推断时，数组才可为空；missing_fields 固定输出空数组，"
                 "正式缺失字段将由后端规则计算。\n\n"
                 f"output_schema:\n{json.dumps(schema, ensure_ascii=False)}\n\n"
                 f"product_input:\n{json.dumps(product_input, ensure_ascii=False)}"

@@ -33,21 +33,35 @@
    - `POST /product-profiles` 后轮询 `GET /analysis-runs/{id}`
    - 结果：`AgentRun.status=succeeded`、`learning_stage=ready_for_confirmation`
    - DB metadata 确认包含 `prompt_version=product_learning_llm_v1`、`llm_provider=tencent_tokenhub`、`llm_model=minimax-m2.5`
+7. 真实 TokenHub smoke：
+   - 使用 `backend/.env` 中的真实 API key
+   - 结果：`AgentRun.status=succeeded`、`learning_stage=ready_for_confirmation`、`missing_fields=[]`
+8. 真实 3 样例 eval：
+   - 3/3 `AgentRun.status=succeeded`
+   - 3/3 required fields filled `4/4`
+   - 3/3 `learning_stage=ready_for_confirmation`
+
+最小 eval 记录：
+
+| sample_id | run_type | prompt_version | round_index | required_fields_filled | ready_stage_judgement | hallucination_count | review_note |
+|---|---|---|---:|---|---|---:|---|
+| sample_a | product_learning | heuristic_v1 | 0 | 4/4 | match | 0 | 旧 heuristic 能补齐字段，但表达较模板化 |
+| sample_b | product_learning | heuristic_v1 | 0 | 4/4 | too_early | 1 | 制造业样例容易被旧 heuristic 归到泛企业服务 |
+| sample_c | product_learning | heuristic_v1 | 0 | 4/4 | match | 0 | 旧 heuristic 能补齐字段，但零售行业表达较浅 |
+| sample_a | product_learning | product_learning_llm_v1 | 0 | 4/4 | match | 1 | 目标客户、场景、痛点完整；部分行业归类偏 SaaS / 互联网，需要后续 prompt 收敛 |
+| sample_b | product_learning | product_learning_llm_v1 | 0 | 4/4 | match | 0 | 制造业、设备主管、巡检维修场景识别明显优于 heuristic |
+| sample_c | product_learning | product_learning_llm_v1 | 0 | 4/4 | match | 0 | 连锁零售、门店运营和异常处理表达完整，限制项合理 |
 
 ---
 
 ## 4. 已知限制
 
-- Codex 当前 shell 没有 `OPENCLAW_BACKEND_LLM_API_KEY`，且 `backend/.env` 不存在，因此没有运行真实 TokenHub product learning flow。
-- 用户已在 `jianglab` 终端验证 `minimax-m2.5` curl 连通，但该 key 尚未注入 Codex/backend 运行环境。
-- 真实 3 样例 heuristic vs `minimax-m2.5` 人工 eval 尚未记录。
+- Sample A 的行业归类仍偏 SaaS / 互联网，后续可继续收敛 prompt。
 - MiniMax 返回中可能包含 `<think>...</think>`，当前实现已做剥离，但后续真实样例仍需确认输出稳定性。
 
 ---
 
 ## 5. 推荐下一步
 
-1. Human 将 API key 注入 `backend/.env` 或启动 backend 的 shell 环境。
-2. 运行真实 product profile create -> process run -> get run detail smoke。
-3. 用 `runtime-v1-observability-eval-baseline.md` 的 3 个样例记录 heuristic vs `minimax-m2.5` eval 表。
-4. 验证完成后将 `task_v1_product_learning_llm_phase1.md` 状态改为 `done`，再进入 Android product learning iteration UI。
+1. 进入 `docs/delivery/tasks/task_v1_android_product_learning_iteration_ui.md`。
+2. 后续如需继续提升质量，可单独拆 prompt tuning / eval follow-up。

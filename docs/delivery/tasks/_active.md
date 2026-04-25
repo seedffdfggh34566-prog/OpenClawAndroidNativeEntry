@@ -57,6 +57,7 @@
 - `task_v1_llm_latency_and_fallback_followup.md`
 - `task_v1_demo_release_candidate_hardening.md`
 - `task_v1_report_readability_postprocess_followup.md`
+- `task_v1_developer_llm_run_inspector.md`
 
 这些任务当前应视为：
 
@@ -66,11 +67,12 @@
 
 ### Current task
 
-- 暂无
+- `task_v1_developer_llm_run_inspector.md`
 
 ### Next queued tasks
 
 - `task_v1_extended_business_eval_round2.md`
+- `task_v1_demo_runbook_and_evidence_pack.md`
 
 最近完成：
 
@@ -132,6 +134,7 @@
 - LLM latency / fallback follow-up 已作为 conditional task 收口为未触发；当前没有已排定的下一项 implementation task。
 - V1 demo release candidate hardening 已完成，当前 RC demo 能力、验收标准、固定样例和已知限制已冻结。下一项进入 report readability postprocess。
 - report readability postprocess 已完成，报告 summary 和 section bullet 长度已做轻量控制。下一项进入 16 个真实业务样例 round 2 eval。
+- extended business eval round2 曾进入准备阶段，但尚未跑样例。为提高 LLM 失败定位和人工评审效率，当前先插入 developer LLM run inspector，再继续 round2 eval。
 
 ### Auto-continue allowed when
 

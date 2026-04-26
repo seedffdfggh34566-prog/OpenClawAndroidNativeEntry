@@ -6,6 +6,7 @@
 
 - `api/`
   - `api/sales-workspace-kernel-v0-contract.md`
+  - `api/sales-workspace-kernel-v0-examples.md`
   - `api/backend-v1-minimum-contract.md`
 - `schemas/`
 - `runtime-v1-observability-eval-baseline.md`

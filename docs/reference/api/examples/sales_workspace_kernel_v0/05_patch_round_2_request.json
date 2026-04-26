@@ -1,0 +1,105 @@
+{
+  "patch": {
+    "id": "patch_round_2",
+    "workspace_id": "ws_demo",
+    "base_workspace_version": 2,
+    "author": "local_user",
+    "message": "Round 2 stronger candidate",
+    "operations": [
+      {
+        "type": "upsert_research_round",
+        "payload": {
+          "id": "rr_002",
+          "round_index": 2,
+          "objective": "Find stronger candidates in Jiangsu/Zhejiang.",
+          "summary": "D has stronger evidence across fit, pain, timing, region, and source quality."
+        }
+      },
+      {
+        "type": "upsert_research_source",
+        "payload": {
+          "id": "src_d_1",
+          "round_id": "rr_002",
+          "title": "D company public case page",
+          "url": "https://example.com/d",
+          "reliability": "high",
+          "excerpt": "D company publicly describes urgent digital operations needs in Zhejiang."
+        }
+      },
+      {
+        "type": "upsert_company_candidate",
+        "payload": {
+          "id": "cand_d",
+          "name": "D Company",
+          "summary": "Zhejiang manufacturer with urgent operations digitization pressure.",
+          "industry": "precision components",
+          "region": "Zhejiang",
+          "company_size": "200 employees",
+          "round_ids": [
+            "rr_002"
+          ]
+        }
+      },
+      {
+        "type": "upsert_candidate_observation",
+        "payload": {
+          "id": "obs_d_fit",
+          "candidate_id": "cand_d",
+          "source_id": "src_d_1",
+          "round_id": "rr_002",
+          "signal_type": "fit",
+          "strength": 3,
+          "summary": "D has strong fit evidence."
+        }
+      },
+      {
+        "type": "upsert_candidate_observation",
+        "payload": {
+          "id": "obs_d_pain",
+          "candidate_id": "cand_d",
+          "source_id": "src_d_1",
+          "round_id": "rr_002",
+          "signal_type": "pain",
+          "strength": 3,
+          "summary": "D has strong pain evidence."
+        }
+      },
+      {
+        "type": "upsert_candidate_observation",
+        "payload": {
+          "id": "obs_d_timing",
+          "candidate_id": "cand_d",
+          "source_id": "src_d_1",
+          "round_id": "rr_002",
+          "signal_type": "timing",
+          "strength": 2,
+          "summary": "D has strong timing evidence."
+        }
+      },
+      {
+        "type": "upsert_candidate_observation",
+        "payload": {
+          "id": "obs_d_region",
+          "candidate_id": "cand_d",
+          "source_id": "src_d_1",
+          "round_id": "rr_002",
+          "signal_type": "region",
+          "strength": 2,
+          "summary": "D has strong region evidence."
+        }
+      },
+      {
+        "type": "upsert_candidate_observation",
+        "payload": {
+          "id": "obs_d_source_quality",
+          "candidate_id": "cand_d",
+          "source_id": "src_d_1",
+          "round_id": "rr_002",
+          "signal_type": "source_quality",
+          "strength": 1,
+          "summary": "D has strong source_quality evidence."
+        }
+      }
+    ]
+  }
+}

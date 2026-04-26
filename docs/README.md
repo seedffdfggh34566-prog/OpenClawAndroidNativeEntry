@@ -104,6 +104,7 @@ V1 细节可继续参考：
 - `docs/delivery/tasks/_active.md`
 - `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
 - `docs/reference/api/sales-workspace-kernel-v0-contract.md`
+- `docs/reference/api/sales-workspace-kernel-v0-examples.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_persistence_decision.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_api_contract_v0.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_post_kernel_v0_planning.md`
@@ -210,6 +211,7 @@ docs/
 最近完成的 contract / persistence decision 文档为：
 
 - `docs/reference/api/sales-workspace-kernel-v0-contract.md`
+- `docs/reference/api/sales-workspace-kernel-v0-examples.md`
 - `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
 
 当前结论：
@@ -217,7 +219,7 @@ docs/
 - 不进入 SQLite / Alembic。
 - 不开放 backend API implementation。
 - `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑，不是正式 persistence baseline。
-- 下一步应先补 contract fixture examples / state transition examples。
+- contract fixture examples / state transition examples 已补齐；当前仍不开放 backend API implementation。
 
 Sales Workspace Kernel backend-only v0 已完成：
 

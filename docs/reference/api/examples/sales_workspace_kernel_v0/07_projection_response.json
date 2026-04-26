@@ -1,0 +1,12 @@
+{
+  "workspace_id": "ws_demo",
+  "workspace_version": 3,
+  "files": {
+    "product/current.md": "---\ngenerated: true\nworkspace_id: ws_demo\nworkspace_version: 3\nobject_type: product_profile_revision\nobject_id: prod_v1\n---\n\n# Product\n\n- Name: FactoryOps AI\n- One-liner: AI assistant for factory operations and sales follow-up.\n",
+    "directions/current.md": "---\ngenerated: true\nworkspace_id: ws_demo\nworkspace_version: 3\nobject_type: lead_direction_version\nobject_id: dir_v1\n---\n\n# Lead Direction\n\n- Priority industries: industrial manufacturing, precision components\n- Regions: Jiangsu, Zhejiang\n",
+    "research/rounds/rr_001.md": "---\ngenerated: true\nworkspace_id: ws_demo\nworkspace_version: 3\nobject_type: research_round\nobject_id: rr_001\n---\n\n# Research Round 1\n\n- Objective: Find initial manufacturing candidates.\n",
+    "research/rounds/rr_002.md": "---\ngenerated: true\nworkspace_id: ws_demo\nworkspace_version: 3\nobject_type: research_round\nobject_id: rr_002\n---\n\n# Research Round 2\n\n- Objective: Find stronger candidates in Jiangsu/Zhejiang.\n",
+    "candidates/index.md": "---\ngenerated: true\nworkspace_id: ws_demo\nworkspace_version: 3\nobject_type: company_candidate_index\nobject_id: index\n---\n\n# Candidates\n\n| Rank | Candidate | Score | Status | Reason |\n|---:|---|---:|---|---|\n| 1 | D Company | 230 | active | fit + pain + region + source_quality + timing evidence |\n",
+    "rankings/current.md": "---\ngenerated: true\nworkspace_id: ws_demo\nworkspace_version: 3\nobject_type: candidate_ranking_board\nobject_id: board_v3\n---\n\n# Current Rankings\n\n## #1 D Company\n\n- Score: 230\n- Supporting observations: obs_d_fit, obs_d_pain, obs_d_timing, obs_d_region, obs_d_source_quality\n\n## Ranking Delta\n\n- D Company entered ranking at #1 with fit + pain + region + source_quality + timing evidence.\n"
+  }
+}

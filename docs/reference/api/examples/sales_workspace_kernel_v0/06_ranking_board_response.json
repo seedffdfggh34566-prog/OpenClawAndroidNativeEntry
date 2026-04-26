@@ -1,0 +1,78 @@
+{
+  "ranking_board": {
+    "id": "board_v3",
+    "workspace_id": "ws_demo",
+    "workspace_version": 3,
+    "ranked_items": [
+      {
+        "candidate_id": "cand_d",
+        "candidate_name": "D Company",
+        "rank": 1,
+        "score": 230,
+        "status": "active",
+        "reason": "fit + pain + region + source_quality + timing evidence",
+        "supporting_observation_ids": [
+          "obs_d_fit",
+          "obs_d_pain",
+          "obs_d_timing",
+          "obs_d_region",
+          "obs_d_source_quality"
+        ],
+        "score_breakdown": {
+          "fit": 70,
+          "pain": 70,
+          "timing": 40,
+          "region": 30,
+          "source_quality": 20
+        }
+      },
+      {
+        "candidate_id": "cand_a",
+        "candidate_name": "A Company",
+        "rank": 2,
+        "score": 110,
+        "status": "active",
+        "reason": "fit + pain evidence",
+        "supporting_observation_ids": [
+          "obs_a_fit",
+          "obs_a_pain"
+        ],
+        "score_breakdown": {
+          "fit": 65,
+          "pain": 45
+        }
+      },
+      {
+        "candidate_id": "cand_b",
+        "candidate_name": "B Company",
+        "rank": 3,
+        "score": 21,
+        "status": "active",
+        "reason": "fit evidence",
+        "supporting_observation_ids": [
+          "obs_b_fit"
+        ],
+        "score_breakdown": {
+          "fit": 21
+        }
+      }
+    ],
+    "deltas": [
+      {
+        "candidate_id": "cand_d",
+        "previous_rank": null,
+        "new_rank": 1,
+        "previous_score": 0,
+        "new_score": 230,
+        "reason": "D Company entered ranking at #1 with fit + pain + region + source_quality + timing evidence.",
+        "supporting_observation_ids": [
+          "obs_d_fit",
+          "obs_d_pain",
+          "obs_d_timing",
+          "obs_d_region",
+          "obs_d_source_quality"
+        ]
+      }
+    ]
+  }
+}

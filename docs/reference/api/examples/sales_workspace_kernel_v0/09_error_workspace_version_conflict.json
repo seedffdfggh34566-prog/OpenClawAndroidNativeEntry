@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "workspace_version_conflict",
+    "message": "base_workspace_version does not match current workspace_version",
+    "details": {
+      "workspace_id": "ws_demo",
+      "current_workspace_version": 3,
+      "base_workspace_version": 2
+    }
+  }
+}

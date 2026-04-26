@@ -1,0 +1,31 @@
+{
+  "context_pack": {
+    "id": "ctx_ws_demo_v3",
+    "workspace_id": "ws_demo",
+    "task_type": "research_round",
+    "token_budget_chars": 6000,
+    "product_summary": "FactoryOps AI | AI assistant for factory operations and sales follow-up. | Target customers: manufacturing SMEs | Pain points: manual production follow-up, slow quotation coordination | Value props: reduce sales operations workload, surface high-fit accounts",
+    "current_direction": "Industries: industrial manufacturing, precision components | Customer types: owner-led SME, operations-heavy factory | Regions: Jiangsu, Zhejiang | Reason: Focus on factories with operations pressure and buying urgency.",
+    "top_candidates": [
+      {
+        "candidate_id": "cand_d",
+        "name": "D Company",
+        "rank": 1,
+        "score": 230,
+        "reason": "fit + pain + region + source_quality + timing evidence",
+        "supporting_observation_ids": [
+          "obs_d_fit",
+          "obs_d_pain",
+          "obs_d_timing",
+          "obs_d_region",
+          "obs_d_source_quality"
+        ]
+      }
+    ],
+    "recent_ranking_delta": [
+      "D Company entered ranking at #1 with fit + pain + region + source_quality + timing evidence."
+    ],
+    "open_questions": [],
+    "kernel_boundary": "Runtime / Product Sales Agent execution layer returns WorkspacePatchDraft; Sales Workspace Kernel validates and writes formal objects."
+  }
+}

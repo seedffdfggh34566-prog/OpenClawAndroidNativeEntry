@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "validation_error",
+    "message": "operation payload failed validation",
+    "details": {
+      "workspace_id": "ws_demo",
+      "operation_type": "upsert_candidate_observation",
+      "field": "source_id",
+      "reason": "CandidateObservation must reference an existing ResearchSource"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "workspace_id": "ws_demo",
+  "name": "Demo sales workspace",
+  "goal": "Find source-backed manufacturing ERP candidates",
+  "owner_id": "local_user",
+  "workspace_key": "local_default"
+}

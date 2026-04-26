@@ -1,0 +1,61 @@
+{
+  "patch": {
+    "id": "patch_product_direction",
+    "workspace_id": "ws_demo",
+    "base_workspace_version": 0,
+    "author": "local_user",
+    "message": "Add product and lead direction",
+    "operations": [
+      {
+        "type": "upsert_product_profile_revision",
+        "payload": {
+          "id": "prod_v1",
+          "product_name": "FactoryOps AI",
+          "one_liner": "AI assistant for factory operations and sales follow-up.",
+          "target_customers": [
+            "manufacturing SMEs"
+          ],
+          "target_industries": [
+            "industrial manufacturing"
+          ],
+          "pain_points": [
+            "manual production follow-up",
+            "slow quotation coordination"
+          ],
+          "value_props": [
+            "reduce sales operations workload",
+            "surface high-fit accounts"
+          ],
+          "constraints": [
+            "China public-web source evidence required"
+          ]
+        }
+      },
+      {
+        "type": "upsert_lead_direction_version",
+        "payload": {
+          "id": "dir_v1",
+          "priority_industries": [
+            "industrial manufacturing",
+            "precision components"
+          ],
+          "target_customer_types": [
+            "owner-led SME",
+            "operations-heavy factory"
+          ],
+          "regions": [
+            "Jiangsu",
+            "Zhejiang"
+          ],
+          "company_sizes": [
+            "50-500 employees"
+          ],
+          "priority_constraints": [
+            "must show public evidence"
+          ],
+          "change_reason": "Focus on factories with operations pressure and buying urgency."
+        }
+      }
+    ]
+  }
+}

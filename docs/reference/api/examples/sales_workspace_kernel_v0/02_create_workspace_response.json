@@ -1,0 +1,15 @@
+{
+  "workspace": {
+    "id": "ws_demo",
+    "workspace_key": "local_default",
+    "owner_id": "local_user",
+    "name": "Demo sales workspace",
+    "goal": "Find source-backed manufacturing ERP candidates",
+    "status": "active",
+    "workspace_version": 0,
+    "current_product_profile_revision_id": null,
+    "current_lead_direction_version_id": null,
+    "current_candidate_ranking_board_id": null,
+    "latest_research_round_id": null
+  }
+}

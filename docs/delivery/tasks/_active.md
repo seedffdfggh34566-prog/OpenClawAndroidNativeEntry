@@ -31,8 +31,10 @@
 - `docs/reference/api/sales-workspace-kernel-v0-contract.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`（done）
 - `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_contract_fixture_examples.md`（done）
+- `docs/reference/api/sales-workspace-kernel-v0-examples.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐。
 
 ---
 
@@ -42,6 +44,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 
 1. Sales Workspace Kernel backend API contract。
 2. Persistence decision。
+3. Contract fixture examples / state transition examples。
 
 当前结论：
 
@@ -49,7 +52,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - 不开放 backend API implementation。
 - `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑，不是正式 persistence baseline。
 - backend API implementation 继续 blocked。
-- 下一步应先补 contract fixture examples / state transition examples，而不是 route / DB。
+- 当前没有 next queued implementation task。
 
 ---
 
@@ -112,9 +115,10 @@ Persistence decision 已冻结：
 
 - `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
 
-下一步建议由规划层新增：
+Contract examples 已补齐：
 
-- contract fixture examples / state transition examples task。
+- `docs/reference/api/sales-workspace-kernel-v0-examples.md`
+- `docs/reference/api/examples/sales_workspace_kernel_v0/`
 
 ---
 
@@ -132,8 +136,9 @@ Persistence decision 已冻结：
 8. `docs/architecture/workspace/markdown-projection.md`
 9. `docs/architecture/workspace/context-pack-compiler.md`
 10. `docs/reference/api/sales-workspace-kernel-v0-contract.md`
-11. `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
-12. 本文件
+11. `docs/reference/api/sales-workspace-kernel-v0-examples.md`
+12. `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
+13. 本文件
 
 ---
 

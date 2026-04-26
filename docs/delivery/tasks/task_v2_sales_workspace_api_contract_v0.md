@@ -6,7 +6,7 @@
 
 - 任务名称：V2 Sales Workspace Kernel backend API contract v0
 - 建议路径：`docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md`
-- 当前状态：`planned`
+- 当前状态：`done`
 - 优先级：P0
 
 ---
@@ -67,3 +67,40 @@
 
 1. `task_v2_sales_workspace_persistence_decision.md`
 2. 完成 persistence decision 后，才允许开放 `task_v2_sales_workspace_backend_api_v0.md`
+
+---
+
+## 8. 实际产出
+
+- 新增 `docs/reference/api/sales-workspace-kernel-v0-contract.md`。
+- 更新 `docs/reference/README.md`。
+- 更新 `_active.md`，将 current task 切到 `task_v2_sales_workspace_persistence_decision.md`。
+- 新增 handoff：`docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_api_contract_v0.md`。
+
+---
+
+## 9. 已做验证
+
+已执行：
+
+```bash
+rg "sales-workspace-kernel-v0-contract.md" docs/reference docs/delivery docs/README.md
+rg "POST /sales-workspaces|WorkspacePatch|workspace_version_conflict|ContextPack" docs/reference/api/sales-workspace-kernel-v0-contract.md
+rg "FastAPI route implementation|Alembic migration|Android UI|Runtime / LangGraph integration" docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_api_contract_v0.md
+git diff --check
+git status --short
+```
+
+结果：
+
+- contract 文档已被 reference / delivery / docs 入口引用。
+- contract 文档包含最小 endpoint、`WorkspacePatch`、`workspace_version_conflict`、`ContextPack`。
+- task / handoff 明确 FastAPI route、Alembic migration、Android UI、Runtime / LangGraph integration 不在本任务范围。
+- `git diff --check` passed。
+- `git status --short` 仅包含本次 Markdown 文档变更。
+
+---
+
+## 10. 实际结果说明
+
+本任务只冻结 API contract，不实现 FastAPI route，不改变 backend code，不引入 DB migration，不接 Android / Runtime / LLM / search。

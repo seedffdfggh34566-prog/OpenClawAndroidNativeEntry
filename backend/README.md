@@ -14,8 +14,12 @@ V1 最小闭环已经作为 demo-ready baseline 收口。当前 V2 backend-only 
 `backend/sales_workspace/`，用于验证 Sales Workspace Kernel 的结构化状态机、
 WorkspacePatch、候选排序、Markdown projection 和 ContextPack Compiler。
 
-当前 V2 kernel v0 不包含 FastAPI endpoint、数据库 migration、Android UI、
-LangGraph、真实 LLM、联网搜索或 CRM pipeline。
+当前 V2 已新增 no-DB FastAPI prototype endpoint，用于验证 Sales Workspace Kernel
+API contract 可调用性。该 prototype 使用进程内 `InMemoryWorkspaceStore`，不是正式
+persistence baseline。
+
+当前 V2 仍不包含数据库 migration、Android UI、LangGraph、真实 LLM、联网搜索或
+CRM pipeline。
 
 当前常用命令：
 
@@ -30,6 +34,7 @@ Sales Workspace Kernel v0 固定验证命令：
 
 ```bash
 backend/.venv/bin/python -m pytest backend/tests/sales_workspace -q
+backend/.venv/bin/python -m pytest backend/tests/sales_workspace backend/tests/test_sales_workspace_api.py -q
 backend/.venv/bin/python -m pytest backend/tests -q
 ```
 

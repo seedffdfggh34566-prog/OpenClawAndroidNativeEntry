@@ -33,8 +33,9 @@
 - `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_contract_fixture_examples.md`（done）
 - `docs/reference/api/sales-workspace-kernel-v0-examples.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成。
 
 ---
 
@@ -45,13 +46,15 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 1. Sales Workspace Kernel backend API contract。
 2. Persistence decision。
 3. Contract fixture examples / state transition examples。
+4. Sales Workspace Backend API prototype v0。
 
 当前结论：
 
 - 不进入 SQLite / Alembic。
-- 不开放 backend API implementation。
+- 不开放 persistence-backed backend API implementation。
 - `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑，不是正式 persistence baseline。
-- backend API implementation 继续 blocked。
+- 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
+- backend API 的 DB-backed / production persistence 版本继续 blocked。
 - 当前没有 next queued implementation task。
 
 ---
@@ -60,7 +63,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 
 除非后续单独创建 task 并写入本文件，否则执行 agent 不应自动实现：
 
-- FastAPI endpoint
+- 新增或扩展 Sales Workspace FastAPI endpoint
 - SQLAlchemy ORM
 - Alembic migration
 - SQLite schema change
@@ -120,6 +123,12 @@ Contract examples 已补齐：
 - `docs/reference/api/sales-workspace-kernel-v0-examples.md`
 - `docs/reference/api/examples/sales_workspace_kernel_v0/`
 
+Sales Workspace Backend API prototype v0 已完成：
+
+- `backend/api/sales_workspace.py`
+- `backend/tests/test_sales_workspace_api.py`
+- `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`
+
 ---
 
 ## 6. 当前执行入口
@@ -138,7 +147,8 @@ Contract examples 已补齐：
 10. `docs/reference/api/sales-workspace-kernel-v0-contract.md`
 11. `docs/reference/api/sales-workspace-kernel-v0-examples.md`
 12. `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
-13. 本文件
+13. `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`
+14. 本文件
 
 ---
 
@@ -154,8 +164,8 @@ Contract examples 已补齐：
 
 - 需要改变 V2 产品方向。
 - 需要实现 DB migration。
-- 需要新增 API route。
+- 需要新增或扩展 API route。
 - 需要接 Android。
 - 需要接 LangGraph / LLM / search。
 - 需要引入新外部依赖。
-- 需要开放 backend API implementation。
+- 需要开放 persistence-backed backend API implementation。

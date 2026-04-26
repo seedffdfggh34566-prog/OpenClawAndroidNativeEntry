@@ -17,6 +17,10 @@ from backend.api.logging_utils import (
     reset_request_context,
     set_request_context,
 )
+from backend.api.sales_workspace import (
+    create_sales_workspace_store,
+    router as sales_workspace_router,
+)
 from backend.api.schemas import (
     AnalysisRunCreateRequest,
     AnalysisRunCreateResponse,
@@ -186,6 +190,8 @@ def create_app() -> FastAPI:
 
     init_db()
     app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
+    app.state.sales_workspace_store = create_sales_workspace_store()
+    app.include_router(sales_workspace_router)
 
     @app.middleware("http")
     async def request_logging_middleware(request, call_next):

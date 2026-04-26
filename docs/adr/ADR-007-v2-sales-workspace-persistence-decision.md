@@ -30,13 +30,13 @@ API contract v0 也已冻结：
 
 当前采用：
 
-> **延后 backend API implementation；不进入 SQLite / Alembic；不开放 API route。**
+> **延后 persistence-backed backend API implementation；不进入 SQLite / Alembic；不开放正式 API route。**
 
 同时明确：
 
 - `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑。
 - `in-memory / JSON fixture` 不是正式 persistence baseline。
-- backend API implementation 继续 blocked。
+- persistence-backed backend API implementation 继续 blocked。
 - SQLite / Alembic migration 继续 blocked。
 - 下一步应先补 contract fixture examples / state transition examples，而不是 route / DB。
 
@@ -92,7 +92,7 @@ API contract v0 也已冻结：
 缺点：
 
 - Android read-only view 和 Runtime integration 继续等待。
-- 短期没有可调用 API。
+- 在 no-DB prototype 开放前，短期没有可调用 API。
 
 结论：
 
@@ -127,7 +127,7 @@ API contract v0 也已冻结：
 
 除非后续新 task 明确开放，否则不实现：
 
-- FastAPI endpoint。
+- persistence-backed FastAPI endpoint。
 - SQLAlchemy ORM。
 - Alembic migration。
 - SQLite schema change。
@@ -140,7 +140,26 @@ API contract v0 也已冻结：
 
 ## 6. 影响
 
-- `task_v2_sales_workspace_backend_api_v0.md` 继续 blocked。
+- `task_v2_sales_workspace_backend_api_v0.md` 作为 persistence-backed API 继续 blocked。
 - `task_v2_android_workspace_readonly_view.md` 继续 blocked。
 - `task_v2_sales_workspace_runtime_patchdraft_integration.md` 继续 blocked。
-- 当前最合理的下一步是新增 contract fixture examples / state transition examples task。
+- contract fixture examples / state transition examples 已在 addendum 前置任务中完成。
+
+---
+
+## 7. 2026-04-27 Addendum：允许 no-DB API prototype
+
+contract fixture examples / state transition examples 已完成：
+
+- `docs/reference/api/sales-workspace-kernel-v0-examples.md`
+- `docs/reference/api/examples/sales_workspace_kernel_v0/`
+
+因此允许实现一个最小 no-DB FastAPI prototype，用于验证 API contract 可调用性：
+
+- 使用 app-local `InMemoryWorkspaceStore`。
+- 不使用 SQLAlchemy ORM。
+- 不新增 Alembic migration。
+- 不承诺正式 persistence baseline。
+- 不开放 Android UI、Runtime / LangGraph、LLM、search 或 CRM。
+
+该 addendum 不推翻本 ADR 的 persistence decision：正式 persistence 仍未冻结，DB-backed API 仍需单独任务。

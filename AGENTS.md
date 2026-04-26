@@ -41,15 +41,16 @@ V1 is no longer the active implementation track. Agents may fix severe demo repr
 ### V2 planning baseline
 V2 currently explores:
 
-1. **Conversational dedicated sales agent prototype**
-2. **AI-guided product learning through chat**
-3. **Conversation-based lead direction analysis and iteration**
-4. **Lightweight lead research as a later V2.2 capability**
-5. **Chinese public-web search with source evidence**
-6. **Concrete company / organization candidates**
-7. **Traceable contact points with manual verification boundaries**
+1. **Workspace-native Product Sales Agent prototype**
+2. **Sales Workspace Kernel as the V2 technical backbone**
+3. **AI-guided product learning through chat-first workspace interaction**
+4. **Conversation-based lead direction analysis and iteration**
+5. **Lightweight evidence-based research as a later V2.2 capability**
+6. **Chinese public-web search with source evidence**
+7. **Concrete company / organization candidates**
+8. **Traceable contact points with manual verification boundaries**
 
-V2 is not yet an MVP, schema baseline, API contract, or implementation queue.
+V2 is not yet an MVP, schema baseline, API contract, or broad implementation queue. Only the task explicitly queued in `docs/delivery/tasks/_active.md` may be implemented.
 
 ### Out of scope unless explicitly approved
 Do **not** proactively expand V2 into:
@@ -72,8 +73,8 @@ Do **not** proactively expand V2 into:
 - Contact points must be traceable to public sources and default to manual verification.
 - Personal contact points are high-risk and must be explicitly marked, sourced, and never auto-contacted.
 - Android remains the control entry; backend remains the formal truth layer.
-- Runtime / agents may produce draft payloads and tool outputs, but backend services own formal object writeback.
-- Sales agent memory must be persisted as structured backend objects, not only in prompts, Markdown files, SDK sessions, or LangGraph checkpoints.
+- Runtime / Product Sales Agent execution layer may produce draft payloads and tool outputs, but backend services own formal object writeback.
+- Product Sales Agent memory must be persisted as structured backend objects, not only in prompts, Markdown files, SDK sessions, or LangGraph checkpoints.
 
 Agents must treat scope control as a top-level rule.
 
@@ -118,6 +119,18 @@ Agents should keep these documents aligned with the current code and workflow re
 ---
 
 ## 5. Required Working Style
+
+### Terminology boundary
+
+This repository uses the word "agent" in multiple layers. Keep these meanings separate:
+
+- **Dev Agent / Execution Agent**: Codex, Claude Code, or another development assistant operating on this repository.
+- **Product Sales Agent / Sales Agent**: the AI sales assistant inside the product experience.
+- **Runtime / LangGraph Runtime**: backend LLM / tool orchestration that may produce draft payloads such as `WorkspacePatchDraft`.
+
+When writing docs, tasks, prompts, or handoffs, prefer the most specific term. Do not imply that a Dev Agent is the Product Sales Agent, and do not treat Runtime / LangGraph as the product's formal truth layer.
+
+Within this file, unqualified "agent" usually means Dev Agent / Execution Agent because `AGENTS.md` is a repository workflow rule file. When discussing product behavior, user-facing intelligence, memory, runtime drafts, or workspace writeback, use `Product Sales Agent`, `Runtime / LangGraph Runtime`, or `Sales Workspace Kernel` explicitly.
 
 ### Agent roles
 

@@ -1,6 +1,6 @@
 # 任务目录说明
 
-更新时间：2026-04-25
+更新时间：2026-04-26
 
 ## 1. 目录定位
 
@@ -16,34 +16,36 @@
 
 - AI 销售助手 V1 demo-ready release candidate / learning milestone closeout。
 - V1 demo runbook 与 evidence pack。
-- V2 PRD Draft v0.2。
-- V2 lead research data model Draft v0.1。
-- V2 planning baseline update。
-- V2 conversational sales agent definition update。
+- V2 workspace-native sales agent 产品北极星更新。
+- V2 Sales Workspace object model 草案。
+- V2 Sales Workspace Kernel backend-only v0 设计。
 
 当前项目处于：
 
-> **V2 对话式专属销售 agent planning baseline 阶段**
+> **V2 workspace-native sales agent planning baseline / Sales Workspace Kernel backend-only v0 阶段**
 
-当前阶段重点是冻结 V2.1 对话式销售 agent、数据、runtime 边界和后端 contract；V2.2 再恢复搜索边界、联系方式边界和 lead research 实现讨论。不自动进入实现。
+当前阶段重点是先验证 Sales Workspace Kernel 的最小 backend-only 状态机，不自动进入数据库、API、Android、LangGraph、LLM 或搜索实现。
 
 ---
 
 ## 3. 当前任务状态
 
-当前正式任务队列：
+当前正式任务队列以 `_active.md` 为准。
 
-- Current task：暂无
-- Next queued tasks：尚未排定
+当前入口：
 
-最近完成：
+- Current task：`task_v2_sales_workspace_kernel_backend_only_v0.md`
+- Next queued tasks：暂无自动排定
 
-- `task_v2_planning_baseline_update.md`
-- `task_v2_conversational_sales_agent_definition_update.md`
-- `task_v1_closeout.md`
-- `task_v1_demo_runbook_and_evidence_pack.md`
+当前允许执行的范围仅限：
 
-执行层不应继续自动追加 V1 功能，也不应在未排入 `_active.md` 的情况下创建 V2 后端、Android、数据库 migration、搜索 provider 或 API 实现任务。
+- Pydantic schema
+- in-memory / JSON fixture store
+- WorkspacePatch apply
+- deterministic candidate ranking
+- Markdown projection
+- ContextPack compiler
+- pytest
 
 ---
 
@@ -51,10 +53,13 @@
 
 | 任务 | 目标 | 当前状态 |
 |---|---|---|
-| `task_v1_demo_runbook_and_evidence_pack.md` | 固化可重复 demo 流程并收集真机证据包 | `done` |
-| `task_v1_closeout.md` | 将 V1 收口为 demo baseline / learning milestone，并停止继续追加 V1 功能 | `done` |
+| `task_v2_sales_workspace_direction_update.md` | 将 V2 北极星升级为 workspace-native sales agent | `done` |
+| `task_v2_workspace_object_model.md` | 定义 Sales Workspace 核心对象模型 | `done` |
+| `task_v2_sales_workspace_kernel_backend_only_v0.md` | 实现 Sales Workspace Kernel backend-only v0 | `current` |
+| `task_v2_conversational_sales_agent_definition_update.md` | 2026-04-25 旧 V2 定义更新 | `done / superseded by workspace-native direction` |
 | `task_v2_planning_baseline_update.md` | 将仓库入口、ADR、roadmap 和 active task 状态对齐到 V2 planning baseline | `done` |
-| `task_v2_conversational_sales_agent_definition_update.md` | 将 V2 定义调整为对话式专属销售 agent prototype，并后置 lead research | `done` |
+| `task_v1_closeout.md` | 将 V1 收口为 demo baseline / learning milestone，并停止继续追加 V1 功能 | `done` |
+| `task_v1_demo_runbook_and_evidence_pack.md` | 固化可重复 demo 流程并收集真机证据包 | `done` |
 
 更早的 V1 已完成任务仍可在 `docs/delivery/tasks/` 中按文件名查阅。
 
@@ -90,10 +95,12 @@
 
 ## 7. 当前默认原则
 
-- 优先做 V2.1 对话式销售 agent 定义，不抢跑实现。
-- 优先冻结会话、消息、产品画像版本、获客方向版本和 `sales_agent_turn_graph` 边界。
-- V2.2 再冻结搜索来源证据、联系方式和 lead research 数据对象边界。
+- 优先做 Sales Workspace Kernel，而不是继续扩展 V1 线性报告链路。
+- 结构化对象是主真相，Markdown 是 projection，不是唯一主存。
+- WorkspacePatch 是 workspace 状态变更入口。
+- CandidateRankingBoard 必须由 deterministic ranking 派生，不能由 Product Sales Agent / Runtime draft 直接写入。
+- ContextPack 从结构化 workspace state 编译，不读取 Markdown、LangGraph checkpoint 或 SDK session。
 - Android 端仍只做控制入口，不抢后端主存职责。
-- Backend services 仍负责正式对象写回裁决。
-- Runtime / agent 只产出 draft payload、工具结果和中间推理。
+- Backend services / workspace kernel 负责正式对象写回裁决。
+- Runtime / Product Sales Agent execution layer 后续只产出 draft payload、工具结果和中间推理。
 - 若对象模型、页面结构与代码现实冲突，先更新 task / spec，再动实现。

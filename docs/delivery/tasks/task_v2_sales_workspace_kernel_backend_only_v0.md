@@ -6,7 +6,7 @@
 
 - 任务名称：V2 Sales Workspace Kernel backend-only v0
 - 建议路径：`docs/delivery/tasks/task_v2_sales_workspace_kernel_backend_only_v0.md`
-- 当前状态：`queued`
+- 当前状态：`done`
 - 优先级：P0
 
 ---
@@ -165,17 +165,52 @@ test_workspace_kernel_v0_two_round_research_reranks_candidate
 
 ## 9. 验收命令
 
-建议：
+固定命令：
 
 ```bash
-pytest backend/tests/sales_workspace -q
+backend/.venv/bin/python -m pytest backend/tests/sales_workspace -q
+backend/.venv/bin/python -m pytest backend/tests -q
 ```
 
-若仓库测试入口不同，以现有 backend pytest 配置为准。
+本任务不运行 Android build；本次不改 Android。
 
 ---
 
-## 10. 停止条件
+## 10. 实际完成记录
+
+完成日期：2026-04-26
+
+已实现：
+
+- `backend/sales_workspace/` backend-only kernel package。
+- Pydantic workspace object model。
+- in-memory store 与 JSON fixture load/save helper。
+- WorkspacePatch apply 与 `base_workspace_version` 乐观校验。
+- evidence-backed deterministic RankingEngine。
+- Markdown projection renderer。
+- ContextPack compiler。
+- `backend/tests/sales_workspace/` pytest 覆盖。
+
+实际验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/tests/sales_workspace -q
+backend/.venv/bin/python -m pytest backend/tests -q
+git diff --check
+```
+
+保持未实现：
+
+- FastAPI endpoint。
+- SQLAlchemy ORM / Alembic migration / SQLite schema change。
+- Android UI。
+- LangGraph / Runtime integration。
+- LLM / search provider。
+- CRM / ContactPoint / 自动触达。
+
+---
+
+## 11. 停止条件
 
 命中以下情况时停止并回到规划层：
 

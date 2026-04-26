@@ -17,13 +17,13 @@
 
 ### Current task
 
-- `docs/delivery/tasks/task_v2_sales_workspace_kernel_backend_only_v0.md`
+- `docs/delivery/tasks/task_v2_sales_workspace_kernel_backend_only_v0.md`（done）
 
 ### Next queued tasks
 
 暂无自动排定。
 
-当前允许执行的范围仅限：
+当前已完成的范围：
 
 ```text
 Sales Workspace Kernel backend-only v0
@@ -114,7 +114,9 @@ v0 的唯一核心验收闭环是：
 
 ## 6. Auto-continue allowed when
 
-执行 agent 可继续当前 task，但必须满足：
+执行 agent 当前不应自动继续新 implementation task，因为暂无 next queued task。
+
+已完成 task 的验收条件为：
 
 - 不触碰 Out of Scope。
 - 每个改动都有对应 pytest。

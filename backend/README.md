@@ -10,15 +10,27 @@
 - pytest
 - structured logging
 
-本轮仅覆盖 V1 最小闭环，不包含鉴权、搜索、分页和真实 OpenClaw runtime 接入。
+V1 最小闭环已经作为 demo-ready baseline 收口。当前 V2 backend-only v0 新增
+`backend/sales_workspace/`，用于验证 Sales Workspace Kernel 的结构化状态机、
+WorkspacePatch、候选排序、Markdown projection 和 ContextPack Compiler。
+
+当前 V2 kernel v0 不包含 FastAPI endpoint、数据库 migration、Android UI、
+LangGraph、真实 LLM、联网搜索或 CRM pipeline。
 
 当前常用命令：
 
 ```bash
 backend/.venv/bin/pip install -e backend
-backend/.venv/bin/python -m pytest backend/tests
+backend/.venv/bin/python -m pytest backend/tests -q
 backend/.venv/bin/alembic upgrade head
 backend/.venv/bin/python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8013
+```
+
+Sales Workspace Kernel v0 固定验证命令：
+
+```bash
+backend/.venv/bin/python -m pytest backend/tests/sales_workspace -q
+backend/.venv/bin/python -m pytest backend/tests -q
 ```
 
 当前环境变量入口：

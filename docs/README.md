@@ -1,6 +1,6 @@
 # 文档导航
 
-更新时间：2026-04-26
+更新时间：2026-04-27
 
 ## 1. 文档定位
 
@@ -27,7 +27,7 @@
 
 > **Sales Workspace Kernel：结构化 workspace 状态机 + WorkspacePatch 写回门禁 + 候选排序 + Markdown projection + ContextPack Compiler。**
 
-当前不是 V1 继续开发阶段，也不是 V2 MVP、正式 schema baseline、API contract 或 Android UI 实现阶段。
+Sales Workspace Kernel backend-only v0 已完成。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、FastAPI route、Android UI 或 Runtime / LangGraph 集成阶段。
 
 ---
 
@@ -101,8 +101,9 @@ V1 细节可继续参考：
 ### 5.3 当前执行入口
 
 - `docs/delivery/tasks/_active.md`
-- `docs/delivery/tasks/task_v2_sales_workspace_kernel_backend_only_v0.md`
-- `docs/delivery/handoffs/handoff_2026_04_26_v2_sales_workspace_kernel_v0_design.md`
+- `docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md`
+- `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`
+- `docs/delivery/handoffs/handoff_2026_04_27_v2_post_kernel_v0_planning.md`
 
 ### 5.4 V1 baseline 与参考
 
@@ -189,7 +190,7 @@ docs/
 
 当前 V1 已正式收口为 demo-ready release candidate / learning milestone，不进入 MVP。
 
-最近完成或导入的 V2 planning baseline 文档包括：
+最近完成或导入的 V2 planning / kernel baseline 文档包括：
 
 - `task_v2_sales_workspace_direction_update.md`
 - `task_v2_workspace_object_model.md`
@@ -197,12 +198,17 @@ docs/
 - `handoff_2026_04_26_v2_sales_workspace_direction_update.md`
 - `handoff_2026_04_26_v2_workspace_object_model.md`
 - `handoff_2026_04_26_v2_sales_workspace_kernel_v0_design.md`
+- `handoff_2026_04_26_v2_sales_workspace_kernel_backend_only_v0.md`
 
 当前正式执行入口为：
 
-- `docs/delivery/tasks/task_v2_sales_workspace_kernel_backend_only_v0.md`
+- `docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md`
 
-当前允许执行的范围仅限 Sales Workspace Kernel backend-only v0：
+Next queued task 为：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`
+
+Sales Workspace Kernel backend-only v0 已完成：
 
 - Pydantic schema
 - in-memory / JSON fixture store
@@ -211,6 +217,14 @@ docs/
 - Markdown projection
 - ContextPack compiler
 - pytest
+
+当前 V2.1 后续顺序冻结为：
+
+1. Sales Workspace Kernel backend API contract。
+2. Persistence decision。
+3. Backend API implementation。
+4. Android read-only workspace view。
+5. Runtime / LangGraph WorkspacePatchDraft integration。
 
 当前仍不应自动实现：
 
@@ -229,4 +243,4 @@ docs/
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2 workspace-native sales agent planning baseline：以 Sales Workspace Kernel 为当前技术主线，先验证 backend-only v0，再决定数据库、API、runtime、搜索和 Android 接入。**
+> **AI 销售助手 V2 workspace-native sales agent planning baseline：Sales Workspace Kernel backend-only v0 已完成，下一步先冻结 backend API contract 与 persistence decision，再决定 API、Android、runtime 和搜索接入。**

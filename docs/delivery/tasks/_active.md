@@ -1,10 +1,10 @@
 # 当前活跃任务
 
-更新时间：2026-04-26
+更新时间：2026-04-27
 
 ## 1. 使用说明
 
-本文件用于告诉开发者和 agent：
+本文件用于告诉开发者和 Dev Agent：
 
 - 当前优先推进哪个正式任务
 - 哪个任务只是背景材料
@@ -17,19 +17,18 @@
 
 ### Current task
 
+- `docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md`
+
+### Next queued task
+
+- `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`
+
+### Recently completed
+
 - `docs/delivery/tasks/task_v2_sales_workspace_kernel_backend_only_v0.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_post_v0_entry_sync.md`（done）
 
-### Next queued tasks
-
-暂无自动排定。
-
-当前已完成的范围：
-
-```text
-Sales Workspace Kernel backend-only v0
-```
-
-即：
+Sales Workspace Kernel backend-only v0 已完成，包含：
 
 - Pydantic schema
 - in-memory / JSON fixture store
@@ -41,9 +40,26 @@ Sales Workspace Kernel backend-only v0
 
 ---
 
-## 3. 当前禁止自动实现
+## 3. 当前 V2.1 后续顺序
 
-除非后续单独创建 task 并写入本文件，否则执行 agent 不应自动实现：
+后续任务顺序冻结为：
+
+1. Sales Workspace Kernel backend API contract。
+2. Persistence decision。
+3. Backend API implementation。
+4. Android read-only workspace view。
+5. Runtime / LangGraph WorkspacePatchDraft integration。
+
+当前只允许自动推进前两项 docs / decision 任务：
+
+- `task_v2_sales_workspace_api_contract_v0.md`
+- `task_v2_sales_workspace_persistence_decision.md`
+
+---
+
+## 4. 当前禁止自动实现
+
+除非后续单独完成 contract / decision 并写入本文件，否则执行 agent 不应自动实现：
 
 - FastAPI endpoint
 - SQLAlchemy ORM
@@ -69,7 +85,7 @@ Sales Workspace Kernel backend-only v0
 
 ---
 
-## 4. 当前结论
+## 5. 当前结论
 
 V2 已从“对话式专属销售 agent prototype”进一步收敛为：
 
@@ -79,7 +95,7 @@ Sales Workspace Kernel 是 V2 主架构。
 
 LangGraph 后续只作为 runtime execution layer。
 
-v0 的唯一核心验收闭环是：
+backend-only v0 已证明：
 
 ```text
 创建 workspace
@@ -92,9 +108,11 @@ v0 的唯一核心验收闭环是：
 -> 编译 ContextPack
 ```
 
+下一步要先冻结 API contract 与 persistence decision，避免过早进入 API、DB、Android 或 Runtime 实现。
+
 ---
 
-## 5. 当前执行入口
+## 6. 当前执行入口
 
 优先阅读：
 
@@ -107,28 +125,26 @@ v0 的唯一核心验收闭环是：
 7. `docs/architecture/workspace/workspace-kernel-v0-scope.md`
 8. `docs/architecture/workspace/markdown-projection.md`
 9. `docs/architecture/workspace/context-pack-compiler.md`
-10. `docs/delivery/tasks/task_v2_sales_workspace_kernel_backend_only_v0.md`
-11. 本文件
+10. `docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md`
+11. `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`
+12. 本文件
 
 ---
 
-## 6. Auto-continue allowed when
+## 7. Auto-continue allowed when
 
-执行 agent 当前不应自动继续新 implementation task，因为暂无 next queued task。
+执行 agent 只可在以下条件全部满足时自动继续：
 
-已完成 task 的验收条件为：
-
-- 不触碰 Out of Scope。
-- 每个改动都有对应 pytest。
-- 核心 e2e 测试通过。
-- 不新增外部依赖。
-- 不修改 V1 现有 ORM / API / Android / runtime graph。
+- 当前任务是 API contract docs-only task 或 persistence decision docs-only task。
+- 不触碰 code、API route、DB migration、Android、runtime graph、LLM 或 search。
+- 任务文件已明确状态、验收标准和停止条件。
+- 完成后同步 task / handoff / docs entry。
 
 当前没有 next queued implementation task。
 
 ---
 
-## 7. Stop conditions
+## 8. Stop conditions
 
 命中以下任一条件时停止并交回规划层：
 
@@ -138,5 +154,5 @@ v0 的唯一核心验收闭环是：
 - 需要接 Android。
 - 需要接 LangGraph / LLM / search。
 - 需要引入新外部依赖。
-- v0 对象模型与 `workspace-object-model.md` 冲突。
-- 无法用单个 e2e 测试证明两轮候选重排闭环。
+- API contract 与现有 `backend/sales_workspace` 对象模型冲突。
+- persistence decision 需要引入生产部署、云服务或数据迁移承诺。

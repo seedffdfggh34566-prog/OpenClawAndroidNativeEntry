@@ -1,6 +1,6 @@
 # 任务目录说明
 
-更新时间：2026-04-26
+更新时间：2026-04-27
 
 ## 1. 目录定位
 
@@ -18,13 +18,13 @@
 - V1 demo runbook 与 evidence pack。
 - V2 workspace-native sales agent 产品北极星更新。
 - V2 Sales Workspace object model 草案。
-- V2 Sales Workspace Kernel backend-only v0 设计。
+- V2 Sales Workspace Kernel backend-only v0 设计与实现。
 
 当前项目处于：
 
-> **V2 workspace-native sales agent planning baseline / Sales Workspace Kernel backend-only v0 阶段**
+> **V2 workspace-native sales agent planning baseline / post-kernel-v0 contract planning 阶段**
 
-当前阶段重点是先验证 Sales Workspace Kernel 的最小 backend-only 状态机，不自动进入数据库、API、Android、LangGraph、LLM 或搜索实现。
+当前阶段重点是先冻结 Sales Workspace Kernel backend API contract 和 persistence decision，不自动进入数据库 migration、FastAPI route、Android、LangGraph、LLM 或搜索实现。
 
 ---
 
@@ -34,10 +34,10 @@
 
 当前入口：
 
-- Current task：`task_v2_sales_workspace_kernel_backend_only_v0.md`
-- Next queued tasks：暂无自动排定
+- Current task：`task_v2_sales_workspace_api_contract_v0.md`
+- Next queued task：`task_v2_sales_workspace_persistence_decision.md`
 
-当前允许执行的范围仅限：
+Sales Workspace Kernel backend-only v0 已完成：
 
 - Pydantic schema
 - in-memory / JSON fixture store
@@ -55,7 +55,13 @@
 |---|---|---|
 | `task_v2_sales_workspace_direction_update.md` | 将 V2 北极星升级为 workspace-native sales agent | `done` |
 | `task_v2_workspace_object_model.md` | 定义 Sales Workspace 核心对象模型 | `done` |
-| `task_v2_sales_workspace_kernel_backend_only_v0.md` | 实现 Sales Workspace Kernel backend-only v0 | `current` |
+| `task_v2_sales_workspace_kernel_backend_only_v0.md` | 实现 Sales Workspace Kernel backend-only v0 | `done` |
+| `task_v2_sales_workspace_post_v0_entry_sync.md` | 同步 post-v0 入口与任务队列 | `done` |
+| `task_v2_sales_workspace_api_contract_v0.md` | 定义 Sales Workspace Kernel backend API contract v0 | `current` |
+| `task_v2_sales_workspace_persistence_decision.md` | 决策 v0.1 persistence 路线 | `queued` |
+| `task_v2_sales_workspace_backend_api_v0.md` | 实现 backend API v0 | `planned / blocked by contract and persistence decision` |
+| `task_v2_android_workspace_readonly_view.md` | Android read-only workspace view | `planned / blocked by backend API` |
+| `task_v2_sales_workspace_runtime_patchdraft_integration.md` | Runtime / LangGraph WorkspacePatchDraft integration | `planned / blocked by API and persistence` |
 | `task_v2_conversational_sales_agent_definition_update.md` | 2026-04-25 旧 V2 定义更新 | `done / superseded by workspace-native direction` |
 | `task_v2_planning_baseline_update.md` | 将仓库入口、ADR、roadmap 和 active task 状态对齐到 V2 planning baseline | `done` |
 | `task_v1_closeout.md` | 将 V1 收口为 demo baseline / learning milestone，并停止继续追加 V1 功能 | `done` |
@@ -104,3 +110,4 @@
 - Backend services / workspace kernel 负责正式对象写回裁决。
 - Runtime / Product Sales Agent execution layer 后续只产出 draft payload、工具结果和中间推理。
 - 若对象模型、页面结构与代码现实冲突，先更新 task / spec，再动实现。
+- V2.1 后续顺序为 API contract -> persistence decision -> backend API -> Android read-only -> Runtime integration。

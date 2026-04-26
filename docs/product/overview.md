@@ -1,6 +1,6 @@
 # 项目总览（当前阶段）
 
-更新时间：2026-04-26
+更新时间：2026-04-27
 
 ## 1. 文档定位
 
@@ -73,7 +73,7 @@ V2 当前规划重点：
 - 产品侧信息、获客方向、客户挖掘、来源证据、候选排序、用户反馈和报告输出应像软件工程 workspace 一样分层沉淀。
 - 结构化后端对象是主真相；Markdown 是 agent-readable workspace projection，不是唯一主存。
 - Product Sales Agent / Runtime 每次运行应尽量生成 `WorkspacePatchDraft`，由后端 workspace kernel 裁决正式写回。
-- V2.1 先验证 Sales Workspace Kernel 和 chat-first workspace 入口。
+- V2.1 已验证 Sales Workspace Kernel backend-only v0；下一步先冻结 backend API contract 与 persistence decision。
 - V2.2 再进入证据化 ResearchRound、候选客户、来源证据和候选优先级榜更新。
 - V2.3 作为 Persistent Sales Workspace MVP gate，验证长期记忆、历史研究复用、候选状态管理和用户反馈闭环是否值得进入 MVP。
 
@@ -85,7 +85,7 @@ V2 当前规划重点：
 - `docs/adr/ADR-006-v2-conversational-sales-agent-baseline.md`
 - `docs/adr/ADR-005-v2-lead-research-scope-and-search-boundary.md`
 
-后续应新增的 V2 workspace 架构入口：
+当前 V2 workspace 架构入口：
 
 - `docs/architecture/workspace/sales-workspace-kernel.md`
 - `docs/architecture/workspace/workspace-object-model.md`
@@ -143,14 +143,15 @@ Android / client
 
 当前处于：
 
-> **V2 planning baseline 阶段，但产品北极星已从 conversational sales agent 升级为 workspace-native sales agent。**
+> **V2 planning baseline / post-kernel-v0 contract planning 阶段。**
 
 已经明确：
 
 - V1 已冻结，不继续追加 V1 功能。
 - V1 是资产库，不是 V2 产品主路径。
 - V2 北极星是 Sales Workspace，而不是一次性报告生成器。
-- V2.1 先做 Sales Workspace Kernel、chat-first 入口、产品理解、获客方向、context pack 和 Markdown projection。
+- V2.1 已完成 Sales Workspace Kernel backend-only v0，验证了产品理解、获客方向、候选排序、Markdown projection 和 ContextPack 的最小闭环。
+- V2.1 下一步先定义 Sales Workspace Kernel backend API contract，再做 persistence decision。
 - V2.2 允许主动联网 / 中文公开网页搜索。
 - V2.2 可以产出具体公司候选，但候选必须带来源证据和排序解释。
 - V2 不做 Web 前端。
@@ -162,17 +163,15 @@ Android / client
 - V2 是否作为 MVP。
 - 是否需要正式云部署。
 - 是否需要账号、多用户、租户隔离和权限。
-- `SalesWorkspace` schema。
-- `WorkspacePatchDraft` schema。
-- `ContextPack` schema。
-- Markdown projection 目录结构和同步规则。
-- `CandidateRankingBoard` / `CandidateScoreSnapshot` 最小模型。
+- Sales Workspace Kernel backend API contract。
+- Persistence baseline：继续 in-memory / JSON fixture、进入 SQLite / Alembic，或延后 DB。
+- `WorkspacePatchDraft` runtime contract。
 - 搜索 provider。
 - 数据保留策略。
 - 个人联系方式展示和删除策略。
 - V2 domain/schema baseline。
 - V2 backend API contract。
-- V2 task queue。
+- V2.2 research/search task queue。
 
 ---
 
@@ -224,7 +223,7 @@ Android 是控制入口，runtime 是执行层，backend services / workspace ke
 
 ### 原则 8：小步任务化
 
-V2 进入实现前，应先冻结 workspace kernel 架构、对象模型、Markdown projection、context pack compiler 和 backend-only prototype task。
+V2 继续实现前，应先冻结 Sales Workspace Kernel backend API contract 和 persistence decision。
 
 ---
 
@@ -232,16 +231,14 @@ V2 进入实现前，应先冻结 workspace kernel 架构、对象模型、Markd
 
 当前推荐顺序：
 
-1. 完成 V2 产品北极星更新。
-2. 新增 Sales Workspace Kernel 架构文档。
-3. 新增 workspace object model 文档。
-4. 新增 Markdown projection 文档。
-5. 新增 ContextPack Compiler 文档。
-6. 创建 V2.1 backend-only Sales Workspace Kernel prototype task。
-7. 先实现 Pydantic schema、ranking engine、Markdown projection 和 context pack compiler 的无 DB 原型。
-8. 原型跑通后，再决定 SQLite migration、API 和 Android 最小接入。
+1. 同步 post-kernel-v0 文档入口与 task queue。
+2. 定义 `task_v2_sales_workspace_api_contract_v0.md`。
+3. 完成 `task_v2_sales_workspace_persistence_decision.md`。
+4. contract 与 persistence 决策完成后，再开放 backend API v0 implementation。
+5. backend API 可用后，再开放 Android read-only workspace view。
+6. API、写回边界和 persistence 稳定后，再开放 Runtime / LangGraph WorkspacePatchDraft integration。
 
-当前不建议直接实现后端 schema、API、搜索 provider 或 Android UI。
+当前不建议直接实现 FastAPI route、DB migration、搜索 provider、Android UI 或 Runtime integration。
 
 ---
 
@@ -249,4 +246,4 @@ V2 进入实现前，应先冻结 workspace kernel 架构、对象模型、Markd
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2 planning baseline：以 workspace-native sales agent 为北极星，先定义并验证 Sales Workspace Kernel，再进入证据化客户挖掘、候选排序和长期销售工作区。**
+> **AI 销售助手 V2 planning baseline：Sales Workspace Kernel backend-only v0 已完成，下一步先冻结 backend API contract 与 persistence decision，再进入 API、Android、Runtime 或 V2.2 证据化客户挖掘。**

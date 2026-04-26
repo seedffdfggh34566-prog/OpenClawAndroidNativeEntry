@@ -1,12 +1,10 @@
 # 项目总览（当前阶段）
 
-更新时间：2026-04-24
+更新时间：2026-04-27
 
 ## 1. 文档定位
 
-本文档用于说明本仓库的当前主线、当前阶段、当前范围、当前系统分层与当前工作方式，供人工和 AI agent 快速接手。
-
-这不是最终产品说明书，也不是详细 PRD。
+本文档用于说明本仓库的当前主线、当前阶段、当前范围、当前系统分层与当前工作方式，供人工和 AI Dev Agent 快速接手。
 
 本文档只记录当前已经明确的共识。后续如产品方向、版本范围、系统分层、部署基线或工作方式发生变化，应优先更新本文件。
 
@@ -14,272 +12,238 @@
 
 ## 2. 当前项目是什么
 
-当前项目已经不再以早期的 OpenClaw Android Native Entry / 原生控制入口实验为主要目标。
+当前项目已经不再以早期 OpenClaw Android Native Entry / 原生控制入口实验为主要目标。
 
-### 当前主线
+当前项目主线为：
 
-当前项目的主要方向是：
+> **AI 销售助手 App**
 
-> **AI 销售助手 App V1**
+V1 已正式收口为 demo-ready release candidate / learning milestone。当前阶段进入：
 
-该产品当前的目标不是做完整 CRM，也不是一开始就做自动外呼系统，而是先验证一个更小、更聚焦的核心能力：
+> **V2 planning baseline：定义 workspace-native sales agent prototype、销售工作区内核、后续证据化客户挖掘能力和 contract。**
 
-- 通过 AI 对话学习用户产品
-- 基于产品理解输出获客分析结果
-- 形成结构化分析内容 / 报告
-
-### 当前系统路线
-
-当前项目第一阶段正式采用以下路线：
-
-> **本地服务器承载正式后端 + 手机端仅作控制入口 + 架构按未来可迁云设计**
-
-其含义是：
-
-- 安卓端不是权威主存，只负责控制入口、状态查看、任务发起、结果查看和轻量编辑
-- 正式后端部署在本地服务器 / 电脑环境中，负责业务对象主存、任务执行编排、结果沉淀与后续协作能力预留
-- 当前默认 runtime 方向为 **`backend/runtime/` 内的 LangGraph direct orchestration**，负责执行编排与结构化 draft 生成；OpenClaw 不再是当前默认实现前提
-- 当前虽以后端本地部署为基线，但对象模型、API 边界和 agent contract 按未来可迁移到云端的方向设计
+当前不是 V1 继续开发阶段，也不是 V2 MVP 实现阶段。
 
 ---
 
-## 3. 当前阶段
+## 3. V1 已完成基线
+
+V1 已验证以下主闭环：
+
+```text
+产品学习 -> 产品画像确认 -> LeadAnalysis LLM -> 结构化报告 -> Android 真机复看
+```
+
+V1 可复用资产包括：
+
+- `ProductProfile`
+- `LeadAnalysisResult`
+- `AnalysisReport`
+- `AgentRun`
+- ProductLearning LLM draft 生成经验
+- LeadAnalysis LLM draft 生成经验
+- TokenHub provider 接入经验
+- runtime metadata 与 token usage 观测
+- Developer LLM Run Inspector
+- Android 控制入口和真机 demo 路径
+- 真实中文业务样例库和 eval 记录
+
+V1 不进入 MVP，原因见：
+
+- `docs/product/research/v1_closeout_2026_04_25.md`
+
+V1 对 V2 的定位：
+
+- V1 是资产库和参考实现，不再决定 V2 产品主路径。
+- V1 的正式对象可以复用，但不应把 V2 强行扩展成“产品学习 + 获客分析 + 报告”的线性流程。
+- V2 的主路径应从 `SalesWorkspace` 和客户挖掘迭代闭环重新定义。
+
+---
+
+## 4. 当前 V2 北极星
+
+V2 当前北极星为：
+
+> **中小企业专属销售工作区 Agent：用户只管聊天和反馈，agent 负责理解产品、沉淀信息、研究候选客户、维护优先级，并持续提升获客质量。**
+
+V2 当前规划重点：
+
+- V2 的核心形态是 **Sales Workspace**，不是一次性报告生成器。
+- chat-first 是入口，structured cards 是可视化确认方式，workspace state 是长期资产。
+- 产品侧信息、获客方向、客户挖掘、来源证据、候选排序、用户反馈和报告输出应像软件工程 workspace 一样分层沉淀。
+- 结构化后端对象是主真相；Markdown 是 agent-readable workspace projection，不是唯一主存。
+- Product Sales Agent / Runtime 每次运行应尽量生成 `WorkspacePatchDraft`，由后端 workspace kernel 裁决正式写回。
+- V2.1 已验证 Sales Workspace Kernel backend-only v0；下一步先冻结 backend API contract 与 persistence decision。
+- V2.2 再进入证据化 ResearchRound、候选客户、来源证据和候选优先级榜更新。
+- V2.3 作为 Persistent Sales Workspace MVP gate，验证长期记忆、历史研究复用、候选状态管理和用户反馈闭环是否值得进入 MVP。
+
+当前 V2 草案入口：
+
+- `docs/product/prd/ai_sales_assistant_v2_prd.md`
+- `docs/architecture/data/v2-sales-agent-data-model.md`
+- `docs/architecture/data/v2-lead-research-data-model.md`
+- `docs/adr/ADR-006-v2-conversational-sales-agent-baseline.md`
+- `docs/adr/ADR-005-v2-lead-research-scope-and-search-boundary.md`
+
+当前 V2 workspace 架构入口：
+
+- `docs/architecture/workspace/sales-workspace-kernel.md`
+- `docs/architecture/workspace/workspace-object-model.md`
+- `docs/architecture/workspace/markdown-projection.md`
+- `docs/architecture/workspace/context-pack-compiler.md`
+
+---
+
+## 5. 当前明确不做
+
+当前阶段不做：
+
+- Web 前端
+- 完整 CRM
+- 自动邮件 / 短信 / 企微 / 电话触达
+- 自动外呼
+- 批量联系人抓取
+- 批量联系人导出
+- 大规模爬虫系统
+- 企业级团队协作审批流
+- 正式商业化计费系统
+- 未经任务排定的后端 schema / migration / API 实现
+- 未经任务排定的 Android 大改
+
+---
+
+## 6. 当前系统路线
+
+当前继续沿用 V1 已验证的系统路线，但 V2 主架构应升级为 Sales Workspace Kernel：
+
+```text
+Android / client
+    -> FastAPI API
+    -> Sales Workspace Kernel / backend services
+    -> Structured Store + Markdown Projection + ContextPack Compiler
+    -> backend/runtime/ Runtime execution layer
+    -> WorkspacePatchDraft
+    -> backend validation / writeback
+    -> formal workspace objects
+```
+
+含义：
+
+- Android 端不是权威主存，只负责控制入口、状态查看、任务发起、结果查看和轻量编辑。
+- 正式后端负责业务对象主存、任务执行编排、结果沉淀与后续协作能力预留。
+- Sales Workspace Kernel 是 V2 的产品主干，负责 workspace 对象、patch、context pack、ranking board 和 Markdown projection。
+- 当前默认 runtime 方向仍为 `backend/runtime/` 内的 LangGraph direct orchestration，但 LangGraph 不是产品主架构。
+- Runtime / Product Sales Agent execution layer 只产出 draft payload、工具执行结果和 `WorkspacePatchDraft`，不直接写正式业务对象。
+- Backend services / workspace kernel 负责正式对象写回和业务边界裁决。
+- 本地部署是当前工程基线，不代表长期耦合到本地路径或单机脚本。
+
+---
+
+## 7. 当前阶段
 
 当前处于：
 
-> **方向已收敛，主路径、runtime 方向与 product learning runtime 边界已冻结，产品表达仍待补厚的阶段**
+> **V2 planning baseline / post-kernel-v0 contract planning 阶段。**
 
-### 已经明确的内容
+已经明确：
 
-- 主线：AI 销售助手 V1
-- 核心闭环：产品学习 → 获客分析 → 结构化输出
-- 当前不优先推进：联系方式获取、自动触达、完整 CRM
-- 系统部署基线：本地服务器承载正式后端，手机端仅作控制入口
-- 系统分层：backend 为 formal truth layer，`backend/runtime/` 内的 LangGraph 作为当前默认 runtime/orchestration 方向
-- 产品学习交互基线：聊天优先 + 结构化摘要辅助 + 阶段门控确认
-- 工程上：`jianglab` 已确定为唯一工作区
-- 工具上：Codex app 已可远程连接 `jianglab`
-- 文档上：`docs/` 已建立最小文档骨架，旧 OpenClaw 文档已归档
+- V1 已冻结，不继续追加 V1 功能。
+- V1 是资产库，不是 V2 产品主路径。
+- V2 北极星是 Sales Workspace，而不是一次性报告生成器。
+- V2.1 已完成 Sales Workspace Kernel backend-only v0，验证了产品理解、获客方向、候选排序、Markdown projection 和 ContextPack 的最小闭环。
+- V2.1 下一步先定义 Sales Workspace Kernel backend API contract，再做 persistence decision。
+- V2.2 允许主动联网 / 中文公开网页搜索。
+- V2.2 可以产出具体公司候选，但候选必须带来源证据和排序解释。
+- V2 不做 Web 前端。
+- V2 不做自动触达或联系人抓取产品。
+- 后端仍是 formal truth layer。
 
-### 当前尚未完全冻结的内容
+尚未冻结：
 
-- 首页信息结构细节
-- 分析结果页的具体展示结构
-- 报告页的最终格式与字段粒度
-- 更完整的 runtime 生命周期与可观测层
-
-这些细节将在后续的参考研究、PRD、spec 和 task 收敛过程中进一步明确。
-
----
-
-## 4. 当前版本范围（V1）
-
-### V1 目标
-
-V1 重点验证以下能力：
-
-#### 产品学习
-
-- 用户通过对话介绍自己的产品
-- 系统理解并沉淀产品信息
-- 系统形成可复用的 `ProductProfile` 草稿或正式对象
-
-#### 获客分析
-
-- 根据产品信息分析适合的客户方向、行业方向、潜在场景
-- 输出可执行的获客建议
-- 形成结构化的分析结果对象
-
-#### 结构化输出
-
-- 将分析结果整理为可阅读、可复用的结构化内容
-- 产出报告式结果，便于后续查看、复用和导出
-
-### 当前明确不做
-
-以下内容当前不属于 V1 必做范围：
-
-- 联系方式抓取
-- 自动外呼
-- 企微自动触达
-- 完整 CRM
-- 大而全的企业销售平台能力
-- 复杂多租户权限系统
-- 一开始就做正式云端 SaaS 部署
-- 立即重构为完整原生聊天客户端
-
-### V1 的入口与结果边界
-
-- 手机端允许发起产品学习与获客分析流程
-- 手机端允许查看分析状态、结果与报告，并做轻量确认或编辑
-- `ProductProfile`、分析结果与报告对象的权威版本以后端为准，而不是以手机本地会话或本地缓存为准
+- V2 是否作为 MVP。
+- 是否需要正式云部署。
+- 是否需要账号、多用户、租户隔离和权限。
+- Sales Workspace Kernel backend API contract。
+- Persistence baseline：继续 in-memory / JSON fixture、进入 SQLite / Alembic，或延后 DB。
+- `WorkspacePatchDraft` runtime contract。
+- 搜索 provider。
+- 数据保留策略。
+- 个人联系方式展示和删除策略。
+- V2 domain/schema baseline。
+- V2 backend API contract。
+- V2.2 research/search task queue。
 
 ---
 
-## 5. 当前技术与工程定位
+## 8. 当前文档体系
 
-### 5.1 工作区
-
-当前唯一权威工作区为：
-
-```text
-jianglab:/home/yulin/projects/OpenClawAndroidNativeEntry
-```
-
-所有正式代码、文档、任务和提交都应以该仓库为准。
-
-### 5.2 当前控制方式
-
-当前推荐工作方式：
-
-- **Codex app**：主控制台，用于远程线程、任务执行、agent 开发
-- **FinalShell**：辅助终端，用于 SSH、文件上传下载、系统运维、Git 基础命令
-- **jianglab**：唯一真实工作区、构建环境、Git 工作区与推送主机
-
-### 5.3 当前 Git 状态
-
-当前仓库已经具备：
-
-- 正常本地 Git 仓库
-- 正常远程 GitHub 连接
-- `jianglab -> GitHub` 的 SSH 推送已打通
-
-后续应继续以该仓库为唯一主仓库推进开发。
-
-### 5.4 当前系统部署基线
-
-当前第一阶段系统基线如下：
-
-- **本地服务器 / 电脑**：承载正式后端、业务对象主存、任务编排和 agent 执行接入层
-- **LangGraph（当前默认）**：作为 `backend/runtime/` 内的 runtime / orchestration layer 运行在后端环境中
-- **手机安卓端**：作为控制入口，负责发起、查看、确认、轻量编辑与状态追踪
-- **未来迁移方向**：在不推翻对象模型、API 边界与 agent contract 的前提下，支持后续迁移到云端部署
-
-### 5.5 当前系统边界原则
-
-当前系统边界应按以下方式理解：
-
-- runtime 不是产品本体，而是执行层
-- 产品系统不是单纯聊天壳，而是销售场景的业务层与结果沉淀层
-- agent 运行结果必须沉淀为正式业务对象，而不是只停留在一次会话中
-- 本地部署不等于本地耦合；即使当前以后端本地部署为主，也应避免直接耦合到本地文件路径、手工脚本或端侧主存逻辑
-
----
-
-## 6. 当前文档体系
-
-当前 `docs/` 目录已经正式切换到新结构：
+当前 `docs/` 目录继续作为唯一正式文档入口：
 
 - `product/`：产品方向、PRD、研究与路线图
-- `architecture/`：系统分层、仓库结构与 backend / runtime / data / clients 方案
+- `architecture/`：系统分层、仓库结构与 backend / runtime / data / clients / workspace 方案
 - `reference/`：API contract、领域模型与其他权威参考
 - `how-to/`：运行、运维、协作和排障手册
 - `adr/`：关键架构与部署决策
 - `delivery/`：任务与交接文档
 - `archive/`：历史资料归档
 
-### 历史文档处理原则
-
-早期与 OpenClaw Android Native Entry、HarmonyOS 宿主部署、Dashboard 兼容性处理相关的文档，现已降级为历史参考资料，不作为当前 AI 销售助手 V1 的主线文档。
-
-但其中“宿主层与产品层分离”“运行层与入口层分离”的经验仍可作为当前架构设计参考。
+历史 OpenClaw 相关文档只作参考，不作为当前产品主线。V2 可以吸收 OpenClaw 的 Markdown workspace / agent memory 思想，但必须以销售场景结构化对象和 workspace kernel 作为产品主干。
 
 ---
 
-## 7. 当前最重要的工程目标
-
-当前阶段的最重要目标不是立刻开发大量功能，而是先建立：
-
-> **稳定、可持续的 agent 开发工作流与清晰的系统分层**
-
-当前优先级大致为：
-
-### P0：建立标准开发规则
-
-- 完成 `AGENTS.md`
-- 明确文档 ownership
-- 建立 task / handoff 机制
-
-### P1：完成参考研究与 PRD 收敛
-
-- 参考市面产品的首页、产品学习、分析结果、报告输出
-- 形成 V1 需求说明
-- 补足系统分层、部署基线与数据权威说明
-
-### P2：完成首批架构 spec
-
-- 明确 runtime、产品后端、手机入口三者的关系
-- 明确业务对象与 agent contract
-- 明确第一阶段本地服务器部署前提与未来迁云约束
-
-### P3：再进入真正的产品开发
-
-- 在 PRD 与 spec 明确后拆第一个正式产品任务
-- 逐步推进 AI 销售助手 V1
-
----
-
-## 8. 当前建议的工作顺序
-
-后续推荐按以下顺序推进：
-
-1. 完成仓库级规则文件与总览文档
-2. 做面向 V1 的定向参考研究
-3. 写 V1 PRD
-4. 补第一版系统架构 spec 与关键 decision
-5. 拆第一个正式 task
-6. 用 Codex 在远程仓库上执行小步、可 review 的改动
-7. 每个任务结束后更新 handoff
-
----
-
-## 9. 当前项目的基本原则
+## 9. 当前工作原则
 
 ### 原则 1：先定义，再实现
 
-方向变化、版本变化或系统基线变化应先更新文档，再推进代码。
+V2 方向变化、workspace 内核、搜索边界、数据模型、API contract 或运行规则变化应先进入 docs / ADR / task，再进入代码。
 
-### 原则 2：先小闭环，再扩范围
+### 原则 2：workspace 是北极星
 
-先把产品学习和获客分析做成最小可验证闭环，不提前扩展到自动触达或 CRM。
+V2 不应退化成聊天机器人、报告生成器或一次性 lead research 工具。所有关键能力都应服务于长期 sales workspace。
 
-### 原则 3：以 `jianglab` 为唯一工作区
+### 原则 3：结构化对象是主真相
 
-不维护第二份主工作副本，不让 Windows 本地副本成为事实源。
+Markdown 可以作为 agent-readable projection，但正式业务对象必须沉淀为后端结构化对象。
 
-### 原则 4：历史资料保留，但不混入当前主线
+### 原则 4：先证据，再候选
 
-OpenClaw 相关旧文档仅作参考，不应主导当前 V1 设计。
+V2.2 线索研究中，无来源候选不能进入正式结果。
 
-### 原则 5：手机端是入口，不是主真相层
+### 原则 5：候选排序必须可解释
 
-手机端负责控制与查看，不负责权威主存。
+候选客户优先级不能只存在于报告正文中，应由候选对象、观察事实、评分快照和 ranking board 支撑。
 
-### 原则 6：本地部署是当前基线，不是长期耦合目标
+### 原则 6：联系方式保守处理
 
-当前第一阶段以后端本地部署为主，但对象模型、API 边界和 agent contract 应按未来可迁云设计。
+公司联系方式和个人联系方式必须分开建模。联系方式必须有来源，默认人工验证，不自动触达。
+
+### 原则 7：后端是主真相
+
+Android 是控制入口，runtime 是执行层，backend services / workspace kernel 是正式对象写回裁决层。
+
+### 原则 8：小步任务化
+
+V2 继续实现前，应先冻结 Sales Workspace Kernel backend API contract 和 persistence decision。
 
 ---
 
-## 10. 下一步
+## 10. 推荐下一步
 
-当前最合理的下一步是：
+当前推荐顺序：
 
-1. 已补 runtime observability / eval baseline
-2. 下一步进入 product learning LLM Phase 1
-3. 先完成 heuristic vs LLM 的最小样例对比
-4. 最后按 contract 做 Android iteration UI
+1. 同步 post-kernel-v0 文档入口与 task queue。
+2. 定义 `task_v2_sales_workspace_api_contract_v0.md`。
+3. 完成 `task_v2_sales_workspace_persistence_decision.md`。
+4. contract 与 persistence 决策完成后，再开放 backend API v0 implementation。
+5. backend API 可用后，再开放 Android read-only workspace view。
+6. API、写回边界和 persistence 稳定后，再开放 Runtime / LangGraph WorkspacePatchDraft integration。
+
+当前不建议直接实现 FastAPI route、DB migration、搜索 provider、Android UI 或 Runtime integration。
 
 ---
 
 ## 11. 一句话总结
 
-当前项目已经从早期 OpenClaw 原生入口实验，转入：
+当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V1 的定义、收敛与标准化 agent 开发阶段。**
-
-并且当前已经进一步明确：
-
-> **第一阶段采用“本地服务器承载正式后端 + 手机端仅作控制入口 + 架构按未来可迁云设计”的路线。**
-
-当前重点不是立即扩展功能，而是先明确版本边界、系统分层与部署基线，并在此基础上推进最小可验证产品闭环。
+> **AI 销售助手 V2 planning baseline：Sales Workspace Kernel backend-only v0 已完成，下一步先冻结 backend API contract 与 persistence decision，再进入 API、Android、Runtime 或 V2.2 证据化客户挖掘。**

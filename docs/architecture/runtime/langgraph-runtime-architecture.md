@@ -4,13 +4,14 @@
 
 ## 1. 文档定位
 
-本文档用于定义 V1 当前阶段的 LangGraph runtime 接入方式。
+本文档用于定义当前 LangGraph runtime 接入方式，并记录 V2 对话式销售 agent 的后续扩展边界。
 
 它回答的问题包括：
 
 - LangGraph 在当前仓库中放在哪一层
 - 它应该如何与 `AgentRun`、`services.py`、正式对象写回配合
-- `lead_analysis` 与 `report_generation` 应该先怎样 graph 化
+- `lead_analysis`、`report_generation`、`product_learning` 已怎样 graph 化
+- V2 的 `sales_agent_turn_graph` 与 `lead_research_graph` 应如何保持边界
 - 当前阶段不能假设哪些 lifecycle 和平台能力已经存在
 
 本文档不是：
@@ -27,14 +28,19 @@
 
 > **在不改动产品后端主真相边界的前提下，用 LangGraph 取代 `backend/runtime/adapter.py` 中的 stub execution。**
 
-Phase 1 仅覆盖：
+V1 Phase 1 已覆盖：
 
 - `lead_analysis`
 - `report_generation`
+- `product_learning`
 
-当前不覆盖：
+V2 planning baseline 建议后续新增：
 
-- product learning runtime 的正式实现
+- `sales_agent_turn_graph`
+- `lead_research_graph`
+
+当前仍不覆盖：
+
 - queue worker infrastructure
 - 可恢复人工审核流
 - 持久化 checkpoint 恢复流程
@@ -102,8 +108,11 @@ backend/runtime/
   adapter.py
   types.py
   graphs/
+    product_learning.py
     lead_analysis.py
     report_generation.py
+    sales_agent_turn.py
+    lead_research.py
   nodes/
     load_inputs.py
     llm_generate.py
@@ -207,6 +216,47 @@ Phase 1 推荐最小节点顺序：
 - 输入必须包含 `ProductProfile` + `LeadAnalysisResult`
 - 输出保持结构化 section-based report draft
 - 不把报告导出、文件存储一起塞进这个图
+
+### 7.3 V2 `sales_agent_turn_graph`
+
+V2.1 推荐新增 `sales_agent_turn_graph`。
+
+最小节点顺序建议：
+
+1. `load_sales_agent_session`
+2. `load_recent_messages_and_current_objects`
+3. `classify_user_intent`
+4. `generate_agent_turn_draft`
+5. `validate_agent_turn_draft`
+6. `return_draft_payload`
+
+要求：
+
+- 输入包含 `SalesAgentSession`、最近 `ConversationMessage`、当前 `ProductProfileRevision` 和当前获客方向版本。
+- 输出 typed draft，而不是直接写库。
+- draft 可以包含 assistant message、追问、产品画像更新草稿或方向调整草稿。
+- 正式消息和对象写回仍由 `services.py` 裁决。
+
+### 7.4 V2 `lead_research_graph`
+
+V2.2 推荐新增 `lead_research_graph`。
+
+最小节点顺序建议：
+
+1. `load_confirmed_direction_context`
+2. `generate_search_queries`
+3. `call_controlled_search_tool`
+4. `select_research_sources`
+5. `extract_company_candidates`
+6. `validate_source_coverage`
+7. `return_draft_payload`
+
+要求：
+
+- 只有确认或足够明确的方向才进入 research。
+- 无来源候选不得进入正式结果。
+- 联系方式策略由 backend services 裁决。
+- runtime 不直接写 `LeadResearchResult`、`ResearchSource`、`CompanyCandidate` 或 `ContactPoint`。
 
 ---
 
@@ -337,7 +387,43 @@ Phase 1 不要求：
 
 ---
 
-## 11. 验证边界
+## 12. V2 对话式销售 agent 扩展边界
+
+V2.1 的核心 runtime 不是一次性 lead research，而是 `sales_agent_turn_graph`。
+
+推荐职责切分：
+
+### `backend/api/services.py`
+
+负责：
+
+- 创建和读取 `SalesAgentSession`
+- 持久化用户与 assistant 的 `ConversationMessage`
+- 创建 `AgentRun(run_type = sales_agent_turn)`
+- 接收 runtime draft
+- 校验并写回 `ProductProfileRevision` 和获客方向版本
+
+### `backend/runtime/`
+
+负责：
+
+- 读取 typed runtime payload
+- 识别用户意图
+- 生成追问、回答、产品画像更新草稿或方向调整草稿
+- 返回 typed draft payload
+
+当前不应：
+
+- 把 LangGraph checkpoint 当成业务记忆主存
+- 让 runtime 直接写数据库
+- 让 runtime 自行决定正式对象状态
+- 在 V2.1 中直接接入搜索 provider 或联系方式处理
+
+业务记忆必须沉淀为结构化后端对象，例如 `ConversationMessage`、`ProductProfileRevision` 和获客方向版本。
+
+---
+
+## 13. 验证边界
 
 LangGraph runtime 接入 Phase 1 的最低验证应包括：
 
@@ -349,7 +435,7 @@ LangGraph runtime 接入 Phase 1 的最低验证应包括：
 
 若 graph state、writeback boundary 或 `AgentRun` 处理方式变化，应按 runtime boundary 风险处理，而不是只跑 schema 单测。
 
-## 12. 当前落地事实（2026-04-24）
+## 14. 当前落地事实（2026-04-24）
 
 当前已经落地：
 
@@ -362,11 +448,11 @@ LangGraph runtime 接入 Phase 1 的最低验证应包括：
 
 ---
 
-## 12. 当前明确不做的实现
+## 15. 当前明确不做的实现
 
 在当前 spec 下，不应顺手引入：
 
-- product learning LangGraph graph
+- 新增 V2 graph implementation
 - 长期记忆数据库
 - `SQLite -> Postgres`
 - `Langfuse`
@@ -378,7 +464,7 @@ LangGraph runtime 接入 Phase 1 的最低验证应包括：
 
 ---
 
-## 13. 推荐实施顺序
+## 16. 推荐实施顺序
 
 1. 保持现有 `services.py` 生命周期与写回所有权不变
 2. 把 `StubRuntimeAdapter` 抽象成可替换 provider interface
@@ -386,10 +472,11 @@ LangGraph runtime 接入 Phase 1 的最低验证应包括：
 4. 再实现 `report_generation` graph
 5. 通过 typed draft payload 完成正式对象写回
 6. 用 handoff 和 smoke 记录 boundary 是否保持稳定
+7. V2.1 若进入实现，先设计 `sales_agent_turn_graph` draft schema，再改代码
 
 ---
 
-## 14. 直接依赖关系
+## 17. 直接依赖关系
 
 本文档直接依赖以下决策与任务：
 
@@ -397,5 +484,7 @@ LangGraph runtime 接入 Phase 1 的最低验证应包括：
 - `docs/delivery/tasks/task_v1_real_runtime_integration_phase1.md`
 - `docs/architecture/backend/backend-agent-stack-phased-adoption.md`
 - `docs/architecture/system-context.md`
+- `docs/adr/ADR-006-v2-conversational-sales-agent-baseline.md`
+- `docs/architecture/data/v2-sales-agent-data-model.md`
 
 在上述文档发生语义变化前，本 spec 可作为后续 runtime 实现事实源。

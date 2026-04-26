@@ -4,7 +4,7 @@
 
 This file applies to work under `backend/`.
 
-When a task touches `backend/`, agents must still read:
+When a task touches `backend/`, Dev Agents / Execution Agents must still read:
 
 1. root `AGENTS.md`
 2. `docs/README.md`
@@ -26,7 +26,7 @@ At the current stage:
 - `backend/runtime/` is the execution boundary, not the product truth layer
 - the shipped persistence baseline is still `SQLite`
 
-Agents must not silently turn the current minimal backend into a broad platform rewrite.
+Dev Agents / Execution Agents must not silently turn the current minimal backend into a broad platform rewrite.
 
 ---
 
@@ -47,7 +47,7 @@ Current tooling decisions for backend follow-up work are:
 - `Langfuse` is the preferred observability direction for the current repo stage
 - `Postgres` is the next recommended persistence baseline, but it is not the current default yet
 - `pgvector` is optional and should only be introduced when retrieval / embedding use cases enter scope
-- `MCP Toolbox for Databases` must be treated as developer / ops augmentation or least-privilege custom tooling, not as unrestricted production agent SQL access
+- `MCP Toolbox for Databases` must be treated as developer / ops augmentation or least-privilege custom tooling, not as unrestricted Product Sales Agent / Runtime SQL access
 
 Avoid by default:
 
@@ -55,7 +55,7 @@ Avoid by default:
 - treating `MCP` as a replacement for direct Python service calls
 - introducing `LangSmith` and `Langfuse` together without an explicit observability decision
 - switching to `Postgres` or `pgvector` without a dedicated migration task and docs update
-- exposing arbitrary SQL execution to product runtime agents
+- exposing arbitrary SQL execution to the Product Sales Agent / Runtime execution layer
 
 ---
 
@@ -78,6 +78,17 @@ curl http://127.0.0.1:8013/health
 Use only the subset relevant to the task.
 
 Do not claim backend validation passed unless the command or smoke check actually succeeded.
+
+### Backend secrets and LLM keys
+
+Backend LLM secrets are allowed only through process environment variables or local `backend/.env` files that remain ignored by Git.
+
+- Do not read or print `backend/.env` contents. Presence checks are enough.
+- Do not echo `OPENCLAW_BACKEND_LLM_API_KEY`, Authorization headers, or provider secrets in shell output, logs, docs, task files, handoffs, PR descriptions, or final answers.
+- Do not run backend commands with shell tracing (`set -x`) when `.env` is sourced or secret-bearing environment variables are present.
+- Before real LLM smoke/eval/demo work, confirm `backend/.env` is ignored with `git check-ignore -v backend/.env` if there is any doubt.
+- LLM traces may contain model output for local development, but must not record API keys, Authorization headers, full request bodies, or complete prompt messages unless a future task explicitly changes that policy.
+- Do not stage local DBs, trace JSON, `.env` files, or provider console exports that contain secret-like identifiers.
 
 ---
 
@@ -192,7 +203,7 @@ Stop and explicitly surface the issue when work would:
 - introduce destructive persistence changes or ad-hoc migrations
 - move orchestration into `LangGraph` outside `backend/runtime/`
 - use `MCP` as the internal backend architecture instead of the tool boundary
-- give unrestricted SQL capability to runtime agents or database tools
+- give unrestricted SQL capability to the Product Sales Agent / Runtime execution layer or database tools
 - switch observability direction without a decision record or task
 - require deployment, secret, or production environment changes
 

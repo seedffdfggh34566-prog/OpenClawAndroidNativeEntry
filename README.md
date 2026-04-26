@@ -1,85 +1,97 @@
 # OpenClawAndroidNativeEntry
 
-> 当前仓库名保留历史来源，但当前正式主线已切换为 **AI 销售助手 V1**。  
-> 当前建议先阅读 [docs/README.md](/home/yulin/projects/OpenClawAndroidNativeEntry/docs/README.md) 与 [AGENTS.md](/home/yulin/projects/OpenClawAndroidNativeEntry/AGENTS.md)。
+> 仓库名保留历史来源；当前正式主线已切换为 **AI Sales Assistant V2 workspace-native planning baseline**。
+
+当前建议先阅读：
+
+1. [AGENTS.md](AGENTS.md)
+2. [docs/README.md](docs/README.md)
+3. [docs/delivery/tasks/_active.md](docs/delivery/tasks/_active.md)
+
+---
 
 ## 当前定位
 
 这个仓库现在应理解为：
 
-- **AI 销售助手 V1 的主仓库**
-- **后端优先的单仓库工作区**
-- **Android 为当前入口之一，而不是整个项目本体**
+- **AI 销售助手 App 的产品级 mono-repo**
+- **V1 demo-ready baseline 的留存仓库**
+- **V2 workspace-native Sales Agent / Sales Workspace Kernel 的当前规划与实现入口**
+- **Android、backend、runtime、docs 共用的单一源工作区**
 
-当前系统主线为：
+当前正式主线为：
 
-> **正式后端承载业务主真相，OpenClaw 作为 runtime，Android / 后续 iOS / PC 作为控制入口。**
+> **Sales Workspace Kernel backend-only v0 已完成；下一步先冻结 Sales Workspace Kernel backend API contract，再做 persistence decision。**
+
+V1 已作为 demo-ready release candidate / learning milestone 收口，不再是默认开发方向。
 
 ---
 
-## V1 当前目标
+## 当前执行入口
 
-V1 只验证三件事：
+当前 active task：
 
-1. 产品学习
-2. 线索 / 获客分析
-3. 结构化分析结果与报告输出
+- [docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md](docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md)
 
-当前明确不做：
+Next queued task：
 
-- 完整 CRM
-- 自动触达 / 自动外呼
-- 大型企业工作流平台
-- 一开始就做完整多端产品矩阵
-- 没有明确授权的大规模架构重写
+- [docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md](docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md)
+
+Sales Workspace Kernel backend-only v0 已完成，包含：
+
+- Pydantic schema
+- in-memory / JSON fixture store
+- WorkspacePatch apply
+- deterministic candidate ranking
+- Markdown projection
+- ContextPack compiler
+- pytest
+
+当前不应自动实现：
+
+- FastAPI endpoint
+- SQLAlchemy ORM / Alembic migration / SQLite schema change
+- Android UI
+- LangGraph graph
+- 真实 LLM / search provider
+- CRM pipeline / ContactPoint / 自动触达
 
 ---
 
 ## 当前系统形态
 
-当前阶段的推荐理解如下：
-
 - `backend/`
-  - 正式业务后端
-  - 权威对象主存
-  - 任务状态与结果沉淀
-- OpenClaw runtime
-  - agent runtime / execution layer
-  - 模型调用与工具调用
+  - 当前正式业务后端与 V2 kernel prototype 位置
+  - V2 backend-only v0 已在 `backend/sales_workspace/` 落地
 - `app/`
-  - 当前 Android 控制入口
-  - 后续可与 iOS / PC 一起成为多个客户端入口之一
+  - Android 控制入口；当前不是 V2 kernel v0 的实现范围
 - `docs/`
-  - 当前项目的正式文档控制平面
+  - 产品方向、架构、任务、handoff 与 runbook 的正式入口
+- `backend/runtime/`
+  - Runtime / LangGraph Runtime 的未来执行层边界；当前 task 不接入
+
+Sales Workspace Kernel 是正式对象写回裁决层，不是 Runtime graph，也不是 Dev Agent。
 
 ---
 
-## 当前文档入口
+## 当前推荐阅读顺序
 
-无论是人工还是 agent，建议按以下顺序进入仓库：
+无论是人工开发者还是 Dev Agent，进入仓库后建议按以下顺序阅读：
 
-1. [AGENTS.md](/home/yulin/projects/OpenClawAndroidNativeEntry/AGENTS.md)
-2. [docs/README.md](/home/yulin/projects/OpenClawAndroidNativeEntry/docs/README.md)
-3. [docs/product/overview.md](/home/yulin/projects/OpenClawAndroidNativeEntry/docs/product/overview.md)
-4. [docs/product/prd/ai_sales_assistant_v1_prd.md](/home/yulin/projects/OpenClawAndroidNativeEntry/docs/product/prd/ai_sales_assistant_v1_prd.md)
-5. [docs/adr/ADR-001-backend-deployment-baseline.md](/home/yulin/projects/OpenClawAndroidNativeEntry/docs/adr/ADR-001-backend-deployment-baseline.md)
-6. [docs/delivery/tasks/_active.md](/home/yulin/projects/OpenClawAndroidNativeEntry/docs/delivery/tasks/_active.md)
+1. [AGENTS.md](AGENTS.md)
+2. [docs/README.md](docs/README.md)
+3. [docs/product/overview.md](docs/product/overview.md)
+4. [docs/product/prd/ai_sales_assistant_v2_prd.md](docs/product/prd/ai_sales_assistant_v2_prd.md)
+5. [docs/adr/ADR-006-v2-conversational-sales-agent-baseline.md](docs/adr/ADR-006-v2-conversational-sales-agent-baseline.md)
+6. [docs/architecture/workspace/workspace-object-model.md](docs/architecture/workspace/workspace-object-model.md)
+7. [docs/architecture/workspace/sales-workspace-kernel.md](docs/architecture/workspace/sales-workspace-kernel.md)
+8. [docs/architecture/workspace/workspace-kernel-v0-scope.md](docs/architecture/workspace/workspace-kernel-v0-scope.md)
+9. [docs/delivery/tasks/_active.md](docs/delivery/tasks/_active.md)
+10. 当前 task / handoff
 
-当前正式 docs 结构为：
+开发协作中的 agent 术语边界参考：
 
-```text
-docs/
-├─ README.md
-├─ product/
-├─ architecture/
-├─ reference/
-├─ how-to/
-├─ adr/
-├─ delivery/
-└─ archive/
-```
-
-旧编号目录已经迁出，不再作为正式入口。
+- [docs/how-to/operate/dev-agent-vs-sales-agent-runbook.md](docs/how-to/operate/dev-agent-vs-sales-agent-runbook.md)
 
 ---
 
@@ -88,25 +100,56 @@ docs/
 ```text
 OpenClawAndroidNativeEntry/
 ├─ app/          # Android 控制入口
-├─ backend/      # V1 最小正式后端
-├─ docs/         # 正式文档与 agent 控制平面
+├─ backend/      # 后端与 Sales Workspace Kernel v0 prototype
+├─ docs/         # 正式文档、任务与 handoff
 └─ ...
 ```
 
-当前最重要的是：
+正式 docs 结构：
 
-- 保持后端优先
-- 用 task / handoff 驱动 agent 工作流
-- 让 Android 逐步从占位数据切到真实后端
+```text
+docs/
+├─ README.md
+├─ product/
+├─ architecture/
+│  └─ workspace/
+├─ reference/
+├─ how-to/
+├─ adr/
+├─ delivery/
+└─ archive/
+```
+
+---
+
+## 常用验证命令
+
+当前 backend 测试：
+
+```bash
+backend/.venv/bin/python -m pytest backend/tests -q
+```
+
+当前 Android 轻量入口检查：
+
+```bash
+./gradlew :app:tasks --offline
+```
+
+Sales Workspace Kernel v0 固定验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/tests/sales_workspace -q
+```
 
 ---
 
 ## 历史背景
 
-这个仓库起源于早期的 OpenClaw Android Native Entry / HarmonyOS 宿主入口实验，因此仓库名和部分历史资料保留了旧痕迹。
+这个仓库起源于早期 OpenClaw Android Native Entry / HarmonyOS 宿主入口实验，因此仓库名和部分历史资料保留旧痕迹。
 
 这些内容现在只作为背景参考，统一放在：
 
-- [docs/archive/openclaw/README.md](/home/yulin/projects/OpenClawAndroidNativeEntry/docs/archive/openclaw/README.md)
+- [docs/archive/openclaw/README.md](docs/archive/openclaw/README.md)
 
-历史资料不再主导当前 AI 销售助手 V1 的方向、任务入口或日常工作流。
+历史资料不再主导当前 V2 workspace-native Sales Agent 的方向、任务入口或日常工作流。

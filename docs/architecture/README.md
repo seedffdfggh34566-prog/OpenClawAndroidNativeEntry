@@ -1,14 +1,35 @@
 # Architecture Docs
 
-当前架构层文档用于说明系统分层、仓库结构和多端 / runtime / data 关系。
+更新时间：2026-04-26
+
+当前架构层文档用于说明系统分层、仓库结构和 Android / backend / runtime / data / workspace 关系。
 
 优先阅读：
 
+- `workspace/`
 - `system-context.md`
 - `repository-layout.md`
 - `backend/`
-- `clients/`
 - `runtime/`
+- `clients/`
+- `data/`
+
+当前 V2 架构主入口：
+
+- `workspace/workspace-object-model.md`
+- `workspace/sales-workspace-kernel.md`
+- `workspace/workspace-kernel-v0-scope.md`
+- `workspace/markdown-projection.md`
+- `workspace/context-pack-compiler.md`
+
+当前 V2 架构基准：
+
+- `SalesWorkspace` 是 V2 根对象。
+- Sales Workspace Kernel 是当前技术主线。
+- 结构化 workspace state 是主真相。
+- Markdown 是 projection，不是唯一主存。
+- ContextPack 从结构化 state 编译。
+- LangGraph 后续只作为 runtime execution layer。
 
 当前与客户端边界直接相关的重点文档包括：
 
@@ -19,3 +40,5 @@
 
 - `backend/backend-agent-stack-phased-adoption.md`
 - `runtime/langgraph-runtime-architecture.md`
+
+注意：`runtime/langgraph-runtime-architecture.md` 仍包含 2026-04-25 session-first runtime 草案内容；当前 V2 workspace-native 边界以 `workspace/` 文档和 `_active.md` 为准。

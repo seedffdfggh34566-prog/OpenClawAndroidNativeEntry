@@ -20,25 +20,61 @@ Agents working in this repository must follow the rules in this file before maki
 This project is no longer centered on a generic OpenClaw native entry experiment.
 
 ### Current primary direction
-Build the **V1 of an AI Sales Assistant App**.
+The **AI Sales Assistant App V1** has been closed out as a demo-ready release candidate / learning milestone.
 
-### V1 focus
-V1 should validate only the following core flow:
+The repository is now in **V2 planning baseline**:
+
+- define V2 product direction before implementation
+- align docs, ADRs, data model drafts, and task entrypoints
+- keep V1 assets as the validated baseline
+- do not start V2 implementation unless a formal task is created under `docs/delivery/tasks/` and queued in `_active.md`
+
+### V1 completed baseline
+V1 validated the following core flow:
 
 1. **Product learning**
 2. **Lead analysis**
 3. **Structured sales analysis output / report**
 
-### Out of scope for V1
-Do **not** proactively expand V1 into:
+V1 is no longer the active implementation track. Agents may fix severe demo reproduction bugs if explicitly tasked, but must not continue adding V1 features by default.
+
+### V2 planning baseline
+V2 currently explores:
+
+1. **Workspace-native Product Sales Agent prototype**
+2. **Sales Workspace Kernel as the V2 technical backbone**
+3. **AI-guided product learning through chat-first workspace interaction**
+4. **Conversation-based lead direction analysis and iteration**
+5. **Lightweight evidence-based research as a later V2.2 capability**
+6. **Chinese public-web search with source evidence**
+7. **Concrete company / organization candidates**
+8. **Traceable contact points with manual verification boundaries**
+
+V2 is not yet an MVP, schema baseline, API contract, or broad implementation queue. Only the task explicitly queued in `docs/delivery/tasks/_active.md` may be implemented.
+
+### Out of scope unless explicitly approved
+Do **not** proactively expand V2 into:
 
 - full CRM
-- contact scraping
+- Web frontend
 - automatic outreach
+- bulk contact scraping
+- bulk contact export
+- large-scale crawler infrastructure
 - phone bot / auto-calling
 - enterprise workflow platform
 - complete native chat client rewrite
 - large architecture rewrite without explicit approval
+
+### V2 guardrails
+
+- Web / search output must preserve source evidence before a candidate enters formal results.
+- Company candidates without sources must remain runtime drafts, not formal lead research results.
+- Contact points must be traceable to public sources and default to manual verification.
+- Personal contact points are high-risk and must be explicitly marked, sourced, and never auto-contacted.
+- Android remains the control entry; backend remains the formal truth layer.
+- Runtime / Product Sales Agent execution layer may produce draft payloads and tool outputs, but backend services own formal object writeback.
+- Product Sales Agent memory must be persisted as structured backend objects, not only in prompts, Markdown files, SDK sessions, or LangGraph checkpoints.
 
 Agents must treat scope control as a top-level rule.
 
@@ -83,6 +119,18 @@ Agents should keep these documents aligned with the current code and workflow re
 ---
 
 ## 5. Required Working Style
+
+### Terminology boundary
+
+This repository uses the word "agent" in multiple layers. Keep these meanings separate:
+
+- **Dev Agent / Execution Agent**: Codex, Claude Code, or another development assistant operating on this repository.
+- **Product Sales Agent / Sales Agent**: the AI sales assistant inside the product experience.
+- **Runtime / LangGraph Runtime**: backend LLM / tool orchestration that may produce draft payloads such as `WorkspacePatchDraft`.
+
+When writing docs, tasks, prompts, or handoffs, prefer the most specific term. Do not imply that a Dev Agent is the Product Sales Agent, and do not treat Runtime / LangGraph as the product's formal truth layer.
+
+Within this file, unqualified "agent" usually means Dev Agent / Execution Agent because `AGENTS.md` is a repository workflow rule file. When discussing product behavior, user-facing intelligence, memory, runtime drafts, or workspace writeback, use `Product Sales Agent`, `Runtime / LangGraph Runtime`, or `Sales Workspace Kernel` explicitly.
 
 ### Agent roles
 
@@ -208,6 +256,16 @@ Do not merge multiple tasks into one commit just because they were executed in o
 ---
 
 ## 9. File Change Rules
+
+### Secret handling
+
+Agents must treat local secrets as high-risk even when they are ignored by Git.
+
+- Never read, print, copy, summarize, or paste `backend/.env` or `backend/.env.*` contents.
+- Never write API keys, Bearer tokens, Authorization headers, private keys, console metric IDs treated as secret, or other credentials into docs, task files, handoffs, PR descriptions, logs, or final answers.
+- Never use `git add -f` to add ignored secret files.
+- To verify local secret setup, only check presence or ignore status, for example `test -f backend/.env` or `git check-ignore -v backend/.env`.
+- If a secret or secret-like identifier may have been committed or pushed, stop normal work and surface the exposure so the human can decide whether to rotate/revoke it and whether history cleanup is required.
 
 ### Safe areas for agent-led drafting
 These are generally safe for structured drafting and iteration:
@@ -337,7 +395,7 @@ The execution agent may continue without re-approval only while none of the stop
 
 ## 14. Current Priority for Agents
 
-At the current stage, the highest priority is **workflow standardization**, not aggressive feature expansion.
+At the current stage, the highest priority is **V2 planning baseline clarity**, not aggressive feature expansion.
 
 Agents should prefer tasks that improve:
 
@@ -351,17 +409,18 @@ Before large feature work, ensure the repository operating model is stable.
 
 ### Current execution emphasis
 
-After the initial workflow bootstrap and API contract freeze, the next recommended engineering priority is:
+After V1 closeout, the next recommended engineering priority is:
 
-> **formal backend implementation with the client remaining a control entry**
+> **V2 direction, search/contact boundaries, data model, ADR, and backend contract definition before implementation**
 
 Agents should treat:
 
 - backend-first repo alignment
 - active task clarity
-- minimal backend implementation readiness
+- V2 planning baseline consistency
+- source-evidence and contact-boundary guardrails
 
-as higher priority than additional Android shell expansion.
+as higher priority than Android UI expansion or backend feature implementation.
 
 ---
 
@@ -446,7 +505,7 @@ Skills should **augment** the repository workflow, not replace it.
 
 Do **not** treat Skills as the source of truth for:
 
-- V1 scope
+- version scope
 - active task priority
 - product meaning
 - ADR-level decisions

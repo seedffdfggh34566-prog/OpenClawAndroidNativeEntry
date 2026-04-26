@@ -2,9 +2,9 @@
 
 ## 1. Purpose
 
-This file defines Android-specific agent rules for everything under `app/`.
+This file defines Android-specific Dev Agent / Execution Agent rules for everything under `app/`.
 
-Agents editing files inside `app/` must follow:
+Dev Agents / Execution Agents editing files inside `app/` must follow:
 
 1. the root `AGENTS.md`
 2. this `app/AGENTS.md`

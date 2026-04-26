@@ -6,7 +6,7 @@
 
 - 任务名称：V2 Sales Workspace persistence decision
 - 建议路径：`docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`
-- 当前状态：`queued`
+- 当前状态：`done`
 - 优先级：P0
 
 ---
@@ -54,3 +54,46 @@
 
 - `task_v2_sales_workspace_backend_api_v0.md`
 - 或新增 DB schema / migration 专项任务。
+
+实际结论：
+
+- 不开放 `task_v2_sales_workspace_backend_api_v0.md`。
+- 不新增 DB schema / migration 任务。
+- 下一步建议新增 contract fixture examples / state transition examples task。
+
+---
+
+## 7. 实际产出
+
+- 新增 `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`。
+- 更新 `docs/adr/README.md`。
+- 更新 `_active.md`，清空自动排定 implementation task。
+- 新增 handoff：`docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_persistence_decision.md`。
+
+---
+
+## 8. 已做验证
+
+已执行：
+
+```bash
+rg "ADR-007-v2-sales-workspace-persistence-decision.md" docs/adr docs/delivery docs/README.md
+rg "不进入 SQLite|不开放 backend API|in-memory / JSON fixture|backend API implementation 继续 blocked" docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md
+rg "FastAPI endpoint|Alembic migration|SQLite schema change|Android UI|Runtime / LangGraph" docs/delivery/tasks/_active.md docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_persistence_decision.md
+git diff --check
+git status --short
+```
+
+结果：
+
+- ADR-007 已被 ADR / delivery / docs 入口引用。
+- ADR-007 包含延后 API、延后 SQLite / Alembic、`in-memory / JSON fixture` 非正式 baseline、backend API implementation 继续 blocked 的结论。
+- task / handoff / `_active.md` 均保留 FastAPI endpoint、Alembic migration、SQLite schema change、Android UI、Runtime / LangGraph 禁止范围。
+- `git diff --check` passed。
+- `git status --short` 仅包含本次 Markdown 文档变更。
+
+---
+
+## 9. 实际结果说明
+
+本任务是 Markdown-only decision task。未修改代码，未实现 route，未写 migration，未接 Android / Runtime / LLM / search。

@@ -87,6 +87,7 @@ V1 细节可继续参考：
 - `docs/product/overview.md`
 - `docs/product/prd/ai_sales_assistant_v2_prd.md`
 - `docs/product/roadmap.md`
+- `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
 - `docs/adr/ADR-006-v2-conversational-sales-agent-baseline.md`
 - `docs/adr/ADR-005-v2-lead-research-scope-and-search-boundary.md`
 
@@ -101,8 +102,9 @@ V1 细节可继续参考：
 ### 5.3 当前执行入口
 
 - `docs/delivery/tasks/_active.md`
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`
+- `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
 - `docs/reference/api/sales-workspace-kernel-v0-contract.md`
+- `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_persistence_decision.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_api_contract_v0.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_post_kernel_v0_planning.md`
 
@@ -203,11 +205,19 @@ docs/
 
 当前正式执行入口为：
 
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`
+- 暂无自动排定 implementation task。
 
-最近完成的 contract 文档为：
+最近完成的 contract / persistence decision 文档为：
 
 - `docs/reference/api/sales-workspace-kernel-v0-contract.md`
+- `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
+
+当前结论：
+
+- 不进入 SQLite / Alembic。
+- 不开放 backend API implementation。
+- `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑，不是正式 persistence baseline。
+- 下一步应先补 contract fixture examples / state transition examples。
 
 Sales Workspace Kernel backend-only v0 已完成：
 

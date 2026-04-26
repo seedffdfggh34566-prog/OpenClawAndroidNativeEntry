@@ -101,8 +101,9 @@ V1 细节可继续参考：
 ### 5.3 当前执行入口
 
 - `docs/delivery/tasks/_active.md`
-- `docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md`
 - `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`
+- `docs/reference/api/sales-workspace-kernel-v0-contract.md`
+- `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_api_contract_v0.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_post_kernel_v0_planning.md`
 
 ### 5.4 V1 baseline 与参考
@@ -202,11 +203,11 @@ docs/
 
 当前正式执行入口为：
 
-- `docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md`
-
-Next queued task 为：
-
 - `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`
+
+最近完成的 contract 文档为：
+
+- `docs/reference/api/sales-workspace-kernel-v0-contract.md`
 
 Sales Workspace Kernel backend-only v0 已完成：
 

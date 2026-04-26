@@ -5,6 +5,8 @@
 优先阅读：
 
 - `api/`
+  - `api/sales-workspace-kernel-v0-contract.md`
+  - `api/backend-v1-minimum-contract.md`
 - `schemas/`
 - `runtime-v1-observability-eval-baseline.md`
 - `runtime-v1-llm-provider-selection.md`

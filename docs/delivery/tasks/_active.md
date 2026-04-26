@@ -17,26 +17,20 @@
 
 ### Current task
 
-- `docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md`
+- `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`
 
 ### Next queued task
 
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`
+暂无 implementation task 自动开放。
 
 ### Recently completed
 
 - `docs/delivery/tasks/task_v2_sales_workspace_kernel_backend_only_v0.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_post_v0_entry_sync.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md`（done）
+- `docs/reference/api/sales-workspace-kernel-v0-contract.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，包含：
-
-- Pydantic schema
-- in-memory / JSON fixture store
-- WorkspacePatch apply
-- deterministic candidate ranking
-- Markdown projection
-- ContextPack compiler
-- pytest
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结。
 
 ---
 
@@ -44,22 +38,21 @@ Sales Workspace Kernel backend-only v0 已完成，包含：
 
 后续任务顺序冻结为：
 
-1. Sales Workspace Kernel backend API contract。
-2. Persistence decision。
+1. Sales Workspace Kernel backend API contract。（done）
+2. Persistence decision。（current）
 3. Backend API implementation。
 4. Android read-only workspace view。
 5. Runtime / LangGraph WorkspacePatchDraft integration。
 
-当前只允许自动推进前两项 docs / decision 任务：
+当前只允许自动推进：
 
-- `task_v2_sales_workspace_api_contract_v0.md`
 - `task_v2_sales_workspace_persistence_decision.md`
 
 ---
 
 ## 4. 当前禁止自动实现
 
-除非后续单独完成 contract / decision 并写入本文件，否则执行 agent 不应自动实现：
+除非后续完成 persistence decision 并写入本文件，否则执行 agent 不应自动实现：
 
 - FastAPI endpoint
 - SQLAlchemy ORM
@@ -108,7 +101,11 @@ backend-only v0 已证明：
 -> 编译 ContextPack
 ```
 
-下一步要先冻结 API contract 与 persistence decision，避免过早进入 API、DB、Android 或 Runtime 实现。
+API contract v0 已冻结：
+
+- `docs/reference/api/sales-workspace-kernel-v0-contract.md`
+
+下一步要先完成 persistence decision，避免过早进入 API、DB、Android 或 Runtime 实现。
 
 ---
 
@@ -125,7 +122,7 @@ backend-only v0 已证明：
 7. `docs/architecture/workspace/workspace-kernel-v0-scope.md`
 8. `docs/architecture/workspace/markdown-projection.md`
 9. `docs/architecture/workspace/context-pack-compiler.md`
-10. `docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md`
+10. `docs/reference/api/sales-workspace-kernel-v0-contract.md`
 11. `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`
 12. 本文件
 
@@ -135,7 +132,7 @@ backend-only v0 已证明：
 
 执行 agent 只可在以下条件全部满足时自动继续：
 
-- 当前任务是 API contract docs-only task 或 persistence decision docs-only task。
+- 当前任务是 persistence decision docs / ADR-level task。
 - 不触碰 code、API route、DB migration、Android、runtime graph、LLM 或 search。
 - 任务文件已明确状态、验收标准和停止条件。
 - 完成后同步 task / handoff / docs entry。
@@ -154,5 +151,4 @@ backend-only v0 已证明：
 - 需要接 Android。
 - 需要接 LangGraph / LLM / search。
 - 需要引入新外部依赖。
-- API contract 与现有 `backend/sales_workspace` 对象模型冲突。
 - persistence decision 需要引入生产部署、云服务或数据迁移承诺。

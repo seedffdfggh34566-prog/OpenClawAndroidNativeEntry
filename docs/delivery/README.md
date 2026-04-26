@@ -34,8 +34,8 @@
 
 当前入口：
 
-- Current task：`task_v2_sales_workspace_api_contract_v0.md`
-- Next queued task：`task_v2_sales_workspace_persistence_decision.md`
+- Current task：`task_v2_sales_workspace_persistence_decision.md`
+- Next queued task：暂无 implementation task 自动开放
 
 Sales Workspace Kernel backend-only v0 已完成：
 
@@ -57,8 +57,8 @@ Sales Workspace Kernel backend-only v0 已完成：
 | `task_v2_workspace_object_model.md` | 定义 Sales Workspace 核心对象模型 | `done` |
 | `task_v2_sales_workspace_kernel_backend_only_v0.md` | 实现 Sales Workspace Kernel backend-only v0 | `done` |
 | `task_v2_sales_workspace_post_v0_entry_sync.md` | 同步 post-v0 入口与任务队列 | `done` |
-| `task_v2_sales_workspace_api_contract_v0.md` | 定义 Sales Workspace Kernel backend API contract v0 | `current` |
-| `task_v2_sales_workspace_persistence_decision.md` | 决策 v0.1 persistence 路线 | `queued` |
+| `task_v2_sales_workspace_api_contract_v0.md` | 定义 Sales Workspace Kernel backend API contract v0 | `done` |
+| `task_v2_sales_workspace_persistence_decision.md` | 决策 v0.1 persistence 路线 | `current` |
 | `task_v2_sales_workspace_backend_api_v0.md` | 实现 backend API v0 | `planned / blocked by contract and persistence decision` |
 | `task_v2_android_workspace_readonly_view.md` | Android read-only workspace view | `planned / blocked by backend API` |
 | `task_v2_sales_workspace_runtime_patchdraft_integration.md` | Runtime / LangGraph WorkspacePatchDraft integration | `planned / blocked by API and persistence` |

@@ -36,8 +36,9 @@
 - `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`（done）
 - `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成。
 
 ---
 
@@ -51,6 +52,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 4. Sales Workspace Backend API prototype v0。
 5. Android read-only workspace demo。
 6. Sales Workspace JSON file store prototype。
+7. Runtime PatchDraft prototype。
 
 当前结论：
 
@@ -60,6 +62,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
 - 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
 - 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
+- 当前已存在 deterministic Runtime PatchDraft prototype：`task_v2_sales_workspace_runtime_patchdraft_prototype.md`。
 - backend API 的 DB-backed / production persistence 版本继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -75,7 +78,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - SQLite schema change
 - Postgres / pgvector
 - 新增或扩展 Android workspace 写入 UI
-- LangGraph graph
+- 正式 LangGraph graph
 - 真实 LLM
 - 联网搜索
 - 搜索 provider
@@ -147,6 +150,10 @@ Sales Workspace JSON file store prototype 已完成：
 - `backend/sales_workspace/store.py`
 - `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`
 
+Runtime PatchDraft prototype 已完成：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
+
 ---
 
 ## 6. 当前执行入口
@@ -168,7 +175,8 @@ Sales Workspace JSON file store prototype 已完成：
 13. `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`
 14. `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`
 15. `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`
-16. 本文件
+16. `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
+17. 本文件
 
 ---
 

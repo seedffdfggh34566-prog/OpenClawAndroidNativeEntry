@@ -195,3 +195,74 @@ def test_sales_workspace_json_store_survives_app_restart(backend_env, monkeypatc
         assert conflict_response.json()["error"]["code"] == "workspace_version_conflict"
 
     assert workspace_file.read_text(encoding="utf-8") == before_conflict
+
+
+def test_runtime_patchdraft_prototype_applies_through_kernel(client) -> None:
+    _build_demo_workspace(client)
+
+    response = client.post(
+        "/sales-workspaces/ws_demo/runtime/patch-drafts/prototype",
+        json={
+            "base_workspace_version": 3,
+            "instruction": "add one deterministic runtime candidate",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["patch_draft"]["id"] == "draft_runtime_v4"
+    assert payload["patch_draft"]["runtime_metadata"]["mode"] == "no_llm_no_langgraph"
+    assert payload["patch"]["id"] == "patch_runtime_v4"
+    assert payload["workspace"]["workspace_version"] == 4
+    assert payload["commit"]["patch_id"] == "patch_runtime_v4"
+
+    ranked_items = payload["ranking_board"]["ranked_items"]
+    assert ranked_items[0]["candidate_id"] == "cand_runtime_001"
+    assert ranked_items[0]["candidate_name"] == "Runtime Draft Co"
+    assert ranked_items[0]["score"] > ranked_items[1]["score"]
+    assert any(item["candidate_id"] == "cand_d" and item["rank"] == 2 for item in ranked_items)
+
+    projection_response = client.get("/sales-workspaces/ws_demo/projection")
+    assert projection_response.status_code == 200
+    assert "Runtime Draft Co" in projection_response.json()["files"]["rankings/current.md"]
+
+    context_pack_response = client.post(
+        "/sales-workspaces/ws_demo/context-packs",
+        json={"task_type": "research_round", "token_budget_chars": 6000, "top_n_candidates": 5},
+    )
+    assert context_pack_response.status_code == 200
+    assert context_pack_response.json()["context_pack"]["top_candidates"][0]["candidate_id"] == "cand_runtime_001"
+
+
+def test_runtime_patchdraft_prototype_version_conflict_does_not_mutate(client) -> None:
+    _build_demo_workspace(client)
+
+    response = client.post(
+        "/sales-workspaces/ws_demo/runtime/patch-drafts/prototype",
+        json={
+            "base_workspace_version": 2,
+            "instruction": "stale runtime draft",
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "workspace_version_conflict"
+
+    workspace_response = client.get("/sales-workspaces/ws_demo")
+    assert workspace_response.status_code == 200
+    workspace = workspace_response.json()["workspace"]
+    assert workspace["workspace_version"] == 3
+    assert "cand_runtime_001" not in workspace["company_candidates"]
+
+
+def test_runtime_patchdraft_prototype_missing_workspace(client) -> None:
+    response = client.post(
+        "/sales-workspaces/ws_missing/runtime/patch-drafts/prototype",
+        json={
+            "base_workspace_version": 0,
+            "instruction": "add one deterministic runtime candidate",
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "not_found"

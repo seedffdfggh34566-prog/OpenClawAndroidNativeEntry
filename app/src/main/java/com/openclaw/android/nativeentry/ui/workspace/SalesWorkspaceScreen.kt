@@ -19,19 +19,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.openclaw.android.nativeentry.data.backend.SalesWorkspacePatchDraftApplyResponseDto
-import com.openclaw.android.nativeentry.data.backend.SalesWorkspacePatchDraftPreviewDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewApplyResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
 import com.openclaw.android.nativeentry.ui.shell.V1SectionState
 
 @Composable
 fun SalesWorkspaceScreen(
     workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
-    patchDraftPreviewState: V1SectionState<SalesWorkspacePatchDraftPreviewDto>,
-    patchDraftApplyState: V1SectionState<SalesWorkspacePatchDraftApplyResponseDto>,
+    draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
+    patchDraftApplyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
     onRefreshClick: () -> Unit,
-    onPreviewClick: () -> Unit,
-    onApplyClick: () -> Unit,
+    onCreateDraftReviewClick: () -> Unit,
+    onAcceptDraftReviewClick: () -> Unit,
+    onRejectDraftReviewClick: () -> Unit,
+    onApplyDraftReviewClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -74,10 +76,12 @@ fun SalesWorkspaceScreen(
                     WorkspaceContent(workspaceState.value)
                     PatchDraftReviewGate(
                         workspaceVersion = workspaceState.value.workspace.workspaceVersion,
-                        previewState = patchDraftPreviewState,
+                        draftReviewState = draftReviewState,
                         applyState = patchDraftApplyState,
-                        onPreviewClick = onPreviewClick,
-                        onApplyClick = onApplyClick,
+                        onCreateDraftReviewClick = onCreateDraftReviewClick,
+                        onAcceptDraftReviewClick = onAcceptDraftReviewClick,
+                        onRejectDraftReviewClick = onRejectDraftReviewClick,
+                        onApplyDraftReviewClick = onApplyDraftReviewClick,
                     )
                 }
             }
@@ -95,63 +99,88 @@ fun SalesWorkspaceScreen(
 @Composable
 private fun PatchDraftReviewGate(
     workspaceVersion: Int,
-    previewState: V1SectionState<SalesWorkspacePatchDraftPreviewDto>,
-    applyState: V1SectionState<SalesWorkspacePatchDraftApplyResponseDto>,
-    onPreviewClick: () -> Unit,
-    onApplyClick: () -> Unit,
+    draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
+    applyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
+    onCreateDraftReviewClick: () -> Unit,
+    onAcceptDraftReviewClick: () -> Unit,
+    onRejectDraftReviewClick: () -> Unit,
+    onApplyDraftReviewClick: () -> Unit,
 ) {
-    val preview = (previewState as? V1SectionState.Loaded<SalesWorkspacePatchDraftPreviewDto>)?.value
-    val previewIsCurrent = preview?.patchDraft?.baseWorkspaceVersion == workspaceVersion
-    val isPreviewLoading = previewState is V1SectionState.Loading
+    val draftReview = (draftReviewState as? V1SectionState.Loaded<SalesWorkspaceDraftReviewDto>)?.value
+    val draftReviewIsCurrent = draftReview?.baseWorkspaceVersion == workspaceVersion
+    val isDraftReviewLoading = draftReviewState is V1SectionState.Loading
     val isApplyLoading = applyState is V1SectionState.Loading
+    val canReview = draftReview?.status == "previewed" && draftReviewIsCurrent && !isDraftReviewLoading && !isApplyLoading
+    val canApply = draftReview?.status == "reviewed" && draftReviewIsCurrent && !isDraftReviewLoading && !isApplyLoading
 
     WorkspaceCard(title = "PatchDraft Review Gate") {
         Text(
-            text = "Android 只负责请求预览和提交已审阅 draft；正式写入由 Sales Workspace Kernel 校验。",
+            text = "Android 只负责创建和审阅 Draft Review；正式写入由 Sales Workspace Kernel 校验。",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(text = "当前 workspace version：$workspaceVersion", style = MaterialTheme.typography.bodyMedium)
 
         Button(
-            onClick = onPreviewClick,
-            enabled = !isPreviewLoading && !isApplyLoading,
+            onClick = onCreateDraftReviewClick,
+            enabled = !isDraftReviewLoading && !isApplyLoading,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(text = if (isPreviewLoading) "正在生成预览" else "生成 PatchDraft 预览")
+            Text(text = if (isDraftReviewLoading) "正在创建 Draft Review" else "生成 Draft Review")
         }
 
-        when (previewState) {
+        when (draftReviewState) {
             V1SectionState.Idle -> Text(
-                text = "尚未生成 PatchDraft 预览。",
+                text = "尚未生成 Draft Review。",
                 style = MaterialTheme.typography.bodyMedium,
             )
 
             V1SectionState.Loading -> Text(
-                text = "Runtime prototype 正在生成 deterministic draft。",
+                text = "Runtime prototype 正在生成 deterministic draft，并由 backend 创建 Draft Review。",
                 style = MaterialTheme.typography.bodyMedium,
             )
 
-            V1SectionState.Empty -> Text(text = "暂无 PatchDraft 预览。", style = MaterialTheme.typography.bodyMedium)
+            V1SectionState.Empty -> Text(text = "暂无 Draft Review。", style = MaterialTheme.typography.bodyMedium)
             is V1SectionState.Failed -> {
-                Text(text = previewState.error.title, style = MaterialTheme.typography.titleSmall)
-                Text(text = previewState.error.detail, style = MaterialTheme.typography.bodyMedium)
+                Text(text = draftReviewState.error.title, style = MaterialTheme.typography.titleSmall)
+                Text(text = draftReviewState.error.detail, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = "如出现 workspace_version_conflict、draft_review_expired 或 draft_review_state_conflict，请刷新 workspace 后重新生成 Draft Review。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
-            is V1SectionState.Loaded -> PatchDraftPreviewDetails(previewState.value, previewIsCurrent)
+            is V1SectionState.Loaded -> DraftReviewDetails(draftReviewState.value, draftReviewIsCurrent)
         }
 
         OutlinedButton(
-            onClick = onApplyClick,
-            enabled = preview != null && previewIsCurrent && !isPreviewLoading && !isApplyLoading,
+            onClick = onAcceptDraftReviewClick,
+            enabled = canReview,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(text = if (isApplyLoading) "正在应用已审阅 Draft" else "应用已审阅 Draft")
+            Text(text = "接受 Draft Review")
         }
 
-        if (preview != null && !previewIsCurrent) {
+        OutlinedButton(
+            onClick = onRejectDraftReviewClick,
+            enabled = canReview,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(text = "拒绝 Draft Review")
+        }
+
+        OutlinedButton(
+            onClick = onApplyDraftReviewClick,
+            enabled = canApply,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(text = if (isApplyLoading) "正在按 Review ID 应用" else "按 Review ID 应用")
+        }
+
+        if (draftReview != null && !draftReviewIsCurrent) {
             Text(
-                text = "预览基于 version ${preview.patchDraft.baseWorkspaceVersion}，当前 workspace 已是 version $workspaceVersion。请刷新后重新生成预览。",
+                text = "Draft Review 基于 version ${draftReview.baseWorkspaceVersion}，当前 workspace 已是 version $workspaceVersion。请刷新后重新生成。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -177,26 +206,49 @@ private fun PatchDraftReviewGate(
 }
 
 @Composable
-private fun PatchDraftPreviewDetails(
-    preview: SalesWorkspacePatchDraftPreviewDto,
-    previewIsCurrent: Boolean,
+private fun DraftReviewDetails(
+    draftReview: SalesWorkspaceDraftReviewDto,
+    draftReviewIsCurrent: Boolean,
 ) {
-    val topCandidate = preview.previewTopCandidate
-    Text(text = "Draft：${preview.patchDraft.id}", style = MaterialTheme.typography.bodyMedium)
-    Text(text = "Patch：${preview.patch.id}", style = MaterialTheme.typography.bodyMedium)
+    val topCandidate = draftReview.preview.previewTopCandidate
+    Text(text = "Draft Review：${draftReview.id}", style = MaterialTheme.typography.bodyMedium)
+    Text(text = "Status：${draftReview.status}", style = MaterialTheme.typography.bodyMedium)
+    Text(text = "Draft：${draftReview.draft.id}", style = MaterialTheme.typography.bodyMedium)
+    Text(text = "Materialized Patch：${draftReview.preview.materializedPatch.id}", style = MaterialTheme.typography.bodyMedium)
     Text(
-        text = "Preview version：${preview.previewWorkspaceVersion}；would_mutate=${preview.wouldMutate}",
+        text = "Preview version：${draftReview.preview.previewWorkspaceVersion}；would_mutate=${draftReview.preview.wouldMutate}",
         style = MaterialTheme.typography.bodyMedium,
     )
-    Text(text = "Operations：${preview.patchDraft.operationCount}", style = MaterialTheme.typography.bodyMedium)
+    Text(text = "Operations：${draftReview.draft.operationCount}", style = MaterialTheme.typography.bodyMedium)
+    draftReview.review?.let { review ->
+        Text(
+            text = "Review：${review.decision} by ${review.reviewedBy} (${review.client})",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        if (review.comment.isNotBlank()) {
+            Text(text = review.comment, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+    draftReview.applyResult?.let { result ->
+        Text(text = "Apply result：${result.status}", style = MaterialTheme.typography.bodyMedium)
+        result.materializedPatchId?.let {
+            Text(text = "Applied patch：$it", style = MaterialTheme.typography.bodySmall)
+        }
+        result.workspaceVersion?.let {
+            Text(text = "Applied workspace version：$it", style = MaterialTheme.typography.bodySmall)
+        }
+        result.errorCode?.let {
+            Text(text = "Apply error：$it ${result.errorMessage.orEmpty()}", style = MaterialTheme.typography.bodySmall)
+        }
+    }
     Text(
-        text = if (previewIsCurrent) {
-            "预览仍匹配当前 workspace version。"
+        text = if (draftReviewIsCurrent) {
+            "Draft Review 仍匹配当前 workspace version。"
         } else {
-            "预览已过期，不能应用。"
+            "Draft Review 已过期，不能应用。"
         },
         style = MaterialTheme.typography.bodySmall,
-        color = if (previewIsCurrent) {
+        color = if (draftReviewIsCurrent) {
             MaterialTheme.colorScheme.onSurfaceVariant
         } else {
             MaterialTheme.colorScheme.error
@@ -215,10 +267,10 @@ private fun PatchDraftPreviewDetails(
 }
 
 @Composable
-private fun PatchDraftApplyDetails(response: SalesWorkspacePatchDraftApplyResponseDto) {
+private fun PatchDraftApplyDetails(response: SalesWorkspaceDraftReviewApplyResponseDto) {
     val topCandidate = response.topCandidate
     Text(
-        text = "已应用 ${response.patch.id}，workspace version ${response.workspace.workspaceVersion}。",
+        text = "已通过 ${response.draftReview.id} 应用 ${response.patch.id}，workspace version ${response.workspace.workspaceVersion}。",
         style = MaterialTheme.typography.bodyMedium,
     )
     if (topCandidate != null) {

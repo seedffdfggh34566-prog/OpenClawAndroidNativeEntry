@@ -21,8 +21,8 @@ import com.openclaw.android.nativeentry.ui.shell.HistoryScreen
 import com.openclaw.android.nativeentry.ui.shell.ProductLearningScreen
 import com.openclaw.android.nativeentry.ui.shell.ProductProfileScreen
 import com.openclaw.android.nativeentry.ui.shell.V1BackendUiState
-import com.openclaw.android.nativeentry.data.backend.SalesWorkspacePatchDraftApplyResponseDto
-import com.openclaw.android.nativeentry.data.backend.SalesWorkspacePatchDraftPreviewDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewApplyResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
 import com.openclaw.android.nativeentry.ui.shell.V1ShellPlaceholderState
 import com.openclaw.android.nativeentry.ui.shell.V1SectionState
@@ -32,8 +32,8 @@ fun OpenClawNavHost(
     navController: NavHostController,
     backendState: V1BackendUiState,
     workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
-    patchDraftPreviewState: V1SectionState<SalesWorkspacePatchDraftPreviewDto>,
-    patchDraftApplyState: V1SectionState<SalesWorkspacePatchDraftApplyResponseDto>,
+    draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
+    patchDraftApplyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
     placeholderState: V1ShellPlaceholderState,
     gatewaySnapshot: GatewayCheckSnapshot,
     launchSnapshot: OpenClawLaunchSnapshot,
@@ -41,8 +41,10 @@ fun OpenClawNavHost(
     onRefreshGatewayStatus: () -> Unit,
     onRefreshBackend: () -> Unit,
     onRefreshWorkspace: () -> Unit,
-    onPreviewRuntimePatchDraft: () -> Unit,
-    onApplyReviewedRuntimePatchDraft: () -> Unit,
+    onCreateDraftReview: () -> Unit,
+    onAcceptDraftReview: () -> Unit,
+    onRejectDraftReview: () -> Unit,
+    onApplyDraftReview: () -> Unit,
     onUseDebugFallback: () -> Unit,
     onLoadLatestProductProfile: () -> Unit,
     onLoadLatestReport: () -> Unit,
@@ -99,11 +101,13 @@ fun OpenClawNavHost(
         composable(OpenClawDestination.Workspace.route) {
             SalesWorkspaceScreen(
                 workspaceState = workspaceState,
-                patchDraftPreviewState = patchDraftPreviewState,
+                draftReviewState = draftReviewState,
                 patchDraftApplyState = patchDraftApplyState,
                 onRefreshClick = onRefreshWorkspace,
-                onPreviewClick = onPreviewRuntimePatchDraft,
-                onApplyClick = onApplyReviewedRuntimePatchDraft,
+                onCreateDraftReviewClick = onCreateDraftReview,
+                onAcceptDraftReviewClick = onAcceptDraftReview,
+                onRejectDraftReviewClick = onRejectDraftReview,
+                onApplyDraftReviewClick = onApplyDraftReview,
             )
         }
         composable(OpenClawDestination.Ops.route) {

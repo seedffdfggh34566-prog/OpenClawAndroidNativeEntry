@@ -20,8 +20,47 @@ data class SalesWorkspacePatchDraftPreviewDto(
         get() = previewRankingBoard?.rankedItems?.firstOrNull()
 }
 
-data class SalesWorkspacePatchDraftApplyResponseDto(
-    val patchDraft: SalesWorkspacePatchDraftDto,
+data class SalesWorkspaceDraftReviewDto(
+    val id: String,
+    val workspaceId: String,
+    val status: String,
+    val baseWorkspaceVersion: Int,
+    val draft: SalesWorkspacePatchDraftDto,
+    val preview: SalesWorkspaceDraftReviewPreviewDto,
+    val review: SalesWorkspaceDraftReviewDecisionDto?,
+    val applyResult: SalesWorkspaceDraftReviewApplyResultDto?,
+)
+
+data class SalesWorkspaceDraftReviewPreviewDto(
+    val materializedPatch: SalesWorkspacePatchSummaryDto,
+    val previewWorkspaceVersion: Int,
+    val previewRankingBoard: SalesWorkspaceRankingBoardDto?,
+    val wouldMutate: Boolean,
+) {
+    val previewTopCandidate: SalesWorkspaceRankingItemDto?
+        get() = previewRankingBoard?.rankedItems?.firstOrNull()
+}
+
+data class SalesWorkspaceDraftReviewDecisionDto(
+    val decision: String,
+    val reviewedBy: String,
+    val comment: String,
+    val client: String,
+)
+
+data class SalesWorkspaceDraftReviewApplyResultDto(
+    val status: String,
+    val materializedPatchId: String?,
+    val workspaceVersion: Int?,
+    val topCandidateId: String?,
+    val topCandidateName: String?,
+    val topCandidateRank: Int?,
+    val errorCode: String?,
+    val errorMessage: String?,
+)
+
+data class SalesWorkspaceDraftReviewApplyResponseDto(
+    val draftReview: SalesWorkspaceDraftReviewDto,
     val patch: SalesWorkspacePatchSummaryDto,
     val workspace: SalesWorkspaceDto,
     val rankingBoard: SalesWorkspaceRankingBoardDto?,

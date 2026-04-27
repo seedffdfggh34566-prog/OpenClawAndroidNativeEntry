@@ -37,13 +37,62 @@ fun parseSalesWorkspacePatchDraftPreviewResponse(rawJson: String): SalesWorkspac
     )
 }
 
-fun parseSalesWorkspacePatchDraftApplyResponse(rawJson: String): SalesWorkspacePatchDraftApplyResponseDto {
+fun parseSalesWorkspaceDraftReviewResponse(rawJson: String): SalesWorkspaceDraftReviewDto =
+    JSONObject(rawJson).getJSONObject("draft_review").toSalesWorkspaceDraftReviewDto()
+
+fun parseSalesWorkspaceDraftReviewApplyResponse(rawJson: String): SalesWorkspaceDraftReviewApplyResponseDto {
     val json = JSONObject(rawJson)
-    return SalesWorkspacePatchDraftApplyResponseDto(
-        patchDraft = json.getJSONObject("patch_draft").toSalesWorkspacePatchDraftDto(),
+    return SalesWorkspaceDraftReviewApplyResponseDto(
+        draftReview = json.getJSONObject("draft_review").toSalesWorkspaceDraftReviewDto(),
         patch = json.getJSONObject("patch").toSalesWorkspacePatchSummaryDto(),
         workspace = json.getJSONObject("workspace").toSalesWorkspaceDto(),
         rankingBoard = json.optJSONObject("ranking_board")?.toSalesWorkspaceRankingBoardDto(),
+    )
+}
+
+private fun JSONObject.toSalesWorkspaceDraftReviewDto(): SalesWorkspaceDraftReviewDto =
+    SalesWorkspaceDraftReviewDto(
+        id = getString("id"),
+        workspaceId = getString("workspace_id"),
+        status = getString("status"),
+        baseWorkspaceVersion = getInt("base_workspace_version"),
+        draft = getJSONObject("draft").toSalesWorkspacePatchDraftDto(),
+        preview = getJSONObject("preview").toSalesWorkspaceDraftReviewPreviewDto(),
+        review = optJSONObject("review")?.toSalesWorkspaceDraftReviewDecisionDto(),
+        applyResult = optJSONObject("apply_result")?.toSalesWorkspaceDraftReviewApplyResultDto(),
+    )
+
+private fun JSONObject.toSalesWorkspaceDraftReviewPreviewDto(): SalesWorkspaceDraftReviewPreviewDto =
+    SalesWorkspaceDraftReviewPreviewDto(
+        materializedPatch = getJSONObject("materialized_patch").toSalesWorkspacePatchSummaryDto(),
+        previewWorkspaceVersion = getInt("preview_workspace_version"),
+        previewRankingBoard = optJSONObject("preview_ranking_board")?.toSalesWorkspaceRankingBoardDto(),
+        wouldMutate = optBoolean("would_mutate"),
+    )
+
+private fun JSONObject.toSalesWorkspaceDraftReviewDecisionDto(): SalesWorkspaceDraftReviewDecisionDto =
+    SalesWorkspaceDraftReviewDecisionDto(
+        decision = getString("decision"),
+        reviewedBy = optString("reviewed_by"),
+        comment = optString("comment"),
+        client = optString("client"),
+    )
+
+private fun JSONObject.toSalesWorkspaceDraftReviewApplyResultDto(): SalesWorkspaceDraftReviewApplyResultDto {
+    val rankingImpact = optJSONObject("ranking_impact_summary")
+    return SalesWorkspaceDraftReviewApplyResultDto(
+        status = getString("status"),
+        materializedPatchId = optNullableString("materialized_patch_id"),
+        workspaceVersion = if (isNull("workspace_version")) null else optInt("workspace_version"),
+        topCandidateId = rankingImpact?.optNullableString("top_candidate_id"),
+        topCandidateName = rankingImpact?.optNullableString("top_candidate_name"),
+        topCandidateRank = if (rankingImpact == null || rankingImpact.isNull("top_candidate_rank")) {
+            null
+        } else {
+            rankingImpact.optInt("top_candidate_rank")
+        },
+        errorCode = optNullableString("error_code"),
+        errorMessage = optNullableString("error_message"),
     )
 }
 

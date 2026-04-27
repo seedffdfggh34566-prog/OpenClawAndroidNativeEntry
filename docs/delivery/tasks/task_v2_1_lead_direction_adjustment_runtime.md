@@ -1,6 +1,6 @@
 # Task: V2.1 Lead Direction Adjustment Runtime
 
-状态：planned / blocked
+状态：done
 
 更新时间：2026-04-27
 
@@ -20,3 +20,16 @@
 - 不生成具体公司候选。
 - 不生成 ContactPoint。
 - 不跳过 backend kernel。
+
+## Outcome
+
+- Deterministic lead direction adjustment now extracts priority industry, target customer type, region, company size, priority constraints, excluded industries, excluded customer types, and change reason from Chinese chat input.
+- Direction updates still produce `WorkspacePatchDraft` and require Draft Review before Kernel writeback.
+- Source message reference is preserved in `change_reason`.
+
+## Validation
+
+```bash
+PYTHONPATH=$PWD backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_chat_first_api.py -q
+git diff --check
+```

@@ -632,6 +632,122 @@ def _product_profile_payload_for_message(
     }
 
 
+def _lead_direction_payload_for_message(
+    *,
+    message: ConversationMessage,
+    direction_id: str,
+    direction_version: int,
+) -> dict[str, Any]:
+    content = message.content
+    priority_industries = _direction_priority_industries(content)
+    target_customer_types = _direction_target_customer_types(content)
+    regions = _direction_regions(content)
+    company_sizes = _direction_company_sizes(content)
+    excluded_industries = _direction_excluded_industries(content)
+    excluded_customer_types = _direction_excluded_customer_types(content)
+    priority_constraints = _direction_priority_constraints(content)
+
+    return {
+        "id": direction_id,
+        "version": direction_version,
+        "priority_industries": priority_industries,
+        "target_customer_types": target_customer_types,
+        "regions": regions,
+        "company_sizes": company_sizes,
+        "priority_constraints": priority_constraints,
+        "excluded_industries": excluded_industries,
+        "excluded_customer_types": excluded_customer_types,
+        "change_reason": f"用户通过 chat message {message.id} 调整获客方向：{content[:120]}",
+    }
+
+
+def _direction_priority_industries(content: str) -> list[str]:
+    if _contains_any(content, ["制造", "工厂", "设备", "外包", "装配"]):
+        return ["制造业"]
+    if _contains_any(content, ["培训", "销售团队", "管理"]):
+        return ["本地服务业", "销售团队驱动行业"]
+    if _contains_any(content, ["财税", "现金流", "发票"]):
+        return ["中小企业服务", "财税数字化"]
+    if _contains_any(content, ["园区", "招商", "选址", "扩租"]):
+        return ["园区主导产业"]
+    return ["待确认优先行业"]
+
+
+def _direction_target_customer_types(content: str) -> list[str]:
+    if _contains_any(content, ["设备部", "维保"]):
+        return ["制造业工厂设备部", "维保服务商"]
+    if _contains_any(content, ["HR", "老板", "销售负责人", "培训"]):
+        return ["本地中小企业老板", "HR", "销售负责人"]
+    if _contains_any(content, ["财务", "代账", "现金流"]):
+        return ["中小企业老板", "财务负责人", "代账服务商"]
+    if _contains_any(content, ["扩租", "选址", "园区"]):
+        return ["有选址或扩租需求的成长型企业"]
+    if _contains_any(content, ["品牌方", "贸易商", "供应链"]):
+        return ["品牌方", "贸易商", "制造企业供应链部门"]
+    if _contains_any(content, ["ERP", "排产", "库存"]):
+        return ["有 ERP 但排产库存协同弱的制造企业"]
+    return ["待确认目标客户类型"]
+
+
+def _direction_regions(content: str) -> list[str]:
+    regions: list[str] = []
+    for keyword in ["华东", "华南", "华北", "上海", "杭州", "苏州", "深圳", "北京", "本地"]:
+        if keyword in content:
+            regions.append(keyword)
+    return regions or ["待确认地区"]
+
+
+def _direction_company_sizes(content: str) -> list[str]:
+    if _contains_any(content, ["100 到 500", "100-500", "100 至 500"]):
+        return ["100-500 人"]
+    if _contains_any(content, ["20-300", "20 到 300", "20 至 300"]):
+        return ["20-300 人"]
+    if _contains_any(content, ["中小", "小微"]):
+        return ["中小企业"]
+    if _contains_any(content, ["成长型", "扩租"]):
+        return ["成长型企业"]
+    if _contains_any(content, ["小批量", "多品种"]):
+        return ["小批量多品种订单客户"]
+    return ["待确认规模"]
+
+
+def _direction_excluded_industries(content: str) -> list[str]:
+    excluded: list[str] = []
+    if _contains_any(content, ["不要教育", "排除教育", "不做教育"]):
+        excluded.append("教育")
+    if _contains_any(content, ["不要金融", "排除金融", "不做金融"]):
+        excluded.append("金融")
+    if _contains_any(content, ["不承接食品", "不要食品"]):
+        excluded.append("食品")
+    return excluded
+
+
+def _direction_excluded_customer_types(content: str) -> list[str]:
+    excluded: list[str] = []
+    if _contains_any(content, ["大型集团", "超大型", "集团客户"]):
+        excluded.append("大型集团客户")
+    if _contains_any(content, ["纯线上"]):
+        excluded.append("纯线上需求客户")
+    return excluded
+
+
+def _direction_priority_constraints(content: str) -> list[str]:
+    constraints: list[str] = []
+    if _contains_any(content, ["ERP"]):
+        constraints.append("已有 ERP")
+    if _contains_any(content, ["MES"]):
+        constraints.append("已有 MES")
+    if _contains_any(content, ["发票", "流水"]):
+        constraints.append("发票或流水数据可接入")
+    if _contains_any(content, ["线下"]):
+        constraints.append("线下交付半径可覆盖")
+    if _contains_any(content, ["小批量", "多品种"]):
+        constraints.append("订单小批量多品种")
+    if _contains_any(content, ["排产", "库存"]):
+        constraints.append("排产和库存协同弱")
+    return constraints or ["需要继续确认优先约束"]
+
+
 def _generate_chat_first_patch_draft(
     workspace: Any,
     *,
@@ -674,23 +790,11 @@ def _generate_chat_first_patch_draft(
             [
                 {
                     "type": "upsert_lead_direction_version",
-                    "payload": {
-                        "id": direction_id,
-                        "version": direction_version,
-                        "priority_industries": ["manufacturing"],
-                        "target_customer_types": [
-                            "manufacturers with ERP but weak scheduling and inventory coordination",
-                        ],
-                        "regions": ["East China"],
-                        "company_sizes": ["100-500 employees"],
-                        "priority_constraints": [
-                            "has ERP",
-                            "scheduling and inventory coordination is weak",
-                        ],
-                        "excluded_industries": ["education"],
-                        "excluded_customer_types": ["large conglomerates"],
-                        "change_reason": f"User clarified target segment in chat message {message.id}.",
-                    },
+                    "payload": _lead_direction_payload_for_message(
+                        message=message,
+                        direction_id=direction_id,
+                        direction_version=direction_version,
+                    ),
                 },
                 {
                     "type": "set_active_lead_direction",

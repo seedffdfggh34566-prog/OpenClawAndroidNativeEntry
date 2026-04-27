@@ -176,6 +176,49 @@ def test_chat_first_review_apply_updates_product_and_direction(client) -> None:
     ]
 
 
+def test_chat_first_lead_direction_adjustment_extracts_chinese_constraints(client) -> None:
+    _create_workspace(client, "ws_demo")
+    _run_chat_turn(
+        client,
+        workspace_id="ws_demo",
+        message_id="msg_user_product_001",
+        message_type="product_profile_update",
+        content="我们做工业设备维保软件，帮工厂减少停机时间，想找第一批客户。",
+        base_workspace_version=0,
+    )
+    _accept_and_apply(client, "ws_demo", "draft_review_sales_turn_product_profile_update_v1", expected_version=1)
+
+    payload = _run_chat_turn(
+        client,
+        workspace_id="ws_demo",
+        message_id="msg_user_direction_adjust_001",
+        message_type="lead_direction_update",
+        content="不要教育行业，先看华东制造业，中小企业优先，有 ERP 但排产库存协同弱。",
+        base_workspace_version=1,
+    )
+
+    operations = payload["patch_draft"]["operations"]
+    direction_payload = operations[0]["payload"]
+    assert operations[0]["type"] == "upsert_lead_direction_version"
+    assert direction_payload["priority_industries"] == ["制造业"]
+    assert direction_payload["regions"] == ["华东"]
+    assert direction_payload["company_sizes"] == ["中小企业"]
+    assert direction_payload["excluded_industries"] == ["教育"]
+    assert "已有 ERP" in direction_payload["priority_constraints"]
+    assert "排产和库存协同弱" in direction_payload["priority_constraints"]
+    assert "msg_user_direction_adjust_001" in direction_payload["change_reason"]
+
+    applied = _accept_and_apply(
+        client,
+        "ws_demo",
+        "draft_review_sales_turn_lead_direction_update_v2",
+        expected_version=2,
+    )
+    workspace = applied["workspace"]
+    direction_id = workspace["current_lead_direction_version_id"]
+    assert workspace["lead_direction_versions"][direction_id]["excluded_industries"] == ["教育"]
+
+
 def test_chat_first_workspace_question_explains_current_structured_objects_without_mutation(client) -> None:
     _create_workspace(client, "ws_demo")
     _run_chat_turn(

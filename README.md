@@ -1,6 +1,6 @@
 # OpenClawAndroidNativeEntry
 
-> 仓库名保留历史来源；当前已完成 **AI Sales Assistant V2.1 workspace/kernel engineering baseline**；**V2.1 conversational product experience remains incomplete**。
+> 仓库名保留历史来源；当前已完成 **AI Sales Assistant V2.1 workspace/kernel engineering baseline** 与 **V2.1 conversational backend acceptance**；**V2.1 conversational product experience remains incomplete**。
 
 当前建议先阅读：
 
@@ -22,7 +22,7 @@
 
 当前正式主线为：
 
-> **V2.1 workspace/kernel engineering baseline completed：Sales Workspace Kernel、FastAPI prototype、Android workspace / Draft Review ID demo、Postgres / Alembic persistence baseline、Sales Workspace Postgres store、Draft Review audit persistence、deterministic chat-first backend prototype 与 Android chat-first workspace UI skeleton 均已完成。V2.1 conversational product experience remains incomplete；下一步是 clarifying questions backend prototype。**
+> **V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed：Sales Workspace Kernel、FastAPI prototype、Android workspace / Draft Review ID demo、Postgres / Alembic persistence baseline、Sales Workspace Postgres store、Draft Review audit persistence、deterministic chat-first backend prototype、5-sample backend conversational acceptance 与 Android chat-first workspace UI skeleton 均已完成。V2.1 conversational product experience remains incomplete；下一步需由规划层决定是否开放 Android conversation polish / device acceptance。**
 
 V1 已作为 demo-ready release candidate / learning milestone 收口，不再是默认开发方向。
 
@@ -32,7 +32,7 @@ V1 已作为 demo-ready release candidate / learning milestone 收口，不再�
 
 当前 active task：
 
-- `docs/delivery/tasks/task_v2_1_clarifying_questions_backend_prototype.md`
+- 暂无自动排定任务。
 
 Next queued task：
 

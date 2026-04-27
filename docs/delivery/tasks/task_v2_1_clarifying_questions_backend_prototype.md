@@ -1,6 +1,6 @@
 # Task: V2.1 Clarifying Questions Backend Prototype
 
-状态：planned / current
+状态：done
 
 更新时间：2026-04-27
 
@@ -25,6 +25,19 @@
 - 不写 migration。
 
 ## Validation
+
+```bash
+PYTHONPATH=$PWD backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_chat_first_api.py -q
+git diff --check
+```
+
+## Outcome
+
+- Insufficient `product_profile_update` / `lead_direction_update` chat input now returns an assistant `ConversationMessage(message_type = "clarifying_question")`.
+- The response keeps `patch_draft = null` and `draft_review = null`; workspace state is not mutated.
+- The deterministic questions cover product/service, target customers, pain points, region/industry/scale, and excluded customers/industries.
+
+## Validation Run
 
 ```bash
 PYTHONPATH=$PWD backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_chat_first_api.py -q

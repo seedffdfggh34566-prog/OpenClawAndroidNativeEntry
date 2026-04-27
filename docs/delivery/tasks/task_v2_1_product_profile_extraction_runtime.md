@@ -1,6 +1,6 @@
 # Task: V2.1 Product Profile Extraction Runtime
 
-状态：planned / blocked
+状态：done
 
 更新时间：2026-04-27
 
@@ -19,3 +19,16 @@
 - 不接真实 LLM。
 - 不接 V2.2 search / ContactPoint / CRM。
 - 不跳过 Draft Review。
+
+## Outcome
+
+- Deterministic product profile extraction now covers the 5 Chinese acceptance samples.
+- Product profile drafts include product name/category, target customers, industries, pain points, value props, constraints, and source message marker.
+- Output still goes through `WorkspacePatchDraft` -> Draft Review -> Kernel apply.
+
+## Validation
+
+```bash
+PYTHONPATH=$PWD backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_chat_first_api.py -q
+git diff --check
+```

@@ -384,6 +384,370 @@ def _agent_run_ref(agent_run: SalesAgentTurnRun) -> str:
     return f"AgentRun:{agent_run.id}"
 
 
+def _needs_clarifying_questions(message: ConversationMessage) -> bool:
+    content = message.content.strip()
+    if message.message_type not in {
+        "product_profile_update",
+        "lead_direction_update",
+        "mixed_product_and_direction_update",
+    }:
+        return False
+    if len(content) < 12:
+        return True
+    if message.message_type == "product_profile_update":
+        return not _contains_any(
+            content,
+            [
+                "软件",
+                "SaaS",
+                "服务",
+                "培训",
+                "园区",
+                "招商",
+                "维保",
+                "外包",
+                "排产",
+                "库存",
+                "财税",
+                "现金流",
+                "FactoryOps",
+            ],
+        )
+    if message.message_type == "lead_direction_update":
+        return not _contains_any(
+            content,
+            [
+                "行业",
+                "地区",
+                "华东",
+                "本地",
+                "制造",
+                "企业",
+                "客户",
+                "人",
+                "优先",
+                "排除",
+                "不要",
+                "规模",
+            ],
+        )
+    return not _contains_any(content, ["客户", "行业", "地区", "产品", "软件", "服务", "优先"])
+
+
+def _contains_any(content: str, keywords: list[str]) -> bool:
+    normalized = content.lower()
+    return any(keyword.lower() in normalized for keyword in keywords)
+
+
+def _clarifying_questions_for_message(message: ConversationMessage) -> list[str]:
+    if message.message_type == "lead_direction_update":
+        return [
+            "你希望优先覆盖哪些行业或客户类型？",
+            "当前优先服务哪个地区或城市？",
+            "目标客户大概是什么规模，例如员工人数、营收或门店数量？",
+            "客户必须具备哪些前提条件，例如已有系统、预算或明确痛点？",
+            "哪些行业、客户类型或订单暂时不想优先做？",
+        ]
+    return [
+        "你的产品或服务主要解决什么具体问题？",
+        "最适合的目标客户是谁，例如老板、业务负责人、HR、设备部或财务负责人？",
+        "客户现在最痛的 1 到 2 个场景是什么？",
+        "你希望优先覆盖哪个地区、行业或企业规模？",
+        "哪些行业、客户类型或需求暂时不想优先做？",
+    ]
+
+
+def _assistant_message_for_clarifying_questions(
+    *,
+    workspace_id: str,
+    agent_run: SalesAgentTurnRun,
+    source_message: ConversationMessage,
+) -> ConversationMessage:
+    questions = _clarifying_questions_for_message(source_message)
+    content = "我还需要先确认几个关键信息，避免过早生成不可靠的工作区草稿：\n" + "\n".join(
+        f"{index}. {question}" for index, question in enumerate(questions, start=1)
+    )
+    return ConversationMessage(
+        id=f"msg_assistant_{agent_run.id}",
+        workspace_id=workspace_id,
+        role="assistant",
+        message_type="clarifying_question",
+        content=content,
+        linked_object_refs=[],
+        created_by_agent_run_id=agent_run.id,
+    )
+
+
+def _assistant_message_for_workspace_question(
+    *,
+    workspace: Any,
+    context_pack: Any,
+    workspace_id: str,
+    agent_run: SalesAgentTurnRun,
+) -> ConversationMessage:
+    product = (
+        workspace.product_profile_revisions.get(workspace.current_product_profile_revision_id)
+        if workspace.current_product_profile_revision_id
+        else None
+    )
+    direction = (
+        workspace.lead_direction_versions.get(workspace.current_lead_direction_version_id)
+        if workspace.current_lead_direction_version_id
+        else None
+    )
+    refs: list[str] = []
+    if product is not None:
+        refs.append(f"ProductProfileRevision:{product.id}")
+    if direction is not None:
+        refs.append(f"LeadDirectionVersion:{direction.id}")
+
+    if product is None and direction is None:
+        content = (
+            "当前 workspace 还没有正式产品理解或获客方向。"
+            "我需要先通过产品理解和获客方向输入形成可审阅草稿，再解释推荐依据。"
+        )
+    else:
+        product_summary = (
+            f"产品理解是：{product.one_liner or product.product_name}。"
+            if product is not None
+            else "当前还没有正式产品理解。"
+        )
+        direction_summary = (
+            "当前获客方向是："
+            f"优先行业 {', '.join(direction.priority_industries) or '未明确'}；"
+            f"目标客户 {', '.join(direction.target_customer_types) or '未明确'}；"
+            f"地区 {', '.join(direction.regions) or '未明确'}；"
+            f"规模 {', '.join(direction.company_sizes) or '未明确'}。"
+            if direction is not None
+            else "当前还没有正式获客方向。"
+        )
+        rationale = (
+            "推荐依据来自当前结构化 workspace objects 和本轮 ContextPack source versions："
+            f"workspace_version={context_pack.source_versions.get('workspace_version')}，"
+            f"current_product_profile_revision_id={context_pack.source_versions.get('current_product_profile_revision_id')}，"
+            f"current_lead_direction_version_id={context_pack.source_versions.get('current_lead_direction_version_id')}。"
+        )
+        content = f"{product_summary}\n{direction_summary}\n{rationale}"
+
+    return ConversationMessage(
+        id=f"msg_assistant_{agent_run.id}",
+        workspace_id=workspace_id,
+        role="assistant",
+        message_type="workspace_question",
+        content=content,
+        linked_object_refs=refs,
+        created_by_agent_run_id=agent_run.id,
+    )
+
+
+def _product_profile_payload_for_message(
+    *,
+    message: ConversationMessage,
+    revision_id: str,
+    product_version: int,
+) -> dict[str, Any]:
+    content = message.content
+    if _contains_any(content, ["维保", "停机", "设备台账", "预测性维护"]):
+        payload = {
+            "product_name": "工业设备维保软件",
+            "one_liner": "帮助设备密集型工厂降低停机时间、提升维保计划性的工业设备维保软件。",
+            "target_customers": ["制造业工厂设备部", "维保服务商", "设备厂商售后团队"],
+            "target_industries": ["制造业", "设备密集型工厂"],
+            "pain_points": ["停机损失", "维修响应慢", "设备台账分散"],
+            "value_props": ["降低停机时间", "提高维保计划性", "集中设备维保信息"],
+            "constraints": ["需要明确设备类型", "需要确认服务地区"],
+        }
+    elif _contains_any(content, ["培训", "线下课", "销售和管理"]):
+        payload = {
+            "product_name": "本地企业培训服务",
+            "one_liner": "面向本地企业的线下销售和管理培训服务。",
+            "target_customers": ["本地中小企业", "HR", "销售负责人", "企业老板"],
+            "target_industries": ["本地服务业", "销售团队驱动行业"],
+            "pain_points": ["销售转化低", "管理能力不足", "培训体系不稳定"],
+            "value_props": ["提升销售能力", "提升基层管理能力", "提供线下交付支持"],
+            "constraints": ["线下交付半径明显", "需要确认城市和课程类型"],
+        }
+    elif _contains_any(content, ["财税", "现金流", "发票", "税务"]):
+        payload = {
+            "product_name": "中小企业财税 SaaS",
+            "one_liner": "帮助中小企业老板和财务负责人查看现金流、发票和税务风险的财税 SaaS。",
+            "target_customers": ["中小企业老板", "财务负责人", "代账服务商"],
+            "target_industries": ["中小企业服务", "财税数字化"],
+            "pain_points": ["现金流不透明", "发票管理分散", "税务风险难以及时发现"],
+            "value_props": ["提升现金流可见性", "集中发票管理", "提前识别税务风险"],
+            "constraints": ["需要发票或流水数据可接入", "需要确认目标客户规模"],
+        }
+    elif _contains_any(content, ["园区", "招商", "扩租", "选址"]):
+        payload = {
+            "product_name": "产业园区招商运营服务",
+            "one_liner": "帮助产业园区匹配有选址、扩租和政策需求企业的招商运营服务。",
+            "target_customers": ["有选址需求的企业", "有扩租需求的成长型企业", "园区招商团队"],
+            "target_industries": ["产业园区主导产业", "成长型企业服务"],
+            "pain_points": ["选址成本高", "政策不清", "产业配套不匹配"],
+            "value_props": ["匹配园区产业定位", "降低选址沟通成本", "提升招商线索质量"],
+            "constraints": ["需要确认园区区域", "需要明确主导产业和空间条件"],
+        }
+    elif _contains_any(content, ["外包", "装配", "小批量", "多品种"]):
+        payload = {
+            "product_name": "制造业外包生产和装配服务",
+            "one_liner": "面向小批量、多品种订单的制造业外包生产和装配服务。",
+            "target_customers": ["品牌方", "贸易商", "制造企业供应链部门"],
+            "target_industries": ["小批量多品种硬件制造", "设备制造", "消费品制造"],
+            "pain_points": ["自建产能成本高", "订单波动", "交付弹性不足"],
+            "value_props": ["提供弹性产能", "适配小批量多品种订单", "降低自建产线成本"],
+            "constraints": ["需要明确外包能力", "需要确认订单量和交付周期"],
+        }
+    elif _contains_any(content, ["FactoryOps", "排产", "库存", "ERP"]):
+        payload = {
+            "product_name": "FactoryOps AI",
+            "one_liner": "Manufacturing scheduling, inventory, and ERP coordination assistant.",
+            "target_customers": ["100-500 employee manufacturing companies"],
+            "target_industries": ["manufacturing"],
+            "pain_points": ["production plan changes do not sync with inventory and ERP context"],
+            "value_props": [
+                "reduce operational data fragmentation",
+                "help teams coordinate scheduling and inventory changes",
+            ],
+            "constraints": ["needs ERP-adjacent workflow data"],
+        }
+    else:
+        payload = {
+            "product_name": "待确认产品或服务",
+            "one_liner": f"用户消息中描述的产品或服务：{content[:80]}",
+            "target_customers": ["待确认目标客户"],
+            "target_industries": ["待确认行业"],
+            "pain_points": ["待确认痛点"],
+            "value_props": ["待确认价值主张"],
+            "constraints": ["需要继续追问产品、客户、痛点、区域和排除项"],
+        }
+
+    return {
+        "id": revision_id,
+        "version": product_version,
+        **payload,
+        "constraints": [
+            *payload["constraints"],
+            f"derived from message {message.id}",
+        ],
+    }
+
+
+def _lead_direction_payload_for_message(
+    *,
+    message: ConversationMessage,
+    direction_id: str,
+    direction_version: int,
+) -> dict[str, Any]:
+    content = message.content
+    priority_industries = _direction_priority_industries(content)
+    target_customer_types = _direction_target_customer_types(content)
+    regions = _direction_regions(content)
+    company_sizes = _direction_company_sizes(content)
+    excluded_industries = _direction_excluded_industries(content)
+    excluded_customer_types = _direction_excluded_customer_types(content)
+    priority_constraints = _direction_priority_constraints(content)
+
+    return {
+        "id": direction_id,
+        "version": direction_version,
+        "priority_industries": priority_industries,
+        "target_customer_types": target_customer_types,
+        "regions": regions,
+        "company_sizes": company_sizes,
+        "priority_constraints": priority_constraints,
+        "excluded_industries": excluded_industries,
+        "excluded_customer_types": excluded_customer_types,
+        "change_reason": f"用户通过 chat message {message.id} 调整获客方向：{content[:120]}",
+    }
+
+
+def _direction_priority_industries(content: str) -> list[str]:
+    if _contains_any(content, ["制造", "工厂", "设备", "外包", "装配"]):
+        return ["制造业"]
+    if _contains_any(content, ["培训", "销售团队", "管理"]):
+        return ["本地服务业", "销售团队驱动行业"]
+    if _contains_any(content, ["财税", "现金流", "发票"]):
+        return ["中小企业服务", "财税数字化"]
+    if _contains_any(content, ["园区", "招商", "选址", "扩租"]):
+        return ["园区主导产业"]
+    return ["待确认优先行业"]
+
+
+def _direction_target_customer_types(content: str) -> list[str]:
+    if _contains_any(content, ["设备部", "维保"]):
+        return ["制造业工厂设备部", "维保服务商"]
+    if _contains_any(content, ["HR", "老板", "销售负责人", "培训"]):
+        return ["本地中小企业老板", "HR", "销售负责人"]
+    if _contains_any(content, ["财务", "代账", "现金流"]):
+        return ["中小企业老板", "财务负责人", "代账服务商"]
+    if _contains_any(content, ["扩租", "选址", "园区"]):
+        return ["有选址或扩租需求的成长型企业"]
+    if _contains_any(content, ["品牌方", "贸易商", "供应链"]):
+        return ["品牌方", "贸易商", "制造企业供应链部门"]
+    if _contains_any(content, ["ERP", "排产", "库存"]):
+        return ["有 ERP 但排产库存协同弱的制造企业"]
+    return ["待确认目标客户类型"]
+
+
+def _direction_regions(content: str) -> list[str]:
+    regions: list[str] = []
+    for keyword in ["华东", "华南", "华北", "上海", "杭州", "苏州", "深圳", "北京", "本地"]:
+        if keyword in content:
+            regions.append(keyword)
+    return regions or ["待确认地区"]
+
+
+def _direction_company_sizes(content: str) -> list[str]:
+    if _contains_any(content, ["100 到 500", "100-500", "100 至 500"]):
+        return ["100-500 人"]
+    if _contains_any(content, ["20-300", "20 到 300", "20 至 300"]):
+        return ["20-300 人"]
+    if _contains_any(content, ["中小", "小微"]):
+        return ["中小企业"]
+    if _contains_any(content, ["成长型", "扩租"]):
+        return ["成长型企业"]
+    if _contains_any(content, ["小批量", "多品种"]):
+        return ["小批量多品种订单客户"]
+    return ["待确认规模"]
+
+
+def _direction_excluded_industries(content: str) -> list[str]:
+    excluded: list[str] = []
+    if _contains_any(content, ["不要教育", "排除教育", "不做教育"]):
+        excluded.append("教育")
+    if _contains_any(content, ["不要金融", "排除金融", "不做金融"]):
+        excluded.append("金融")
+    if _contains_any(content, ["不承接食品", "不要食品"]):
+        excluded.append("食品")
+    return excluded
+
+
+def _direction_excluded_customer_types(content: str) -> list[str]:
+    excluded: list[str] = []
+    if _contains_any(content, ["大型集团", "超大型", "集团客户"]):
+        excluded.append("大型集团客户")
+    if _contains_any(content, ["纯线上"]):
+        excluded.append("纯线上需求客户")
+    return excluded
+
+
+def _direction_priority_constraints(content: str) -> list[str]:
+    constraints: list[str] = []
+    if _contains_any(content, ["ERP"]):
+        constraints.append("已有 ERP")
+    if _contains_any(content, ["MES"]):
+        constraints.append("已有 MES")
+    if _contains_any(content, ["发票", "流水"]):
+        constraints.append("发票或流水数据可接入")
+    if _contains_any(content, ["线下"]):
+        constraints.append("线下交付半径可覆盖")
+    if _contains_any(content, ["小批量", "多品种"]):
+        constraints.append("订单小批量多品种")
+    if _contains_any(content, ["排产", "库存"]):
+        constraints.append("排产和库存协同弱")
+    return constraints or ["需要继续确认优先约束"]
+
+
 def _generate_chat_first_patch_draft(
     workspace: Any,
     *,
@@ -406,25 +770,11 @@ def _generate_chat_first_patch_draft(
         operations.append(
             {
                 "type": "upsert_product_profile_revision",
-                "payload": {
-                    "id": f"ppr_chat_v{next_version}",
-                    "version": product_version,
-                    "product_name": "FactoryOps AI",
-                    "one_liner": "Manufacturing scheduling, inventory, and ERP coordination assistant.",
-                    "target_customers": ["100-500 employee manufacturing companies"],
-                    "target_industries": ["manufacturing"],
-                    "pain_points": [
-                        "production plan changes do not sync with inventory and ERP context",
-                    ],
-                    "value_props": [
-                        "reduce operational data fragmentation",
-                        "help teams coordinate scheduling and inventory changes",
-                    ],
-                    "constraints": [
-                        "needs ERP-adjacent workflow data",
-                        f"derived from message {message.id}",
-                    ],
-                },
+                "payload": _product_profile_payload_for_message(
+                    message=message,
+                    revision_id=f"ppr_chat_v{next_version}",
+                    product_version=product_version,
+                ),
             }
         )
 
@@ -440,23 +790,11 @@ def _generate_chat_first_patch_draft(
             [
                 {
                     "type": "upsert_lead_direction_version",
-                    "payload": {
-                        "id": direction_id,
-                        "version": direction_version,
-                        "priority_industries": ["manufacturing"],
-                        "target_customer_types": [
-                            "manufacturers with ERP but weak scheduling and inventory coordination",
-                        ],
-                        "regions": ["East China"],
-                        "company_sizes": ["100-500 employees"],
-                        "priority_constraints": [
-                            "has ERP",
-                            "scheduling and inventory coordination is weak",
-                        ],
-                        "excluded_industries": ["education"],
-                        "excluded_customer_types": ["large conglomerates"],
-                        "change_reason": f"User clarified target segment in chat message {message.id}.",
-                    },
+                    "payload": _lead_direction_payload_for_message(
+                        message=message,
+                        direction_id=direction_id,
+                        direction_version=direction_version,
+                    ),
                 },
                 {
                     "type": "set_active_lead_direction",
@@ -492,6 +830,8 @@ def _generate_chat_first_patch_draft(
 
 def _assistant_message_for_turn(
     *,
+    workspace: Any,
+    context_pack: Any,
     workspace_id: str,
     agent_run: SalesAgentTurnRun,
     source_message: ConversationMessage,
@@ -504,6 +844,13 @@ def _assistant_message_for_turn(
         )
         message_type: MessageType = "out_of_scope_v2_2"
         refs: list[str] = []
+    elif draft_review is None and source_message.message_type == "workspace_question":
+        return _assistant_message_for_workspace_question(
+            workspace=workspace,
+            context_pack=context_pack,
+            workspace_id=workspace_id,
+            agent_run=agent_run,
+        )
     elif draft_review is None:
         content = "我可以先解释当前 workspace 状态；这轮没有生成 WorkspacePatchDraft。"
         message_type = "workspace_question"
@@ -643,6 +990,30 @@ def create_sales_agent_turn(workspace_id: str, request: Request, payload: Any = 
     )
     trace_store.save_context_pack(context_pack)
 
+    if _needs_clarifying_questions(source_message):
+        assistant_message = _assistant_message_for_clarifying_questions(
+            workspace_id=workspace_id,
+            agent_run=agent_run,
+            source_message=source_message,
+        )
+        trace_store.save_message(assistant_message)
+        completed = agent_run.model_copy(
+            update={
+                "status": "succeeded",
+                "output_refs": [_message_ref(assistant_message)],
+                "finished_at": utc_now(),
+            }
+        )
+        trace_store.save_agent_run(completed)
+        return {
+            "conversation_message": source_message,
+            "agent_run": completed,
+            "context_pack": context_pack,
+            "assistant_message": assistant_message,
+            "patch_draft": None,
+            "draft_review": None,
+        }
+
     patch_draft = _generate_chat_first_patch_draft(
         workspace,
         message=source_message,
@@ -711,6 +1082,8 @@ def create_sales_agent_turn(workspace_id: str, request: Request, payload: Any = 
         review_store.save(draft_review)
 
     assistant_message = _assistant_message_for_turn(
+        workspace=workspace,
+        context_pack=context_pack,
         workspace_id=workspace_id,
         agent_run=agent_run,
         source_message=source_message,

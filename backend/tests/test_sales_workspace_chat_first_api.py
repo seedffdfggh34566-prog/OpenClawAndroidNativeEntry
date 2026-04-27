@@ -77,6 +77,68 @@ def test_chat_first_product_turn_creates_review_without_workspace_mutation(clien
     ]["output_refs"]
 
 
+@pytest.mark.parametrize(
+    ("workspace_id", "content", "expected_name", "expected_pain"),
+    [
+        (
+            "ws_maintenance",
+            "我们做工业设备维保软件，帮工厂减少停机时间，想找第一批客户。",
+            "工业设备维保软件",
+            "停机损失",
+        ),
+        (
+            "ws_training",
+            "我们给本地企业做销售和管理培训，主要是线下课，想知道先找什么客户。",
+            "本地企业培训服务",
+            "销售转化低",
+        ),
+        (
+            "ws_tax",
+            "我们做中小企业财税 SaaS，帮老板看现金流、发票和税务风险。",
+            "中小企业财税 SaaS",
+            "现金流不透明",
+        ),
+        (
+            "ws_park",
+            "我们帮产业园区做招商运营，想找有扩租和选址需求的企业。",
+            "产业园区招商运营服务",
+            "选址成本高",
+        ),
+        (
+            "ws_outsourcing",
+            "我们给制造企业提供外包生产和装配服务，适合小批量、多品种订单。",
+            "制造业外包生产和装配服务",
+            "自建产能成本高",
+        ),
+    ],
+)
+def test_chat_first_product_extraction_covers_five_chinese_acceptance_samples(
+    client,
+    workspace_id: str,
+    content: str,
+    expected_name: str,
+    expected_pain: str,
+) -> None:
+    _create_workspace(client, workspace_id)
+
+    payload = _run_chat_turn(
+        client,
+        workspace_id=workspace_id,
+        message_id="msg_user_product_001",
+        message_type="product_profile_update",
+        content=content,
+        base_workspace_version=0,
+    )
+
+    operation = payload["patch_draft"]["operations"][0]
+    assert operation["type"] == "upsert_product_profile_revision"
+    product_payload = operation["payload"]
+    assert product_payload["product_name"] == expected_name
+    assert expected_pain in product_payload["pain_points"]
+    assert f"derived from message msg_user_product_001" in product_payload["constraints"]
+    assert payload["draft_review"]["status"] == "previewed"
+
+
 def test_chat_first_review_apply_updates_product_and_direction(client) -> None:
     _create_workspace(client, "ws_demo")
     _run_chat_turn(
@@ -114,6 +176,220 @@ def test_chat_first_review_apply_updates_product_and_direction(client) -> None:
     ]
 
 
+def test_chat_first_lead_direction_adjustment_extracts_chinese_constraints(client) -> None:
+    _create_workspace(client, "ws_demo")
+    _run_chat_turn(
+        client,
+        workspace_id="ws_demo",
+        message_id="msg_user_product_001",
+        message_type="product_profile_update",
+        content="我们做工业设备维保软件，帮工厂减少停机时间，想找第一批客户。",
+        base_workspace_version=0,
+    )
+    _accept_and_apply(client, "ws_demo", "draft_review_sales_turn_product_profile_update_v1", expected_version=1)
+
+    payload = _run_chat_turn(
+        client,
+        workspace_id="ws_demo",
+        message_id="msg_user_direction_adjust_001",
+        message_type="lead_direction_update",
+        content="不要教育行业，先看华东制造业，中小企业优先，有 ERP 但排产库存协同弱。",
+        base_workspace_version=1,
+    )
+
+    operations = payload["patch_draft"]["operations"]
+    direction_payload = operations[0]["payload"]
+    assert operations[0]["type"] == "upsert_lead_direction_version"
+    assert direction_payload["priority_industries"] == ["制造业"]
+    assert direction_payload["regions"] == ["华东"]
+    assert direction_payload["company_sizes"] == ["中小企业"]
+    assert direction_payload["excluded_industries"] == ["教育"]
+    assert "已有 ERP" in direction_payload["priority_constraints"]
+    assert "排产和库存协同弱" in direction_payload["priority_constraints"]
+    assert "msg_user_direction_adjust_001" in direction_payload["change_reason"]
+
+    applied = _accept_and_apply(
+        client,
+        "ws_demo",
+        "draft_review_sales_turn_lead_direction_update_v2",
+        expected_version=2,
+    )
+    workspace = applied["workspace"]
+    direction_id = workspace["current_lead_direction_version_id"]
+    assert workspace["lead_direction_versions"][direction_id]["excluded_industries"] == ["教育"]
+
+
+@pytest.mark.parametrize(
+    (
+        "workspace_id",
+        "product_content",
+        "direction_content",
+        "expected_product_name",
+        "expected_direction_fragment",
+    ),
+    [
+        (
+            "ws_e2e_maintenance",
+            "我们做工业设备维保软件，帮工厂减少停机时间，想找第一批客户。",
+            "先看华东制造业，中小企业优先，不要教育行业，设备部或维保服务商优先。",
+            "工业设备维保软件",
+            "制造业",
+        ),
+        (
+            "ws_e2e_training",
+            "我们给本地企业做销售和管理培训，主要是线下课，想知道先找什么客户。",
+            "先找本地 20-300 人企业，有本地培训需求的 HR、老板和销售负责人优先，排除大型集团和纯线上需求。",
+            "本地企业培训服务",
+            "本地服务业",
+        ),
+        (
+            "ws_e2e_tax",
+            "我们做中小企业财税 SaaS，帮老板看现金流、发票和税务风险。",
+            "先找华东中小企业老板和财务负责人，要求发票或流水数据可接入，排除大型集团客户。",
+            "中小企业财税 SaaS",
+            "财税数字化",
+        ),
+        (
+            "ws_e2e_park",
+            "我们帮产业园区做招商运营，想找有扩租和选址需求的企业。",
+            "先看本地园区主导产业，有扩租和选址需求的成长型企业优先。",
+            "产业园区招商运营服务",
+            "园区主导产业",
+        ),
+        (
+            "ws_e2e_outsourcing",
+            "我们给制造企业提供外包生产和装配服务，适合小批量、多品种订单。",
+            "先找华南小批量多品种硬件制造客户，品牌方和贸易商优先，不承接食品。",
+            "制造业外包生产和装配服务",
+            "制造业",
+        ),
+    ],
+)
+def test_chat_first_backend_acceptance_e2e_for_five_chinese_business_samples(
+    client,
+    workspace_id: str,
+    product_content: str,
+    direction_content: str,
+    expected_product_name: str,
+    expected_direction_fragment: str,
+) -> None:
+    _create_workspace(client, workspace_id)
+
+    unclear = _run_chat_turn(
+        client,
+        workspace_id=workspace_id,
+        message_id="msg_user_unclear_001",
+        message_type="product_profile_update",
+        content="帮我找客户",
+        base_workspace_version=0,
+    )
+    assert unclear["assistant_message"]["message_type"] == "clarifying_question"
+    assert unclear["patch_draft"] is None
+    assert unclear["draft_review"] is None
+
+    product_turn = _run_chat_turn(
+        client,
+        workspace_id=workspace_id,
+        message_id="msg_user_product_001",
+        message_type="product_profile_update",
+        content=product_content,
+        base_workspace_version=0,
+    )
+    product_payload = product_turn["patch_draft"]["operations"][0]["payload"]
+    assert product_payload["product_name"] == expected_product_name
+    assert product_turn["agent_run"]["output_refs"] == [
+        "WorkspacePatchDraftReview:draft_review_sales_turn_product_profile_update_v1",
+        "ConversationMessage:msg_assistant_run_sales_turn_product_001",
+    ]
+    _accept_and_apply(client, workspace_id, "draft_review_sales_turn_product_profile_update_v1", expected_version=1)
+
+    direction_turn = _run_chat_turn(
+        client,
+        workspace_id=workspace_id,
+        message_id="msg_user_direction_001",
+        message_type="lead_direction_update",
+        content=direction_content,
+        base_workspace_version=1,
+    )
+    direction_payload = direction_turn["patch_draft"]["operations"][0]["payload"]
+    assert expected_direction_fragment in direction_payload["priority_industries"]
+    assert "msg_user_direction_001" in direction_payload["change_reason"]
+    applied = _accept_and_apply(
+        client,
+        workspace_id,
+        "draft_review_sales_turn_lead_direction_update_v2",
+        expected_version=2,
+    )
+
+    workspace = applied["workspace"]
+    assert workspace["workspace_version"] == 2
+    assert workspace["current_product_profile_revision_id"] == "ppr_chat_v1"
+    assert workspace["current_lead_direction_version_id"] == "dir_chat_v2"
+    assert workspace["commits"][-2]["changed_object_refs"] == ["ProductProfileRevision:ppr_chat_v1"]
+    assert "LeadDirectionVersion:dir_chat_v2" in workspace["commits"][-1]["changed_object_refs"]
+
+    explanation = _run_chat_turn(
+        client,
+        workspace_id=workspace_id,
+        message_id="msg_user_explain_001",
+        message_type="workspace_question",
+        content="为什么建议这个方向？",
+        base_workspace_version=2,
+    )
+    assert explanation["assistant_message"]["message_type"] == "workspace_question"
+    assert "ProductProfileRevision:ppr_chat_v1" in explanation["assistant_message"]["linked_object_refs"]
+    assert "LeadDirectionVersion:dir_chat_v2" in explanation["assistant_message"]["linked_object_refs"]
+    assert explanation["patch_draft"] is None
+    assert explanation["draft_review"] is None
+
+
+def test_chat_first_workspace_question_explains_current_structured_objects_without_mutation(client) -> None:
+    _create_workspace(client, "ws_demo")
+    _run_chat_turn(
+        client,
+        workspace_id="ws_demo",
+        message_id="msg_user_product_001",
+        message_type="product_profile_update",
+        content="FactoryOps AI 帮助制造企业协同排产、库存和 ERP。",
+        base_workspace_version=0,
+    )
+    _accept_and_apply(client, "ws_demo", "draft_review_sales_turn_product_profile_update_v1", expected_version=1)
+    _run_chat_turn(
+        client,
+        workspace_id="ws_demo",
+        message_id="msg_user_direction_001",
+        message_type="lead_direction_update",
+        content="先找华东地区 100 到 500 人、有 ERP 但排产库存协同弱的制造企业。",
+        base_workspace_version=1,
+    )
+    _accept_and_apply(client, "ws_demo", "draft_review_sales_turn_lead_direction_update_v2", expected_version=2)
+
+    payload = _run_chat_turn(
+        client,
+        workspace_id="ws_demo",
+        message_id="msg_user_explain_001",
+        message_type="workspace_question",
+        content="为什么建议这个方向？",
+        base_workspace_version=2,
+    )
+
+    assert payload["patch_draft"] is None
+    assert payload["draft_review"] is None
+    assistant = payload["assistant_message"]
+    assert assistant["message_type"] == "workspace_question"
+    assert "产品理解" in assistant["content"]
+    assert "当前获客方向" in assistant["content"]
+    assert "workspace_version=2" in assistant["content"]
+    assert assistant["linked_object_refs"] == [
+        "ProductProfileRevision:ppr_chat_v1",
+        "LeadDirectionVersion:dir_chat_v2",
+    ]
+
+    workspace_response = client.get("/sales-workspaces/ws_demo")
+    assert workspace_response.status_code == 200
+    assert workspace_response.json()["workspace"]["workspace_version"] == 2
+
+
 def test_chat_first_out_of_scope_v2_2_does_not_create_draft(client) -> None:
     _create_workspace(client, "ws_demo")
     _post_message(
@@ -138,6 +414,43 @@ def test_chat_first_out_of_scope_v2_2_does_not_create_draft(client) -> None:
     workspace_response = client.get("/sales-workspaces/ws_demo")
     assert workspace_response.status_code == 200
     assert workspace_response.json()["workspace"]["workspace_version"] == 0
+
+
+def test_chat_first_insufficient_input_returns_clarifying_questions_without_mutation(client) -> None:
+    _create_workspace(client, "ws_demo")
+    _post_message(
+        client,
+        workspace_id="ws_demo",
+        message_id="msg_user_unclear_001",
+        message_type="product_profile_update",
+        content="帮我找客户",
+    )
+
+    response = client.post(
+        "/sales-workspaces/ws_demo/agent-runs/sales-agent-turns",
+        json={"message_id": "msg_user_unclear_001", "base_workspace_version": 0},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["patch_draft"] is None
+    assert payload["draft_review"] is None
+    assert payload["assistant_message"]["message_type"] == "clarifying_question"
+    questions = [
+        line
+        for line in payload["assistant_message"]["content"].splitlines()
+        if line[:2] in {"1.", "2.", "3.", "4.", "5."}
+    ]
+    assert len(questions) == 5
+    assert "目标客户" in payload["assistant_message"]["content"]
+    assert "哪些行业" in payload["assistant_message"]["content"]
+    assert payload["agent_run"]["output_refs"] == ["ConversationMessage:msg_assistant_run_sales_turn_unclear_001"]
+
+    workspace_response = client.get("/sales-workspaces/ws_demo")
+    assert workspace_response.status_code == 200
+    workspace = workspace_response.json()["workspace"]
+    assert workspace["workspace_version"] == 0
+    assert workspace["product_profile_revisions"] == {}
 
 
 def test_chat_first_version_conflict_records_failed_run_without_mutation(client) -> None:

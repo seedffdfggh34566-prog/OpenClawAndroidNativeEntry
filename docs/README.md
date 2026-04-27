@@ -21,7 +21,7 @@
 
 当前正式主线为：
 
-> **AI 销售助手 App：V1 已冻结为 demo-ready baseline，V2.1 workspace/kernel engineering baseline completed；V2.1 conversational product experience remains incomplete。**
+> **AI 销售助手 App：V1 已冻结为 demo-ready baseline，V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed；V2.1 conversational product experience remains incomplete。**
 
 当前 V2 的核心架构方向是：
 
@@ -328,7 +328,7 @@ docs/
 - V2.1 engineering baseline closeout 已完成。
 - V2.1 chat-first Runtime design 已完成。
 - V2.1 chat-first deterministic demo flow 已完成 contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook 和 closeout，但不等于 PRD-level conversational product experience 完成。
-- 当前正式任务为 `docs/delivery/tasks/task_v2_1_clarifying_questions_backend_prototype.md`；这是 V2.1 conversational completion 的第一个 backend-first deterministic implementation task。
+- 当前没有自动排定任务；V2.1 conversational backend acceptance 已完成，下一步需由规划层决定是否开放 Android conversation polish / device acceptance。
 - V2 MVP persistence baseline 采用 Postgres / Alembic。
 - 当前不开放 Android 或 Runtime / LangGraph implementation。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
@@ -415,4 +415,4 @@ V2.2 planned / blocked task placeholders：
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2.1 workspace/kernel engineering baseline completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain 和 Draft Review audit persistence 已完成；V2.1 conversational product experience remains incomplete，当前先做 clarifying questions backend prototype，不直接写 V2.2 LangGraph / LLM / search/contact 或 Android 扩展。**
+> **AI 销售助手 V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain、Draft Review audit persistence 和 5-sample backend conversational acceptance 已完成；V2.1 conversational product experience remains incomplete，不直接写 V2.2 LangGraph / LLM / search/contact 或 Android 扩展。**

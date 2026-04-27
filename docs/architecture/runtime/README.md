@@ -11,6 +11,7 @@
 当前优先阅读：
 
 - `v2-1-chat-first-runtime-design.md`
+- `v2-1-chat-first-trace-persistence-schema.md`
 - `langgraph-runtime-architecture.md`
 
 当前 runtime 层的关键原则是：

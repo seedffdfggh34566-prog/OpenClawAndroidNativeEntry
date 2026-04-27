@@ -1,6 +1,6 @@
 # Task: V2 Sales Workspace Draft Review Persistence Schema
 
-状态：planned / blocked
+状态：done / folded into persistence schema design
 
 更新时间：2026-04-27
 
@@ -8,9 +8,22 @@
 
 为 `WorkspacePatchDraftReview` 设计正式 persistence schema。
 
-## Blocker
+## Result
 
-必须等待 Postgres dev environment baseline 与 Sales Workspace persistence schema design 完成后才能执行。
+已并入 `task_v2_sales_workspace_persistence_schema_design.md` 完成。
+
+正式 schema design 见：
+
+- `docs/architecture/workspace/sales-workspace-persistence-schema.md`
+
+Draft Review 首版 schema 由以下表承载：
+
+- `sales_workspace_draft_reviews`
+- `sales_workspace_draft_review_events`
+
+后续实现任务改为：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`
 
 ## Scope Placeholder
 

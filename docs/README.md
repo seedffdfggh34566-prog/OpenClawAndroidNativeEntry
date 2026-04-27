@@ -27,7 +27,7 @@
 
 > **Sales Workspace Kernel：结构化 workspace 状态机 + WorkspacePatch 写回门禁 + 候选排序 + Markdown projection + ContextPack Compiler。**
 
-Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design 和 Postgres dev environment baseline 已完成。当前不是 V1 继续开发阶段，也不是 Sales Workspace schema migration、扩展 Android write path 或正式 Runtime / LangGraph 集成阶段。下一项唯一开放任务是 Sales Workspace persistence schema design。
+Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline 和 persistence schema design 已完成。当前不是 V1 继续开发阶段，也不是 Sales Workspace schema migration、扩展 Android write path 或正式 Runtime / LangGraph 集成阶段。当前没有自动排定任务。
 
 当前 V2 prototype demo runbook 已补齐：
 
@@ -104,6 +104,7 @@ V1 细节可继续参考：
 - `docs/architecture/workspace/workspace-object-model.md`
 - `docs/architecture/workspace/sales-workspace-kernel.md`
 - `docs/architecture/workspace/sales-workspace-persistence-baseline.md`
+- `docs/architecture/workspace/sales-workspace-persistence-schema.md`
 - `docs/architecture/workspace/workspace-kernel-v0-scope.md`
 - `docs/architecture/workspace/markdown-projection.md`
 - `docs/architecture/workspace/context-pack-compiler.md`
@@ -117,7 +118,6 @@ V1 细节可继续参考：
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_persistence_decision.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_api_contract_v0.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_post_kernel_v0_planning.md`
-- `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_json_store_prototype.md`
 - `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_runtime_patchdraft_prototype.md`
 - `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`
@@ -144,6 +144,8 @@ V1 细节可继续参考：
 - `docs/how-to/operate/postgres-dev-environment.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_postgres_dev_environment_baseline.md`
 - `docs/delivery/tasks/task_v2_sales_workspace_persistence_schema_design.md`
+- `docs/architecture/workspace/sales-workspace-persistence-schema.md`
+- `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_persistence_schema_design.md`
 
 ### 5.4 V1 baseline 与参考
 
@@ -244,9 +246,9 @@ docs/
 
 当前正式执行入口为：
 
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_schema_design.md`
+- `docs/delivery/tasks/_active.md`
 
-该任务只做 Sales Workspace persistence schema design，不写 SQLAlchemy model 或 Alembic migration。
+当前没有自动排定任务；后续 migration / repository / API store 工作必须等待新任务明确开放。
 
 当前 Draft review contract 为：
 
@@ -274,6 +276,11 @@ docs/
 - `docs/how-to/operate/postgres-dev-environment.md`
 - `docs/delivery/tasks/task_v2_postgres_dev_environment_baseline.md`
 
+当前 Sales Workspace persistence schema design 为：
+
+- `docs/architecture/workspace/sales-workspace-persistence-schema.md`
+- `docs/delivery/tasks/task_v2_sales_workspace_persistence_schema_design.md`
+
 当前 demo 复现入口为：
 
 - `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`
@@ -286,7 +293,7 @@ docs/
 
 当前结论：
 
-- 不直接进入 SQLite / Alembic migration。
+- 不直接进入 Postgres / Alembic migration。
 - no-DB FastAPI prototype v0 已完成。
 - Android read-only workspace demo 已完成。
 - JSON file store prototype 已完成。
@@ -301,7 +308,8 @@ docs/
 - Post Review-ID Flow persistence decision refresh 已完成。
 - Sales Workspace persistence baseline design 已完成。
 - Postgres dev environment baseline 已完成。
-- 下一项唯一开放任务是 Sales Workspace persistence schema design。
+- Sales Workspace persistence schema design 已完成。
+- 当前没有自动排定任务。
 - V2 MVP persistence baseline 采用 Postgres / Alembic。
 - 不开放 persistence-backed backend API implementation。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
@@ -329,6 +337,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 - Post Review-ID Flow persistence decision refresh
 - Sales Workspace persistence baseline design
 - Postgres dev environment baseline
+- Sales Workspace persistence schema design
 - pytest
 
 当前 V2.1 后续顺序冻结为：
@@ -349,6 +358,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 14. Post Review-ID Flow persistence decision refresh。
 15. Sales Workspace persistence baseline design。
 16. Postgres dev environment baseline。
+17. Sales Workspace persistence schema design。
 
 当前仍不应自动实现：
 
@@ -361,9 +371,9 @@ Sales Workspace Kernel backend-only v0 已完成：
 - ContactPoint
 - CRM / 自动触达
 
-当前唯一开放任务：
+当前自动排定任务：
 
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_schema_design.md`
+- 暂无。
 
 ---
 
@@ -371,4 +381,4 @@ Sales Workspace Kernel backend-only v0 已完成：
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2 workspace-native sales agent：Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、JSON file store prototype、Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design 与 Postgres dev environment baseline 已完成；下一步只开放 Sales Workspace persistence schema design，不直接写 Alembic migration、LangGraph / LLM 或 Android 扩展。**
+> **AI 销售助手 V2 workspace-native sales agent：Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、JSON file store prototype、Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline 与 persistence schema design 已完成；当前没有自动排定任务，不直接写 Alembic migration、LangGraph / LLM 或 Android 扩展。**

@@ -39,7 +39,7 @@
 
 > **V2.1 workspace/kernel engineering baseline completed；V2.1 conversational product experience remains incomplete 阶段**
 
-当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook、post-demo next phase decision、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline、persistence schema design、persistence migration v0、repository layer v0、API Postgres store v0、Draft Review persistence v0 和 V2.1 engineering baseline closeout。V2.1 chat-first Runtime design、contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook 和 product experience closeout 只证明 deterministic demo flow；PRD-level conversational product experience 仍需 gap review。不自动进入扩展 Android write path、正式 LangGraph、真实 LLM 或搜索实现。
+当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook、post-demo next phase decision、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline、persistence schema design、persistence migration v0、repository layer v0、API Postgres store v0、Draft Review persistence v0 和 V2.1 engineering baseline closeout。V2.1 chat-first Runtime design、contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook 和 product experience closeout 只证明 deterministic demo flow；PRD Acceptance Traceability 已完成，当前转入 clarifying questions backend prototype。不自动进入扩展 Android write path、正式 LangGraph、真实 LLM 或搜索实现。
 
 ---
 
@@ -49,7 +49,7 @@
 
 当前入口：
 
-- Current task：`task_v2_1_prd_acceptance_gap_review.md`
+- Current task：`task_v2_1_clarifying_questions_backend_prototype.md`
 - Next queued task：暂无 implementation task 自动开放
 
 Sales Workspace Kernel backend-only v0 已完成：
@@ -119,7 +119,16 @@ Sales Workspace Kernel backend-only v0 已完成：
 | `task_v2_1_android_chat_first_workspace_ui_prototype.md` | Android chat-first workspace UI prototype | `done` |
 | `task_v2_1_product_experience_demo_runbook.md` | 固化 V2.1 product experience demo runbook | `done` |
 | `task_v2_1_product_experience_closeout.md` | 收口 deterministic chat-first demo flow；不代表 PRD-level V2.1 完成 | `done / corrected` |
-| `task_v2_1_prd_acceptance_gap_review.md` | 将 PRD 成功标准映射到实现、测试、真机证据和缺口 | `planned / current` |
+| `task_v2_1_prd_acceptance_gap_review.md` | 将 PRD 成功标准映射到实现、测试、真机证据和缺口 | `done` |
+| `task_v2_1_conversational_completion_scope.md` | 定义 V2.1 conversational completion 最小范围 | `done` |
+| `task_v2_1_conversation_acceptance_examples.md` | 定义 5 个中文业务验收样例 | `done` |
+| `task_v2_1_conversational_implementation_queue.md` | 创建 V2.1 conversational implementation queue | `done` |
+| `task_v2_1_clarifying_questions_backend_prototype.md` | 实现主动追问 3-5 个问题的 backend prototype | `planned / current` |
+| `task_v2_1_workspace_explanation_backend_prototype.md` | 实现基于 workspace objects 的解释型回答 | `planned / blocked` |
+| `task_v2_1_product_profile_extraction_runtime.md` | 扩展产品理解 deterministic extraction | `planned / blocked` |
+| `task_v2_1_lead_direction_adjustment_runtime.md` | 扩展获客方向调整 deterministic runtime | `planned / blocked` |
+| `task_v2_1_conversation_acceptance_e2e.md` | 用 5 个中文样例验收 V2.1 conversational experience | `planned / blocked` |
+| `task_v2_1_android_conversation_polish.md` | Android 最小 conversation polish | `planned / blocked` |
 | `task_v2_2_runtime_langgraph_design.md` | 设计 V2.2 Runtime / LangGraph WorkspacePatchDraft flow | `planned / blocked until explicitly opened` |
 | `task_v2_2_android_review_history_planning.md` | 规划 Android Draft Review history / detail view | `planned / blocked until explicitly opened` |
 | `task_v2_2_search_evidence_boundary_design.md` | 设计搜索证据与 ContactPoint 边界 | `planned / blocked until explicitly opened` |
@@ -204,6 +213,6 @@ Sales Workspace Kernel backend-only v0 已完成：
 - Sales Workspace API Postgres store v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`。
 - Sales Workspace Draft Review persistence v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`。
 - V2.1 engineering baseline closeout 已完成：`docs/delivery/tasks/task_v2_1_completion_closeout.md`。
-- 当前自动排定任务：暂无。
-- 推荐下一步：执行 `task_v2_1_prd_acceptance_gap_review.md`，先完成 PRD Acceptance Traceability，再决定是否开放后续 V2.1 conversational completion task 或 V2.2 planning。
+- 当前自动排定任务：`task_v2_1_clarifying_questions_backend_prototype.md`。
+- 推荐下一步：执行 `task_v2_1_clarifying_questions_backend_prototype.md`。V2.2 planning 与 implementation 继续 blocked。
 - 后续 Android 体验增强、正式 Runtime / LangGraph implementation、V2.2 evidence/search/contact 或 DB hardening 必须等待对应 task 解锁后再推进。

@@ -39,9 +39,10 @@ V2 的核心产品形态为：
 
 1. V2.1 workspace/kernel engineering baseline closeout 已完成。
 2. V2.1 deterministic chat-first demo flow closeout 已完成，但不等于完整 V2.1 conversational product experience。
-3. 当前先执行 `task_v2_1_prd_acceptance_gap_review.md`，用 PRD Acceptance Traceability 映射现有实现、测试、真机证据和缺口。
-4. V2.2 implementation 前，不直接接真实 LLM、联网搜索、ContactPoint 或 Android 扩展。
-5. 后续若进入 V2.2，应先做 evidence/search/contact 的 docs-level boundary planning。
+3. PRD Acceptance Traceability、V2.1 conversational completion scope、5 个中文验收样例和 implementation queue 已补齐。
+4. 当前先执行 `task_v2_1_clarifying_questions_backend_prototype.md`，补主动追问 3 到 5 个关键问题。
+5. V2.2 implementation 前，不直接接真实 LLM、联网搜索、ContactPoint 或 Android 扩展。
+6. 后续若进入 V2.2，应先做 evidence/search/contact 的 docs-level boundary planning。
 
 ---
 
@@ -76,7 +77,7 @@ V2.1 engineering baseline 退出条件：
 - `_active.md` 明确 post-v0 task queue：API contract -> persistence decision -> backend API -> Android read-only -> Runtime integration。
 - Postgres / Alembic persistence chain、Draft Review audit persistence 和 Android Draft Review ID flow 已进入 main。
 
-上述工程基线已完成。V2.1 conversational product experience 退出条件仍需 PRD acceptance gap review 重新判定：
+上述工程基线已完成。V2.1 conversational product experience 退出条件已由 PRD acceptance gap review 重新判定，当前下一步是 clarifying questions backend prototype：
 
 - chat-first 输入如何进入 Runtime 已定义。（done）
 - Product Sales Agent 如何基于 ContextPack 生成 `WorkspacePatchDraft` 已定义。（done）
@@ -87,6 +88,10 @@ V2.1 engineering baseline 退出条件：
 - Android 已能承接 chat-first 输入与审阅闭环。（done）
 - V2.1 product experience demo runbook 已补齐。（done，deterministic demo flow）
 - V2.1 product experience closeout 已完成。（done / corrected，不代表 PRD-level completion）
-- PRD Acceptance Traceability 已完成。（planned / current）
+- PRD Acceptance Traceability 已完成。（done）
+- V2.1 conversational completion scope 已完成。（done）
+- 5 个中文业务验收样例已完成。（done）
+- V2.1 conversational implementation queue 已完成。（done）
+- 主动追问 3 到 5 个关键问题 backend prototype。（planned / current）
 
 V2.2 可以进入 docs-level planning；implementation 前仍不应直接接真实 LLM、search provider、Android 扩展或 CRM/contact。

@@ -19,9 +19,9 @@ WorkspacePatch、候选排序、Markdown projection 和 ContextPack Compiler。
 API contract 可调用性。该 prototype 使用进程内 `InMemoryWorkspaceStore`，不是正式
 persistence baseline。
 
-当前 V2 persistence baseline design 已冻结为 Postgres / Alembic，并提供本地
+当前 V2.1 persistence baseline 已冻结为 Postgres / Alembic，并提供本地
 Postgres dev environment。Sales Workspace persistence migration、repository layer、
-显式 Postgres-backed API store 和 Draft Review persistence 已完成。当前仍不包含 Android 新 UI、
+显式 Postgres-backed API store 和 Draft Review persistence 已完成并进入 main。当前仍不包含 Android 新 UI、
 LangGraph、真实 LLM、联网搜索或 CRM pipeline。
 
 当前常用命令：

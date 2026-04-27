@@ -1,6 +1,6 @@
 # Task: V2 Android Review History View
 
-状态：planned / blocked
+状态：planned / blocked by V2.1 product experience
 
 更新时间：2026-04-27
 
@@ -10,7 +10,7 @@
 
 ## Blocker
 
-必须等待 Draft Review persistence schema 与 backend read API 明确后才能执行。
+必须等待 V2.1 product experience 完成，并等待 Draft Review persistence schema 与 backend read API 明确后才能执行。
 
 ## Scope Placeholder
 

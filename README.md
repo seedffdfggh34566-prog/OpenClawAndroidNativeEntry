@@ -7,6 +7,7 @@
 1. [AGENTS.md](AGENTS.md)
 2. [docs/README.md](docs/README.md)
 3. [docs/delivery/tasks/_active.md](docs/delivery/tasks/_active.md)
+4. [docs/how-to/operate/sales-workspace-prototype-demo-runbook.md](docs/how-to/operate/sales-workspace-prototype-demo-runbook.md)
 
 ---
 
@@ -21,7 +22,7 @@
 
 当前正式主线为：
 
-> **Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype、Android read-only demo、JSON file store prototype、Runtime PatchDraft prototype、PatchDraft review gate prototype 与 Android PatchDraft review UI prototype 已完成。**
+> **Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype、Android read-only demo、JSON file store prototype、Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype 与 prototype demo runbook 已完成。**
 
 V1 已作为 demo-ready release candidate / learning milestone 收口，不再是默认开发方向。
 
@@ -51,6 +52,7 @@ Sales Workspace Kernel prototype 已完成：
 - deterministic Runtime PatchDraft prototype
 - PatchDraft review gate prototype
 - Android PatchDraft review UI prototype
+- V2 prototype demo runbook
 - pytest coverage
 
 当前不应自动实现：
@@ -152,6 +154,12 @@ Sales Workspace API / Runtime prototype 固定验证：
 
 ```bash
 backend/.venv/bin/python -m pytest backend/tests/sales_workspace backend/tests/test_sales_workspace_api.py -q
+```
+
+V2 Sales Workspace prototype demo：
+
+```bash
+docs/how-to/operate/sales-workspace-prototype-demo-runbook.md
 ```
 
 ---

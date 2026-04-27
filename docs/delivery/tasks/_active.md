@@ -39,8 +39,9 @@
 - `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`（done）
 - `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_prototype_demo_runbook.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成。
 
 ---
 
@@ -57,6 +58,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 7. Runtime PatchDraft prototype。
 8. PatchDraft review gate prototype。
 9. Android PatchDraft review UI prototype。
+10. Prototype demo runbook。
 
 当前结论：
 
@@ -69,6 +71,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - 当前已存在 deterministic Runtime PatchDraft prototype：`task_v2_sales_workspace_runtime_patchdraft_prototype.md`。
 - 当前已存在 PatchDraft review gate prototype：`task_v2_sales_workspace_patchdraft_review_gate_prototype.md`。
 - 当前已存在 Android PatchDraft review UI prototype：`task_v2_android_patchdraft_review_ui_prototype.md`。
+- 当前已存在 V2 prototype demo runbook：`docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`。
 - backend API 的 DB-backed / production persistence 版本继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -168,6 +171,11 @@ Android PatchDraft review UI prototype 已完成：
 
 - `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`
 
+V2 Sales Workspace prototype demo runbook 已完成：
+
+- `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`
+- `docs/delivery/tasks/task_v2_sales_workspace_prototype_demo_runbook.md`
+
 ---
 
 ## 6. 当前执行入口
@@ -192,7 +200,8 @@ Android PatchDraft review UI prototype 已完成：
 16. `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
 17. `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`
 18. `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`
-19. 本文件
+19. `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`
+20. 本文件
 
 ---
 

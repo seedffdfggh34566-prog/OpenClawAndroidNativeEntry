@@ -123,6 +123,60 @@ class SalesWorkspaceBackendClient(
             parser = ::parseSalesWorkspaceDraftReviewApplyResponse,
         )
 
+    suspend fun runChatFirstSalesAgentTurn(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+        baseWorkspaceVersion: Int,
+        messageType: String,
+        content: String,
+    ): BackendReadResult<SalesWorkspaceChatTurnResponseDto> = withContext(Dispatchers.IO) {
+        val message = when (
+            val result = createConversationMessage(
+                workspaceId = workspaceId,
+                messageType = messageType,
+                content = content,
+            )
+        ) {
+            is BackendReadResult.Failure -> return@withContext result
+            is BackendReadResult.Success -> result.value
+        }
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/agent-runs/sales-agent-turns",
+            body = JSONObject()
+                .put("message_id", message.id)
+                .put("base_workspace_version", baseWorkspaceVersion)
+                .put("instruction", "handle Android chat-first workspace input")
+                .toString(),
+            parser = ::parseSalesWorkspaceChatTurnResponse,
+        )
+    }
+
+    private suspend fun createConversationMessage(
+        workspaceId: String,
+        messageType: String,
+        content: String,
+    ): BackendReadResult<SalesWorkspaceConversationMessageDto> =
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/messages",
+            body = JSONObject()
+                .put("message_type", messageType)
+                .put("content", content)
+                .toString(),
+            parser = { rawJson ->
+                JSONObject(rawJson)
+                    .getJSONObject("message")
+                    .let { messageJson ->
+                        SalesWorkspaceConversationMessageDto(
+                            id = messageJson.getString("id"),
+                            role = messageJson.getString("role"),
+                            messageType = messageJson.getString("message_type"),
+                            content = messageJson.getString("content"),
+                        )
+                    }
+            },
+        )
+
     private suspend fun createDraftReview(
         workspaceId: String,
         patchDraft: SalesWorkspacePatchDraftDto,

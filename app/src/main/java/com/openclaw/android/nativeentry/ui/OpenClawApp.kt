@@ -38,6 +38,7 @@ import com.openclaw.android.nativeentry.data.backend.ProductProfileCreateRequest
 import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichRequestDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceBackendClient
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceChatTurnResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDemoWorkspaceId
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewApplyResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
@@ -96,6 +97,11 @@ fun OpenClawApp() {
     var patchDraftApplyState by remember {
         mutableStateOf<V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>>(V1SectionState.Idle)
     }
+    var chatFirstTurnState by remember {
+        mutableStateOf<V1SectionState<SalesWorkspaceChatTurnResponseDto>>(V1SectionState.Idle)
+    }
+    var workspaceChatInput by remember { mutableStateOf("") }
+    var workspaceChatMessageType by remember { mutableStateOf("product_profile_update") }
     var productName by remember { mutableStateOf("") }
     var productDescription by remember { mutableStateOf("") }
     var sourceNotes by remember { mutableStateOf("") }
@@ -110,6 +116,7 @@ fun OpenClawApp() {
     var workspaceLoadJob by remember { mutableStateOf<Job?>(null) }
     var draftReviewJob by remember { mutableStateOf<Job?>(null) }
     var patchDraftApplyJob by remember { mutableStateOf<Job?>(null) }
+    var chatFirstTurnJob by remember { mutableStateOf<Job?>(null) }
     var productProfileLoadJob by remember { mutableStateOf<Job?>(null) }
     var productProfileCreateJob by remember { mutableStateOf<Job?>(null) }
     var productProfileEnrichJob by remember { mutableStateOf<Job?>(null) }
@@ -218,6 +225,53 @@ fun OpenClawApp() {
             ) {
                 is BackendReadResult.Failure -> V1SectionState.Failed(result.error)
                 is BackendReadResult.Success -> V1SectionState.Loaded(result.value)
+            }
+        }
+    }
+
+    fun submitChatFirstWorkspaceTurn() {
+        val loadedWorkspace = (workspaceState as? V1SectionState.Loaded<SalesWorkspaceReadOnlySnapshot>)
+            ?.value
+            ?.workspace
+        if (loadedWorkspace == null) {
+            chatFirstTurnState = V1SectionState.Failed(
+                BackendReadError(
+                    title = "无法提交 chat-first 输入",
+                    detail = "请先刷新并加载 Sales Workspace。",
+                ),
+            )
+            return
+        }
+        val content = workspaceChatInput.trim()
+        if (content.isBlank()) {
+            chatFirstTurnState = V1SectionState.Failed(
+                BackendReadError(
+                    title = "无法提交 chat-first 输入",
+                    detail = "请输入产品信息或获客方向。",
+                ),
+            )
+            return
+        }
+
+        chatFirstTurnJob?.cancel()
+        patchDraftApplyState = V1SectionState.Idle
+        draftReviewState = V1SectionState.Idle
+        chatFirstTurnState = V1SectionState.Loading
+        chatFirstTurnJob = scope.launch {
+            when (
+                val result = workspaceClient.runChatFirstSalesAgentTurn(
+                    workspaceId = loadedWorkspace.id,
+                    baseWorkspaceVersion = loadedWorkspace.workspaceVersion,
+                    messageType = workspaceChatMessageType,
+                    content = content,
+                )
+            ) {
+                is BackendReadResult.Failure -> chatFirstTurnState = V1SectionState.Failed(result.error)
+                is BackendReadResult.Success -> {
+                    chatFirstTurnState = V1SectionState.Loaded(result.value)
+                    draftReviewState = result.value.draftReview?.let { V1SectionState.Loaded(it) } ?: V1SectionState.Empty
+                    workspaceChatInput = ""
+                }
             }
         }
     }
@@ -1249,6 +1303,7 @@ fun OpenClawApp() {
             workspaceState = workspaceState,
             draftReviewState = draftReviewState,
             patchDraftApplyState = patchDraftApplyState,
+            chatFirstTurnState = chatFirstTurnState,
             placeholderState = placeholderState,
             gatewaySnapshot = gatewaySnapshot,
             launchSnapshot = launchSnapshot,
@@ -1257,6 +1312,11 @@ fun OpenClawApp() {
             onRefreshBackend = ::refreshV1History,
             onRefreshWorkspace = ::refreshSalesWorkspace,
             onCreateDraftReview = ::createDraftReviewFromRuntimePreview,
+            workspaceChatInput = workspaceChatInput,
+            workspaceChatMessageType = workspaceChatMessageType,
+            onWorkspaceChatInputChange = { workspaceChatInput = it },
+            onWorkspaceChatMessageTypeChange = { workspaceChatMessageType = it },
+            onSubmitWorkspaceChatTurn = ::submitChatFirstWorkspaceTurn,
             onAcceptDraftReview = ::acceptDraftReview,
             onRejectDraftReview = ::rejectDraftReview,
             onApplyDraftReview = ::applyReviewedDraftReview,

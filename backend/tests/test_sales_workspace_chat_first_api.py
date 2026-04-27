@@ -77,6 +77,68 @@ def test_chat_first_product_turn_creates_review_without_workspace_mutation(clien
     ]["output_refs"]
 
 
+@pytest.mark.parametrize(
+    ("workspace_id", "content", "expected_name", "expected_pain"),
+    [
+        (
+            "ws_maintenance",
+            "我们做工业设备维保软件，帮工厂减少停机时间，想找第一批客户。",
+            "工业设备维保软件",
+            "停机损失",
+        ),
+        (
+            "ws_training",
+            "我们给本地企业做销售和管理培训，主要是线下课，想知道先找什么客户。",
+            "本地企业培训服务",
+            "销售转化低",
+        ),
+        (
+            "ws_tax",
+            "我们做中小企业财税 SaaS，帮老板看现金流、发票和税务风险。",
+            "中小企业财税 SaaS",
+            "现金流不透明",
+        ),
+        (
+            "ws_park",
+            "我们帮产业园区做招商运营，想找有扩租和选址需求的企业。",
+            "产业园区招商运营服务",
+            "选址成本高",
+        ),
+        (
+            "ws_outsourcing",
+            "我们给制造企业提供外包生产和装配服务，适合小批量、多品种订单。",
+            "制造业外包生产和装配服务",
+            "自建产能成本高",
+        ),
+    ],
+)
+def test_chat_first_product_extraction_covers_five_chinese_acceptance_samples(
+    client,
+    workspace_id: str,
+    content: str,
+    expected_name: str,
+    expected_pain: str,
+) -> None:
+    _create_workspace(client, workspace_id)
+
+    payload = _run_chat_turn(
+        client,
+        workspace_id=workspace_id,
+        message_id="msg_user_product_001",
+        message_type="product_profile_update",
+        content=content,
+        base_workspace_version=0,
+    )
+
+    operation = payload["patch_draft"]["operations"][0]
+    assert operation["type"] == "upsert_product_profile_revision"
+    product_payload = operation["payload"]
+    assert product_payload["product_name"] == expected_name
+    assert expected_pain in product_payload["pain_points"]
+    assert f"derived from message msg_user_product_001" in product_payload["constraints"]
+    assert payload["draft_review"]["status"] == "previewed"
+
+
 def test_chat_first_review_apply_updates_product_and_direction(client) -> None:
     _create_workspace(client, "ws_demo")
     _run_chat_turn(

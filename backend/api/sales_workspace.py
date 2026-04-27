@@ -540,6 +540,98 @@ def _assistant_message_for_workspace_question(
     )
 
 
+def _product_profile_payload_for_message(
+    *,
+    message: ConversationMessage,
+    revision_id: str,
+    product_version: int,
+) -> dict[str, Any]:
+    content = message.content
+    if _contains_any(content, ["维保", "停机", "设备台账", "预测性维护"]):
+        payload = {
+            "product_name": "工业设备维保软件",
+            "one_liner": "帮助设备密集型工厂降低停机时间、提升维保计划性的工业设备维保软件。",
+            "target_customers": ["制造业工厂设备部", "维保服务商", "设备厂商售后团队"],
+            "target_industries": ["制造业", "设备密集型工厂"],
+            "pain_points": ["停机损失", "维修响应慢", "设备台账分散"],
+            "value_props": ["降低停机时间", "提高维保计划性", "集中设备维保信息"],
+            "constraints": ["需要明确设备类型", "需要确认服务地区"],
+        }
+    elif _contains_any(content, ["培训", "线下课", "销售和管理"]):
+        payload = {
+            "product_name": "本地企业培训服务",
+            "one_liner": "面向本地企业的线下销售和管理培训服务。",
+            "target_customers": ["本地中小企业", "HR", "销售负责人", "企业老板"],
+            "target_industries": ["本地服务业", "销售团队驱动行业"],
+            "pain_points": ["销售转化低", "管理能力不足", "培训体系不稳定"],
+            "value_props": ["提升销售能力", "提升基层管理能力", "提供线下交付支持"],
+            "constraints": ["线下交付半径明显", "需要确认城市和课程类型"],
+        }
+    elif _contains_any(content, ["财税", "现金流", "发票", "税务"]):
+        payload = {
+            "product_name": "中小企业财税 SaaS",
+            "one_liner": "帮助中小企业老板和财务负责人查看现金流、发票和税务风险的财税 SaaS。",
+            "target_customers": ["中小企业老板", "财务负责人", "代账服务商"],
+            "target_industries": ["中小企业服务", "财税数字化"],
+            "pain_points": ["现金流不透明", "发票管理分散", "税务风险难以及时发现"],
+            "value_props": ["提升现金流可见性", "集中发票管理", "提前识别税务风险"],
+            "constraints": ["需要发票或流水数据可接入", "需要确认目标客户规模"],
+        }
+    elif _contains_any(content, ["园区", "招商", "扩租", "选址"]):
+        payload = {
+            "product_name": "产业园区招商运营服务",
+            "one_liner": "帮助产业园区匹配有选址、扩租和政策需求企业的招商运营服务。",
+            "target_customers": ["有选址需求的企业", "有扩租需求的成长型企业", "园区招商团队"],
+            "target_industries": ["产业园区主导产业", "成长型企业服务"],
+            "pain_points": ["选址成本高", "政策不清", "产业配套不匹配"],
+            "value_props": ["匹配园区产业定位", "降低选址沟通成本", "提升招商线索质量"],
+            "constraints": ["需要确认园区区域", "需要明确主导产业和空间条件"],
+        }
+    elif _contains_any(content, ["外包", "装配", "小批量", "多品种"]):
+        payload = {
+            "product_name": "制造业外包生产和装配服务",
+            "one_liner": "面向小批量、多品种订单的制造业外包生产和装配服务。",
+            "target_customers": ["品牌方", "贸易商", "制造企业供应链部门"],
+            "target_industries": ["小批量多品种硬件制造", "设备制造", "消费品制造"],
+            "pain_points": ["自建产能成本高", "订单波动", "交付弹性不足"],
+            "value_props": ["提供弹性产能", "适配小批量多品种订单", "降低自建产线成本"],
+            "constraints": ["需要明确外包能力", "需要确认订单量和交付周期"],
+        }
+    elif _contains_any(content, ["FactoryOps", "排产", "库存", "ERP"]):
+        payload = {
+            "product_name": "FactoryOps AI",
+            "one_liner": "Manufacturing scheduling, inventory, and ERP coordination assistant.",
+            "target_customers": ["100-500 employee manufacturing companies"],
+            "target_industries": ["manufacturing"],
+            "pain_points": ["production plan changes do not sync with inventory and ERP context"],
+            "value_props": [
+                "reduce operational data fragmentation",
+                "help teams coordinate scheduling and inventory changes",
+            ],
+            "constraints": ["needs ERP-adjacent workflow data"],
+        }
+    else:
+        payload = {
+            "product_name": "待确认产品或服务",
+            "one_liner": f"用户消息中描述的产品或服务：{content[:80]}",
+            "target_customers": ["待确认目标客户"],
+            "target_industries": ["待确认行业"],
+            "pain_points": ["待确认痛点"],
+            "value_props": ["待确认价值主张"],
+            "constraints": ["需要继续追问产品、客户、痛点、区域和排除项"],
+        }
+
+    return {
+        "id": revision_id,
+        "version": product_version,
+        **payload,
+        "constraints": [
+            *payload["constraints"],
+            f"derived from message {message.id}",
+        ],
+    }
+
+
 def _generate_chat_first_patch_draft(
     workspace: Any,
     *,
@@ -562,25 +654,11 @@ def _generate_chat_first_patch_draft(
         operations.append(
             {
                 "type": "upsert_product_profile_revision",
-                "payload": {
-                    "id": f"ppr_chat_v{next_version}",
-                    "version": product_version,
-                    "product_name": "FactoryOps AI",
-                    "one_liner": "Manufacturing scheduling, inventory, and ERP coordination assistant.",
-                    "target_customers": ["100-500 employee manufacturing companies"],
-                    "target_industries": ["manufacturing"],
-                    "pain_points": [
-                        "production plan changes do not sync with inventory and ERP context",
-                    ],
-                    "value_props": [
-                        "reduce operational data fragmentation",
-                        "help teams coordinate scheduling and inventory changes",
-                    ],
-                    "constraints": [
-                        "needs ERP-adjacent workflow data",
-                        f"derived from message {message.id}",
-                    ],
-                },
+                "payload": _product_profile_payload_for_message(
+                    message=message,
+                    revision_id=f"ppr_chat_v{next_version}",
+                    product_version=product_version,
+                ),
             }
         )
 

@@ -9,6 +9,13 @@ from sqlalchemy.orm import sessionmaker
 
 from backend.api.database import get_session_factory
 from backend.sales_workspace.patches import apply_workspace_patch
+from backend.sales_workspace.draft_reviews import (
+    DraftReviewNotFound,
+    WorkspacePatchDraftApplyResult,
+    WorkspacePatchDraftPreview,
+    WorkspacePatchDraftReview,
+    WorkspacePatchDraftReviewDecision,
+)
 from backend.sales_workspace.schemas import SalesWorkspace, WorkspacePatch
 from backend.sales_workspace.store import WorkspaceNotFound
 
@@ -118,6 +125,46 @@ sales_workspace_patch_commits = sa.Table(
     sa.Column("changed_object_refs", sa.JSON(), nullable=False),
     sa.Column("patch_json", sa.JSON(), nullable=False),
     sa.Column("commit_json", sa.JSON(), nullable=False),
+    sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+)
+
+sales_workspace_draft_reviews = sa.Table(
+    "sales_workspace_draft_reviews",
+    metadata,
+    sa.Column("workspace_id", sa.Text(), primary_key=True),
+    sa.Column("draft_review_id", sa.Text(), primary_key=True),
+    sa.Column("draft_id", sa.Text(), nullable=False),
+    sa.Column("status", sa.Text(), nullable=False),
+    sa.Column("base_workspace_version", sa.Integer(), nullable=False),
+    sa.Column("instruction", sa.Text(), nullable=False),
+    sa.Column("created_by", sa.Text(), nullable=False),
+    sa.Column("reviewed_by", sa.Text(), nullable=True),
+    sa.Column("applied_commit_id", sa.Text(), nullable=True),
+    sa.Column("failure_code", sa.Text(), nullable=True),
+    sa.Column("failure_reason", sa.Text(), nullable=True),
+    sa.Column("draft_json", sa.JSON(), nullable=False),
+    sa.Column("preview_json", sa.JSON(), nullable=False),
+    sa.Column("review_json", sa.JSON(), nullable=True),
+    sa.Column("apply_result_json", sa.JSON(), nullable=True),
+    sa.Column("runtime_metadata", sa.JSON(), nullable=False),
+    sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
+    sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+)
+
+sales_workspace_draft_review_events = sa.Table(
+    "sales_workspace_draft_review_events",
+    metadata,
+    sa.Column("workspace_id", sa.Text(), primary_key=True),
+    sa.Column("draft_review_id", sa.Text(), nullable=False),
+    sa.Column("event_id", sa.Text(), primary_key=True),
+    sa.Column("event_type", sa.Text(), nullable=False),
+    sa.Column("from_status", sa.Text(), nullable=True),
+    sa.Column("to_status", sa.Text(), nullable=False),
+    sa.Column("actor_type", sa.Text(), nullable=False),
+    sa.Column("actor_id", sa.Text(), nullable=True),
+    sa.Column("reason", sa.Text(), nullable=False),
+    sa.Column("event_json", sa.JSON(), nullable=False),
     sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
 )
 
@@ -329,5 +376,212 @@ class PostgresWorkspaceStore:
         )
 
 
+class PostgresDraftReviewStore:
+    """SQLAlchemy-backed Draft Review store for the Postgres persistence path."""
+
+    def __init__(self, session_factory: sessionmaker[Session] | Callable[[], Session] | None = None) -> None:
+        self._session_factory = session_factory or get_session_factory()
+
+    def save(self, draft_review: WorkspacePatchDraftReview) -> None:
+        with self._session_factory() as session:
+            with session.begin():
+                previous = self._get_review_row(session, draft_review.workspace_id, draft_review.id, for_update=True)
+                self._upsert_review(session, draft_review)
+                self._append_lifecycle_events(session, draft_review, previous)
+
+    def get(self, workspace_id: str, draft_review_id: str) -> WorkspacePatchDraftReview:
+        with self._session_factory() as session:
+            row = self._get_review_row(session, workspace_id, draft_review_id)
+            if row is None:
+                raise DraftReviewNotFound(draft_review_id)
+            return self._review_from_row(row)
+
+    def _get_review_row(
+        self,
+        session: Session,
+        workspace_id: str,
+        draft_review_id: str,
+        *,
+        for_update: bool = False,
+    ) -> dict[str, Any] | None:
+        statement = sa.select(sales_workspace_draft_reviews).where(
+            sales_workspace_draft_reviews.c.workspace_id == workspace_id,
+            sales_workspace_draft_reviews.c.draft_review_id == draft_review_id,
+        )
+        if for_update:
+            statement = statement.with_for_update()
+        row = session.execute(statement).mappings().first()
+        return dict(row) if row is not None else None
+
+    def _upsert_review(self, session: Session, draft_review: WorkspacePatchDraftReview) -> None:
+        apply_result = draft_review.apply_result
+        values = {
+            "workspace_id": draft_review.workspace_id,
+            "draft_review_id": draft_review.id,
+            "draft_id": draft_review.draft.id,
+            "status": draft_review.status,
+            "base_workspace_version": draft_review.base_workspace_version,
+            "instruction": draft_review.instruction,
+            "created_by": draft_review.created_by,
+            "reviewed_by": draft_review.review.reviewed_by if draft_review.review else None,
+            "applied_commit_id": _applied_commit_id(draft_review),
+            "failure_code": apply_result.error_code if apply_result else None,
+            "failure_reason": apply_result.error_message if apply_result else None,
+            "draft_json": _json(draft_review.draft),
+            "preview_json": _json(draft_review.preview),
+            "review_json": _optional_json(draft_review.review),
+            "apply_result_json": _optional_json(apply_result),
+            "runtime_metadata": draft_review.runtime_metadata,
+            "expires_at": draft_review.expires_at,
+            "created_at": draft_review.created_at,
+            "updated_at": draft_review.updated_at,
+        }
+        updated = session.execute(
+            sales_workspace_draft_reviews.update()
+            .where(
+                sales_workspace_draft_reviews.c.workspace_id == draft_review.workspace_id,
+                sales_workspace_draft_reviews.c.draft_review_id == draft_review.id,
+            )
+            .values(**values)
+        ).rowcount
+        if not updated:
+            session.execute(sales_workspace_draft_reviews.insert().values(**values))
+
+    def _append_lifecycle_events(
+        self,
+        session: Session,
+        draft_review: WorkspacePatchDraftReview,
+        previous: dict[str, Any] | None,
+    ) -> None:
+        previous_status = previous["status"] if previous else None
+        events: list[str] = []
+
+        if previous is None:
+            events.append("created")
+        elif previous_status != draft_review.status:
+            if draft_review.status == "reviewed":
+                events.append("reviewed")
+            elif draft_review.status == "rejected":
+                events.append("rejected")
+            elif draft_review.status == "applied":
+                events.append("applied")
+            elif draft_review.status == "expired":
+                events.append("expired")
+
+        previous_apply_result = previous["apply_result_json"] if previous else None
+        current_apply_result = _optional_json(draft_review.apply_result)
+        if (
+            draft_review.apply_result is not None
+            and draft_review.apply_result.status == "failed"
+            and current_apply_result != previous_apply_result
+        ):
+            events.append("apply_failed")
+
+        for event_type in events:
+            self._insert_event(
+                session,
+                draft_review,
+                event_type=event_type,
+                from_status=previous_status,
+                to_status=draft_review.status,
+            )
+
+    def _insert_event(
+        self,
+        session: Session,
+        draft_review: WorkspacePatchDraftReview,
+        *,
+        event_type: str,
+        from_status: str | None,
+        to_status: str,
+    ) -> None:
+        next_index = (
+            session.execute(
+                sa.select(sa.func.count())
+                .select_from(sales_workspace_draft_review_events)
+                .where(
+                    sales_workspace_draft_review_events.c.workspace_id == draft_review.workspace_id,
+                    sales_workspace_draft_review_events.c.draft_review_id == draft_review.id,
+                )
+            ).scalar_one()
+            + 1
+        )
+        actor_type, actor_id = _event_actor(draft_review, event_type)
+        reason = _event_reason(draft_review, event_type)
+        session.execute(
+            sales_workspace_draft_review_events.insert().values(
+                workspace_id=draft_review.workspace_id,
+                draft_review_id=draft_review.id,
+                event_id=f"{draft_review.id}_event_{next_index:04d}",
+                event_type=event_type,
+                from_status=from_status,
+                to_status=to_status,
+                actor_type=actor_type,
+                actor_id=actor_id,
+                reason=reason,
+                event_json={
+                    "draft_review_id": draft_review.id,
+                    "event_type": event_type,
+                    "from_status": from_status,
+                    "to_status": to_status,
+                    "review": _optional_json(draft_review.review),
+                    "apply_result": _optional_json(draft_review.apply_result),
+                },
+                created_at=draft_review.updated_at,
+            )
+        )
+
+    def _review_from_row(self, row: dict[str, Any]) -> WorkspacePatchDraftReview:
+        return WorkspacePatchDraftReview(
+            id=row["draft_review_id"],
+            workspace_id=row["workspace_id"],
+            draft=row["draft_json"],
+            status=row["status"],
+            base_workspace_version=row["base_workspace_version"],
+            created_by=row["created_by"],
+            created_at=row["created_at"],
+            instruction=row["instruction"],
+            runtime_metadata=row["runtime_metadata"],
+            preview=WorkspacePatchDraftPreview.model_validate(row["preview_json"]),
+            review=WorkspacePatchDraftReviewDecision.model_validate(row["review_json"])
+            if row["review_json"] is not None
+            else None,
+            apply_result=WorkspacePatchDraftApplyResult.model_validate(row["apply_result_json"])
+            if row["apply_result_json"] is not None
+            else None,
+            expires_at=row["expires_at"],
+            updated_at=row["updated_at"],
+        )
+
+
 def _json(model: Any) -> dict[str, Any]:
     return model.model_dump(mode="json")
+
+
+def _optional_json(model: Any | None) -> dict[str, Any] | None:
+    return model.model_dump(mode="json") if model is not None else None
+
+
+def _applied_commit_id(draft_review: WorkspacePatchDraftReview) -> str | None:
+    apply_result = draft_review.apply_result
+    if apply_result is None or apply_result.status != "applied" or apply_result.workspace_version is None:
+        return None
+    return f"commit_v{apply_result.workspace_version}"
+
+
+def _event_actor(draft_review: WorkspacePatchDraftReview, event_type: str) -> tuple[str, str | None]:
+    if event_type in {"reviewed", "rejected"} and draft_review.review is not None:
+        return "human", draft_review.review.reviewed_by
+    if event_type == "created":
+        return "runtime", draft_review.created_by
+    return "backend", None
+
+
+def _event_reason(draft_review: WorkspacePatchDraftReview, event_type: str) -> str:
+    if event_type in {"reviewed", "rejected"} and draft_review.review is not None:
+        return draft_review.review.comment
+    if event_type == "apply_failed" and draft_review.apply_result is not None:
+        return draft_review.apply_result.error_message or draft_review.apply_result.error_code or ""
+    if event_type == "created":
+        return draft_review.instruction
+    return ""

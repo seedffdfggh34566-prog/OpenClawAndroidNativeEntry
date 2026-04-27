@@ -20,8 +20,8 @@ API contract 可调用性。该 prototype 使用进程内 `InMemoryWorkspaceStor
 persistence baseline。
 
 当前 V2 persistence baseline design 已冻结为 Postgres / Alembic，并提供本地
-Postgres dev environment。Sales Workspace persistence migration、repository layer
-和显式 Postgres-backed API store 已完成。当前仍不包含 Android 新 UI、
+Postgres dev environment。Sales Workspace persistence migration、repository layer、
+显式 Postgres-backed API store 和 Draft Review persistence 已完成。当前仍不包含 Android 新 UI、
 LangGraph、真实 LLM、联网搜索或 CRM pipeline。
 
 当前常用命令：

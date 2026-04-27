@@ -21,13 +21,13 @@
 
 当前正式主线为：
 
-> **AI 销售助手 App：V1 已冻结为 demo-ready baseline，V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed；V2.1 conversational product experience remains incomplete。**
+> **AI 销售助手 App：V1 已冻结为 demo-ready baseline，V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed；V2.1 conversational product experience prototype completed。**
 
 当前 V2 的核心架构方向是：
 
 > **Sales Workspace Kernel：结构化 workspace 状态机 + WorkspacePatch 写回门禁 + 候选排序 + Markdown projection + ContextPack Compiler。**
 
-Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline、persistence schema design、persistence migration v0、repository layer v0、API Postgres store v0、Draft Review persistence v0 和 V2.1 engineering baseline closeout 已完成。V2.1 chat-first Runtime design、contract examples、trace persistence、backend prototype、Android chat-first UI 和 demo runbook 已形成 deterministic demo flow，但尚未完成 PRD-level conversational product experience。当前不是 V1 继续开发阶段，也不是正式 Runtime / LangGraph implementation 或 V2.2 evidence / search 阶段。
+Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline、persistence schema design、persistence migration v0、repository layer v0、API Postgres store v0、Draft Review persistence v0 和 V2.1 engineering baseline closeout 已完成。V2.1 chat-first Runtime design、contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook、backend conversational acceptance、Android polish、真机端到端验收和 PRD Acceptance final review 已完成。当前不是 V1 继续开发阶段，也不是正式 Runtime / LangGraph implementation 或 V2.2 evidence / search 阶段。
 
 当前 V2 prototype demo runbook 已补齐：
 
@@ -327,8 +327,8 @@ docs/
 - Sales Workspace Draft Review persistence v0 已完成。
 - V2.1 engineering baseline closeout 已完成。
 - V2.1 chat-first Runtime design 已完成。
-- V2.1 chat-first deterministic demo flow 已完成 contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook 和 closeout，但不等于 PRD-level conversational product experience 完成。
-- 当前没有自动排定任务；V2.1 conversational backend acceptance 已完成，下一步需由规划层决定是否开放 Android conversation polish / device acceptance。
+- V2.1 chat-first deterministic demo flow、backend conversational acceptance、Android polish、真机端到端验收和 PRD Acceptance final review 已完成。
+- 当前没有自动排定任务；V2.1 conversational product experience prototype completed，下一步只允许由规划层开放 V2.2 docs-level planning。
 - V2 MVP persistence baseline 采用 Postgres / Alembic。
 - 当前不开放 Android 或 Runtime / LangGraph implementation。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
@@ -415,4 +415,4 @@ V2.2 planned / blocked task placeholders：
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain、Draft Review audit persistence 和 5-sample backend conversational acceptance 已完成；V2.1 conversational product experience remains incomplete，不直接写 V2.2 LangGraph / LLM / search/contact 或 Android 扩展。**
+> **AI 销售助手 V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain、Draft Review audit persistence 和 5-sample backend conversational acceptance 已完成；V2.1 conversational product experience prototype completed，不直接写 V2.2 LangGraph / LLM / search/contact 或 Android 扩展。**

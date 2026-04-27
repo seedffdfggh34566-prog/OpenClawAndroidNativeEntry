@@ -112,8 +112,13 @@ Sales Workspace Kernel backend-only v0 已完成：
 | `task_v2_sales_workspace_draft_review_persistence_v0.md` | 将 Draft Review lifecycle 落入 Postgres persistence | `done` |
 | `task_v2_1_completion_closeout.md` | 完成 V2.1 engineering baseline closeout | `done` |
 | `task_v2_1_chat_first_runtime_design.md` | 设计 V2.1 chat-first Runtime / WorkspacePatchDraft 产品体验闭环 | `done` |
-| `task_v2_1_chat_first_runtime_contract_examples.md` | 补 V2.1 chat-first Runtime contract examples | `planned / blocked until explicitly opened` |
-| `task_v2_1_chat_first_runtime_backend_prototype.md` | 实现 V2.1 chat-first Runtime backend prototype | `planned / blocked by contract examples` |
+| `task_v2_1_chat_first_runtime_contract_examples.md` | 补 V2.1 chat-first Runtime contract examples | `planned / ready after PR #26 merge` |
+| `task_v2_1_chat_first_runtime_trace_persistence_schema_design.md` | 设计 chat-first trace persistence schema | `planned / blocked by contract examples` |
+| `task_v2_1_chat_first_runtime_trace_persistence_migration_v0.md` | 实现 chat-first trace persistence migration v0 | `planned / blocked by trace persistence schema design` |
+| `task_v2_1_chat_first_runtime_backend_prototype.md` | 实现 V2.1 chat-first Runtime backend prototype | `planned / blocked by contract examples and trace persistence migration` |
+| `task_v2_1_android_chat_first_workspace_ui_prototype.md` | Android chat-first workspace UI prototype | `planned / blocked by chat-first backend prototype` |
+| `task_v2_1_product_experience_demo_runbook.md` | 固化 V2.1 product experience demo runbook | `planned / blocked by Android chat-first UI prototype` |
+| `task_v2_1_product_experience_closeout.md` | 收口 V2.1 product experience | `planned / blocked by product experience demo runbook` |
 | `task_v2_2_runtime_langgraph_design.md` | 设计 V2.2 Runtime / LangGraph WorkspacePatchDraft flow | `planned / blocked by V2.1 product experience` |
 | `task_v2_2_android_review_history_planning.md` | 规划 Android Draft Review history / detail view | `planned / blocked by V2.1 product experience` |
 | `task_v2_2_search_evidence_boundary_design.md` | 设计搜索证据与 ContactPoint 边界 | `planned / blocked by V2.1 product experience` |
@@ -171,7 +176,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 - 若对象模型、页面结构与代码现实冲突，先更新 task / spec，再动实现。
 - V2.1 engineering baseline 已完成 API contract -> persistence decision -> contract examples -> no-DB backend API prototype -> Android read-only demo -> JSON file store prototype -> Runtime PatchDraft prototype -> PatchDraft review gate prototype -> Android PatchDraft review UI prototype -> prototype demo runbook -> Draft review contract -> Draft review routes prototype -> Android Draft Review ID flow prototype -> post-review-id-flow persistence decision refresh -> persistence baseline design -> Postgres dev environment -> persistence schema -> migration -> repository -> API Postgres store -> Draft Review persistence -> V2.1 engineering baseline closeout。
 - V2.1 chat-first Runtime design 已完成。
-- V2.1 product experience 尚未完成；当前应先补 contract examples，再决定是否开放 backend prototype。V2.2 evidence / search / ContactPoint 继续 blocked。
+- V2.1 product experience 尚未完成；已规划 contract examples -> trace persistence schema -> trace migration -> backend prototype -> Android chat-first UI -> demo runbook -> closeout 的长线程队列。V2.2 evidence / search / ContactPoint 继续 blocked。
 - 当前 demo 复现入口为 `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`。
 - Draft review contract 已完成：`docs/reference/api/sales-workspace-draft-review-contract.md`。
 - Draft review routes prototype 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`。
@@ -186,5 +191,5 @@ Sales Workspace Kernel backend-only v0 已完成：
 - Sales Workspace Draft Review persistence v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`。
 - V2.1 engineering baseline closeout 已完成：`docs/delivery/tasks/task_v2_1_completion_closeout.md`。
 - 当前自动排定任务：暂无。
-- 推荐下一步：由规划层明确是否开放 `docs/delivery/tasks/task_v2_1_chat_first_runtime_contract_examples.md`。
+- 推荐下一步：由规划层明确是否开放 V2.1 product experience long-thread queue，第一项为 `docs/delivery/tasks/task_v2_1_chat_first_runtime_contract_examples.md`。
 - 后续 Android 体验增强、正式 Runtime / LangGraph implementation、V2.2 evidence/search/contact 或 DB hardening 必须等待对应 task 解锁后再推进。

@@ -1,6 +1,6 @@
 # Task: V2.1 Chat-first Runtime Backend Prototype
 
-状态：planned / blocked by contract examples
+状态：planned / blocked by contract examples and trace persistence migration
 
 更新时间：2026-04-27
 
@@ -14,12 +14,16 @@
 
 - `task_v2_1_chat_first_runtime_design.md`
 - `task_v2_1_chat_first_runtime_contract_examples.md`
+- `task_v2_1_chat_first_runtime_trace_persistence_schema_design.md`
+- `task_v2_1_chat_first_runtime_trace_persistence_migration_v0.md`
 
 ## Initial Scope Placeholder
 
 - backend-only prototype。
 - deterministic runtime stub only。
 - support product profile and lead direction patch drafts。
+- persist minimal `ConversationMessage` and `AgentRun(run_type = sales_agent_turn)` trace.
+- compile `ContextPack(task_type = sales_agent_turn)` from structured workspace state.
 - use existing Draft Review routes for review/apply。
 - keep Sales Workspace Kernel as formal writeback owner。
 
@@ -31,3 +35,9 @@
 - 不做 ContactPoint / CRM。
 - 不改 Android UI。
 - 不新增 production hardening。
+
+## Recommended Next
+
+完成后进入：
+
+- `task_v2_1_android_chat_first_workspace_ui_prototype.md`

@@ -1,6 +1,6 @@
 # Task: V2.1 Chat-first Runtime Contract Examples
 
-状态：planned / blocked until explicitly opened
+状态：planned / ready after PR #26 merge
 
 更新时间：2026-04-27
 
@@ -36,4 +36,10 @@
 
 ## Blocker
 
-必须先完成 `task_v2_1_chat_first_runtime_design.md`，并由 `_active.md` 明确开放。
+必须先完成并合并 `task_v2_1_chat_first_runtime_design.md`。
+
+## Recommended Next
+
+完成后进入：
+
+- `task_v2_1_chat_first_runtime_trace_persistence_schema_design.md`

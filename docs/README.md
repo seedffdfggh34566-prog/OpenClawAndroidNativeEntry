@@ -153,6 +153,7 @@ V1 细节可继续参考：
 - `docs/architecture/runtime/v2-1-chat-first-runtime-design.md`
 - `docs/reference/api/sales-workspace-chat-first-runtime-contract.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_1_chat_first_runtime_design.md`
+- `docs/delivery/handoffs/handoff_2026_04_27_v2_1_product_experience_task_queue_planning.md`
 
 ### 5.4 V1 baseline 与参考
 
@@ -324,7 +325,7 @@ docs/
 - Sales Workspace Draft Review persistence v0 已完成。
 - V2.1 engineering baseline closeout 已完成。
 - V2.1 chat-first Runtime design 已完成。
-- V2.1 product experience 仍需完成 contract examples 和 backend / Android 实现后才算闭环完成。
+- V2.1 product experience 仍需完成 contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook 和 closeout 后才算闭环完成。
 - 当前没有 implementation task 自动开放。
 - V2 MVP persistence baseline 采用 Postgres / Alembic。
 - 当前不开放 Android 或 Runtime / LangGraph implementation。

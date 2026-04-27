@@ -26,6 +26,44 @@ fun parseSalesWorkspaceContextPackResponse(rawJson: String): SalesWorkspaceConte
     return SalesWorkspaceContextPackResponseDto(contextPack = contextPack.toSalesWorkspaceContextPackDto())
 }
 
+fun parseSalesWorkspacePatchDraftPreviewResponse(rawJson: String): SalesWorkspacePatchDraftPreviewDto {
+    val json = JSONObject(rawJson)
+    return SalesWorkspacePatchDraftPreviewDto(
+        patchDraft = json.getJSONObject("patch_draft").toSalesWorkspacePatchDraftDto(),
+        patch = json.getJSONObject("patch").toSalesWorkspacePatchSummaryDto(),
+        previewWorkspaceVersion = json.getInt("preview_workspace_version"),
+        previewRankingBoard = json.optJSONObject("preview_ranking_board")?.toSalesWorkspaceRankingBoardDto(),
+        wouldMutate = json.optBoolean("would_mutate"),
+    )
+}
+
+fun parseSalesWorkspacePatchDraftApplyResponse(rawJson: String): SalesWorkspacePatchDraftApplyResponseDto {
+    val json = JSONObject(rawJson)
+    return SalesWorkspacePatchDraftApplyResponseDto(
+        patchDraft = json.getJSONObject("patch_draft").toSalesWorkspacePatchDraftDto(),
+        patch = json.getJSONObject("patch").toSalesWorkspacePatchSummaryDto(),
+        workspace = json.getJSONObject("workspace").toSalesWorkspaceDto(),
+        rankingBoard = json.optJSONObject("ranking_board")?.toSalesWorkspaceRankingBoardDto(),
+    )
+}
+
+private fun JSONObject.toSalesWorkspacePatchDraftDto(): SalesWorkspacePatchDraftDto =
+    SalesWorkspacePatchDraftDto(
+        id = getString("id"),
+        workspaceId = getString("workspace_id"),
+        baseWorkspaceVersion = getInt("base_workspace_version"),
+        operationCount = optJSONArray("operations")?.length() ?: 0,
+        rawJson = toString(),
+    )
+
+private fun JSONObject.toSalesWorkspacePatchSummaryDto(): SalesWorkspacePatchSummaryDto =
+    SalesWorkspacePatchSummaryDto(
+        id = getString("id"),
+        workspaceId = getString("workspace_id"),
+        baseWorkspaceVersion = getInt("base_workspace_version"),
+        operationCount = optJSONArray("operations")?.length() ?: 0,
+    )
+
 private fun JSONObject.toSalesWorkspaceDto(): SalesWorkspaceDto =
     SalesWorkspaceDto(
         id = getString("id"),

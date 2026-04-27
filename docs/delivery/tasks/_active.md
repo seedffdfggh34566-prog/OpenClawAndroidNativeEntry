@@ -38,8 +38,9 @@
 - `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`（done）
+- `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成。
 
 ---
 
@@ -55,6 +56,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 6. Sales Workspace JSON file store prototype。
 7. Runtime PatchDraft prototype。
 8. PatchDraft review gate prototype。
+9. Android PatchDraft review UI prototype。
 
 当前结论：
 
@@ -66,6 +68,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
 - 当前已存在 deterministic Runtime PatchDraft prototype：`task_v2_sales_workspace_runtime_patchdraft_prototype.md`。
 - 当前已存在 PatchDraft review gate prototype：`task_v2_sales_workspace_patchdraft_review_gate_prototype.md`。
+- 当前已存在 Android PatchDraft review UI prototype：`task_v2_android_patchdraft_review_ui_prototype.md`。
 - backend API 的 DB-backed / production persistence 版本继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -161,6 +164,10 @@ PatchDraft review gate prototype 已完成：
 
 - `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`
 
+Android PatchDraft review UI prototype 已完成：
+
+- `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`
+
 ---
 
 ## 6. 当前执行入口
@@ -184,7 +191,8 @@ PatchDraft review gate prototype 已完成：
 15. `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`
 16. `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
 17. `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`
-18. 本文件
+18. `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`
+19. 本文件
 
 ---
 

@@ -6,6 +6,7 @@
 - Pydantic v2
 - SQLAlchemy
 - SQLite
+- Postgres dev environment baseline
 - Alembic
 - pytest
 - structured logging
@@ -18,8 +19,9 @@ WorkspacePatch、候选排序、Markdown projection 和 ContextPack Compiler。
 API contract 可调用性。该 prototype 使用进程内 `InMemoryWorkspaceStore`，不是正式
 persistence baseline。
 
-当前 V2 仍不包含数据库 migration、Android UI、LangGraph、真实 LLM、联网搜索或
-CRM pipeline。
+当前 V2 persistence baseline design 已冻结为 Postgres / Alembic，并提供本地
+Postgres dev environment。当前仍不包含 Sales Workspace 数据库 migration、
+正式 DB-backed API、Android 新 UI、LangGraph、真实 LLM、联网搜索或 CRM pipeline。
 
 当前常用命令：
 
@@ -29,6 +31,20 @@ backend/.venv/bin/python -m pytest backend/tests -q
 backend/.venv/bin/alembic upgrade head
 backend/.venv/bin/python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8013
 ```
+
+Postgres dev environment：
+
+```bash
+docker compose -f compose.postgres.yml up -d
+docker exec openclaw-postgres pg_isready -U openclaw -d openclaw_dev
+OPENCLAW_BACKEND_DATABASE_URL=postgresql+psycopg://openclaw:openclaw_dev_password@127.0.0.1:55432/openclaw_dev backend/.venv/bin/alembic -c alembic.ini upgrade head
+OPENCLAW_BACKEND_POSTGRES_VERIFY_URL=postgresql+psycopg://openclaw:openclaw_dev_password@127.0.0.1:55432/openclaw_dev backend/.venv/bin/python -m pytest backend/tests/test_postgres_dev_environment.py -q
+docker compose -f compose.postgres.yml down
+```
+
+详细说明见：
+
+- `docs/how-to/operate/postgres-dev-environment.md`
 
 Sales Workspace Kernel v0 固定验证命令：
 

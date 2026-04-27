@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     llm_timeout_seconds: float = 30.0
     dev_llm_trace_enabled: bool = False
     dev_llm_trace_dir: str = "/tmp/openclaw_llm_traces"
+    sales_workspace_store_dir: str | None = None
 
     model_config = SettingsConfigDict(
         env_prefix="OPENCLAW_BACKEND_",
@@ -52,6 +53,15 @@ class Settings(BaseSettings):
     @property
     def uses_sqlite(self) -> bool:
         return self.resolved_database_url.startswith("sqlite")
+
+    @property
+    def sales_workspace_store_path(self) -> Path | None:
+        if not self.sales_workspace_store_dir:
+            return None
+        path = Path(self.sales_workspace_store_dir)
+        if path.is_absolute():
+            return path
+        return BACKEND_ROOT / path
 
 
 @lru_cache(maxsize=1)

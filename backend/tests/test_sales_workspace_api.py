@@ -4,6 +4,11 @@ import copy
 import json
 from pathlib import Path
 
+from fastapi.testclient import TestClient
+
+from backend.api.config import reset_settings_cache
+from backend.api.main import create_app
+
 
 EXAMPLE_DIR = (
     Path(__file__).resolve().parents[2]
@@ -133,3 +138,60 @@ def test_sales_workspace_not_found_and_path_mismatch(client) -> None:
     mismatch_response = client.post("/sales-workspaces/ws_other/patches", json=mismatch_request)
     assert mismatch_response.status_code == 422
     assert mismatch_response.json()["error"]["code"] == "validation_error"
+
+
+def test_sales_workspace_default_store_is_app_local(backend_env, monkeypatch) -> None:
+    monkeypatch.delenv("OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR", raising=False)
+    reset_settings_cache()
+
+    with TestClient(create_app()) as first_client:
+        _build_demo_workspace(first_client)
+        assert first_client.get("/sales-workspaces/ws_demo").status_code == 200
+
+    with TestClient(create_app()) as second_client:
+        missing_response = second_client.get("/sales-workspaces/ws_demo")
+        assert missing_response.status_code == 404
+        assert missing_response.json()["error"]["code"] == "not_found"
+
+
+def test_sales_workspace_json_store_survives_app_restart(backend_env, monkeypatch, tmp_path) -> None:
+    store_dir = tmp_path / "sales_workspace_store"
+    monkeypatch.setenv("OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR", str(store_dir))
+    reset_settings_cache()
+
+    with TestClient(create_app()) as first_client:
+        _build_demo_workspace(first_client)
+
+    workspace_file = store_dir / "ws_demo.json"
+    assert workspace_file.exists()
+    before_conflict = workspace_file.read_text(encoding="utf-8")
+    assert json.loads(before_conflict)["workspace_version"] == 3
+
+    with TestClient(create_app()) as second_client:
+        workspace_response = second_client.get("/sales-workspaces/ws_demo")
+        assert workspace_response.status_code == 200
+        assert workspace_response.json()["workspace"]["workspace_version"] == 3
+
+        ranking_response = second_client.get("/sales-workspaces/ws_demo/ranking-board/current")
+        assert ranking_response.status_code == 200
+        assert ranking_response.json()["ranking_board"]["ranked_items"][0]["candidate_id"] == "cand_d"
+
+        projection_response = second_client.get("/sales-workspaces/ws_demo/projection")
+        assert projection_response.status_code == 200
+        assert "rankings/current.md" in projection_response.json()["files"]
+
+        context_pack_response = second_client.post(
+            "/sales-workspaces/ws_demo/context-packs",
+            json={"task_type": "research_round", "token_budget_chars": 6000, "top_n_candidates": 5},
+        )
+        assert context_pack_response.status_code == 200
+        assert context_pack_response.json()["context_pack"]["top_candidates"][0]["candidate_id"] == "cand_d"
+
+        conflict_response = second_client.post(
+            "/sales-workspaces/ws_demo/patches",
+            json=_example("05_patch_round_2_request.json"),
+        )
+        assert conflict_response.status_code == 409
+        assert conflict_response.json()["error"]["code"] == "workspace_version_conflict"
+
+    assert workspace_file.read_text(encoding="utf-8") == before_conflict

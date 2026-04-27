@@ -7,11 +7,12 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from backend.api.config import get_settings
 from backend.sales_workspace.context_pack import compile_context_pack
 from backend.sales_workspace.patches import WorkspacePatchError, WorkspaceVersionConflict
 from backend.sales_workspace.projection import render_markdown_projection
 from backend.sales_workspace.schemas import WorkspacePatch
-from backend.sales_workspace.store import InMemoryWorkspaceStore, WorkspaceNotFound
+from backend.sales_workspace.store import InMemoryWorkspaceStore, JsonFileWorkspaceStore, WorkspaceNotFound
 
 
 router = APIRouter(prefix="/sales-workspaces", tags=["sales-workspaces"])
@@ -40,6 +41,9 @@ class CreateContextPackRequest(ApiModel):
 
 
 def create_sales_workspace_store() -> InMemoryWorkspaceStore:
+    store_path = get_settings().sales_workspace_store_path
+    if store_path is not None:
+        return JsonFileWorkspaceStore(store_path)
     return InMemoryWorkspaceStore()
 
 

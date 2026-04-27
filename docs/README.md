@@ -33,6 +33,10 @@ Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android re
 
 - `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`
 
+当前 clean demo verification 已完成。下一阶段推荐方向是先定义 Draft persistence / review history contract：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`
+
 ---
 
 ## 3. 当前建议阅读顺序
@@ -121,6 +125,9 @@ V1 细节可继续参考：
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_android_patchdraft_review_ui_prototype.md`
 - `docs/delivery/tasks/task_v2_sales_workspace_prototype_demo_runbook.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_prototype_demo_runbook.md`
+- `docs/delivery/tasks/task_v2_post_demo_next_phase_decision.md`
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`
+- `docs/delivery/handoffs/handoff_2026_04_27_v2_post_demo_next_phase_decision.md`
 
 ### 5.4 V1 baseline 与参考
 
@@ -222,6 +229,10 @@ docs/
 
 - 暂无自动排定 implementation task。
 
+当前推荐下一阶段为：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`
+
 当前 demo 复现入口为：
 
 - `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`
@@ -242,6 +253,8 @@ docs/
 - PatchDraft review gate prototype 已完成。
 - Android PatchDraft review UI prototype 已完成。
 - V2 Sales Workspace prototype demo runbook 已完成。
+- clean demo verification 已完成。
+- Draft persistence / review history contract 是推荐下一阶段。
 - 不开放 persistence-backed backend API implementation。
 - `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑，不是正式 persistence baseline。
 - contract fixture examples / state transition examples 已补齐。
@@ -261,6 +274,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 - PatchDraft review gate prototype
 - Android PatchDraft review UI prototype
 - prototype demo runbook
+- clean demo verification
 - pytest
 
 当前 V2.1 后续顺序冻结为：
@@ -274,6 +288,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 7. PatchDraft review gate prototype。
 8. Android PatchDraft review UI prototype。
 9. Prototype demo runbook。
+10. Post-demo next phase decision。
 
 当前仍不应自动实现：
 
@@ -292,4 +307,4 @@ Sales Workspace Kernel backend-only v0 已完成：
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2 workspace-native sales agent：Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、JSON file store prototype、Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype 与 prototype demo runbook 已完成；下一步由规划层决定正式 Runtime / LangGraph integration、draft persistence / review history、DB-backed persistence 或 Android review UX 谁先进入任务队列。**
+> **AI 销售助手 V2 workspace-native sales agent：Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、JSON file store prototype、Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype 与 prototype demo runbook 已完成；clean demo verification 已通过；下一阶段推荐先定义 Draft persistence / review history contract。**

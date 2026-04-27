@@ -40,8 +40,9 @@
 - `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`（done）
 - `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_prototype_demo_runbook.md`（done）
+- `docs/delivery/tasks/task_v2_post_demo_next_phase_decision.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成。
 
 ---
 
@@ -59,6 +60,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 8. PatchDraft review gate prototype。
 9. Android PatchDraft review UI prototype。
 10. Prototype demo runbook。
+11. Post-demo next phase decision。
 
 当前结论：
 
@@ -72,6 +74,8 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - 当前已存在 PatchDraft review gate prototype：`task_v2_sales_workspace_patchdraft_review_gate_prototype.md`。
 - 当前已存在 Android PatchDraft review UI prototype：`task_v2_android_patchdraft_review_ui_prototype.md`。
 - 当前已存在 V2 prototype demo runbook：`docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`。
+- 当前已完成 clean demo verification。
+- 下一阶段推荐任务是 `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`，但尚未自动开放执行。
 - backend API 的 DB-backed / production persistence 版本继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -176,6 +180,11 @@ V2 Sales Workspace prototype demo runbook 已完成：
 - `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`
 - `docs/delivery/tasks/task_v2_sales_workspace_prototype_demo_runbook.md`
 
+Post-demo next phase decision 已完成：
+
+- `docs/delivery/tasks/task_v2_post_demo_next_phase_decision.md`
+- 推荐下一阶段：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`
+
 ---
 
 ## 6. 当前执行入口
@@ -201,13 +210,17 @@ V2 Sales Workspace prototype demo runbook 已完成：
 17. `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`
 18. `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`
 19. `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`
-20. 本文件
+20. `docs/delivery/tasks/task_v2_post_demo_next_phase_decision.md`
+21. `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`
+22. 本文件
 
 ---
 
 ## 7. Auto-continue allowed when
 
-当前没有 next queued task，因此执行 agent 不应自动继续实现或规划新任务。
+当前没有 next queued task，因此执行 agent 不应自动继续实现。
+
+推荐下一阶段是 `task_v2_sales_workspace_draft_review_contract.md`，但需要人工明确要求后再执行。
 
 ---
 

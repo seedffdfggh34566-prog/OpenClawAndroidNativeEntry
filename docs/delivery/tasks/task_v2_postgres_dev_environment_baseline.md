@@ -1,6 +1,6 @@
 # Task: V2 Postgres Dev Environment Baseline
 
-状态：planned / current
+状态：done
 
 更新时间：2026-04-27
 
@@ -35,7 +35,34 @@
 
 - Postgres startup command succeeds。
 - `alembic upgrade head` passes against local Postgres。
-- `backend/tests/test_persistence.py` passes against local Postgres。
+- opt-in Postgres dev environment pytest passes against local Postgres。
 - backend startup + `/health` smoke passes against local Postgres。
 - Existing SQLite backend tests remain pass if dependency metadata changes。
 - `git diff --check` passes。
+
+## Result
+
+已完成：
+
+- 新增 `compose.postgres.yml`，提供本地 `postgres:16` dev service。
+- 新增 Postgres driver dependency：`psycopg[binary]>=3.2,<4.0`。
+- 新增 Postgres dev environment runbook：`docs/how-to/operate/postgres-dev-environment.md`。
+- 新增 opt-in Postgres verification test：`backend/tests/test_postgres_dev_environment.py`。
+- 保留现有 SQLite test path。
+- 未新增 Sales Workspace table、SQLAlchemy model、Alembic migration、backend route、Android UI 或 Runtime / LangGraph integration。
+
+## Actual Validation
+
+- `docker compose -f compose.postgres.yml up -d`
+- `docker compose -f compose.postgres.yml ps`
+- `docker exec openclaw-postgres pg_isready -U openclaw -d openclaw_dev`
+- `backend/.venv/bin/pip install -e backend`
+- `OPENCLAW_BACKEND_DATABASE_URL=postgresql+psycopg://openclaw:openclaw_dev_password@127.0.0.1:55432/openclaw_dev backend/.venv/bin/alembic -c alembic.ini upgrade head`
+- `OPENCLAW_BACKEND_POSTGRES_VERIFY_URL=postgresql+psycopg://openclaw:openclaw_dev_password@127.0.0.1:55432/openclaw_dev backend/.venv/bin/python -m pytest backend/tests/test_postgres_dev_environment.py -q`
+- `backend/.venv/bin/python -m pytest backend/tests/test_persistence.py -q`
+- backend startup + `/health` smoke against local Postgres
+- `docker compose -f compose.postgres.yml down`
+- `git diff --check`
+- `git status --short`
+
+说明：`backend/tests/test_persistence.py` 通过 repo fixture 固定验证临时 SQLite path；Postgres path 由新增 opt-in 测试验证，避免普通测试套件依赖 Docker。

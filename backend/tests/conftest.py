@@ -90,6 +90,7 @@ def backend_env(tmp_path, monkeypatch) -> Generator[str, None, None]:
     monkeypatch.delenv("OPENCLAW_BACKEND_DATABASE_PATH", raising=False)
     monkeypatch.delenv("OPENCLAW_BACKEND_DEV_LLM_TRACE_ENABLED", raising=False)
     monkeypatch.delenv("OPENCLAW_BACKEND_DEV_LLM_TRACE_DIR", raising=False)
+    monkeypatch.delenv("OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_BACKEND", raising=False)
     monkeypatch.delenv("OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR", raising=False)
     monkeypatch.setattr(
         "backend.runtime.llm_client.TokenHubClient.complete",

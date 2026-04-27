@@ -27,7 +27,7 @@
 
 > **Sales Workspace Kernel：结构化 workspace 状态机 + WorkspacePatch 写回门禁 + 候选排序 + Markdown projection + ContextPack Compiler。**
 
-Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline 和 persistence schema design 已完成。当前不是 V1 继续开发阶段，也不是 Sales Workspace schema migration、扩展 Android write path 或正式 Runtime / LangGraph 集成阶段。当前没有自动排定任务。
+Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline、persistence schema design、persistence migration v0、repository layer v0 和 API Postgres store v0 已完成。当前不是 V1 继续开发阶段，也不是扩展 Android write path 或正式 Runtime / LangGraph 集成阶段。
 
 当前 V2 prototype demo runbook 已补齐：
 
@@ -248,7 +248,9 @@ docs/
 
 - `docs/delivery/tasks/_active.md`
 
-当前没有自动排定任务；后续 migration / repository / API store 工作必须等待新任务明确开放。
+当前自动排定任务为：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`
 
 当前 Draft review contract 为：
 
@@ -309,9 +311,12 @@ docs/
 - Sales Workspace persistence baseline design 已完成。
 - Postgres dev environment baseline 已完成。
 - Sales Workspace persistence schema design 已完成。
-- 当前没有自动排定任务。
+- Sales Workspace persistence migration v0 已完成。
+- Sales Workspace repository layer v0 已完成。
+- Sales Workspace API Postgres store v0 已完成。
+- 当前自动排定任务为 Draft Review persistence v0。
 - V2 MVP persistence baseline 采用 Postgres / Alembic。
-- 不开放 persistence-backed backend API implementation。
+- 当前不开放 Android 或 Runtime / LangGraph implementation。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
 - contract fixture examples / state transition examples 已补齐。
 

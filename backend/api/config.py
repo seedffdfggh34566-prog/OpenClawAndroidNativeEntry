@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     llm_timeout_seconds: float = 30.0
     dev_llm_trace_enabled: bool = False
     dev_llm_trace_dir: str = "/tmp/openclaw_llm_traces"
+    sales_workspace_store_backend: str | None = None
     sales_workspace_store_dir: str | None = None
 
     model_config = SettingsConfigDict(

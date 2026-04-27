@@ -27,7 +27,7 @@
 
 > **Sales Workspace Kernel：结构化 workspace 状态机 + WorkspacePatch 写回门禁 + 候选排序 + Markdown projection + ContextPack Compiler。**
 
-Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo 和可选 JSON file store prototype 已完成。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、Android write path 或 Runtime / LangGraph 集成阶段。
+Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo 和可选 JSON file store prototype 已完成。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、Android write path 或正式 Runtime / LangGraph 集成阶段；本轮只开放 deterministic Runtime PatchDraft prototype。
 
 ---
 
@@ -109,6 +109,7 @@ V1 细节可继续参考：
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_api_contract_v0.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_post_kernel_v0_planning.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_json_store_prototype.md`
+- `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
 
 ### 5.4 V1 baseline 与参考
 
@@ -207,7 +208,7 @@ docs/
 
 当前正式执行入口为：
 
-- 暂无自动排定 implementation task。
+- `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
 
 最近完成的 contract / persistence decision 文档为：
 
@@ -220,6 +221,8 @@ docs/
 - 不进入 SQLite / Alembic。
 - no-DB FastAPI prototype v0 已完成。
 - Android read-only workspace demo 已完成。
+- JSON file store prototype 已完成。
+- 当前开放 deterministic Runtime PatchDraft prototype。
 - 不开放 persistence-backed backend API implementation。
 - `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑，不是正式 persistence baseline。
 - contract fixture examples / state transition examples 已补齐。
@@ -234,6 +237,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 - ContextPack compiler
 - FastAPI prototype endpoints
 - Android read-only workspace demo
+- optional JSON file store prototype
 - pytest
 
 当前 V2.1 后续顺序冻结为：
@@ -242,14 +246,15 @@ Sales Workspace Kernel backend-only v0 已完成：
 2. Persistence decision。
 3. Backend API prototype。
 4. Android read-only workspace view。
-5. Runtime / LangGraph WorkspacePatchDraft integration。
+5. JSON file store prototype。
+6. Runtime PatchDraft prototype。
 
 当前仍不应自动实现：
 
-- 新增或扩展 Sales Workspace FastAPI endpoint
+- 除本轮 prototype endpoint 外，新增或扩展 Sales Workspace FastAPI endpoint
 - SQLAlchemy ORM / Alembic migration / SQLite schema change
 - Android write path 或复杂 workspace 交互
-- LangGraph graph
+- 正式 LangGraph graph
 - 真实 LLM
 - 联网搜索 / search provider
 - ContactPoint
@@ -261,4 +266,4 @@ Sales Workspace Kernel backend-only v0 已完成：
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2 workspace-native sales agent：Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0 与 Android read-only workspace demo 已完成；下一步由规划层决定 Android 体验增强、正式 persistence 或 Runtime patch draft 谁先进入任务队列。**
+> **AI 销售助手 V2 workspace-native sales agent：Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo 与 JSON file store prototype 已完成；当前执行 Runtime PatchDraft prototype，让 Product Sales Agent / Runtime 只能通过 draft patch 进入后端 kernel 写回门禁。**

@@ -17,7 +17,7 @@
 
 ### Current task
 
-暂无自动排定。
+`docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
 
 ### Next queued task
 
@@ -39,6 +39,8 @@
 
 Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成。
 
+当前开放 deterministic Runtime PatchDraft prototype，让 Runtime / Product Sales Agent execution layer 只能产出 draft payload，再由 Sales Workspace Kernel 转换、校验并写回正式 workspace。
+
 ---
 
 ## 3. 当前 V2.1 后续顺序
@@ -51,6 +53,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 4. Sales Workspace Backend API prototype v0。
 5. Android read-only workspace demo。
 6. Sales Workspace JSON file store prototype。
+7. Runtime PatchDraft prototype。
 
 当前结论：
 
@@ -60,6 +63,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
 - 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
 - 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
+- 当前开放 deterministic Runtime PatchDraft prototype：`task_v2_sales_workspace_runtime_patchdraft_prototype.md`。
 - backend API 的 DB-backed / production persistence 版本继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -69,13 +73,13 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 
 除非后续单独创建 task 并写入本文件，否则执行 agent 不应自动实现：
 
-- 新增或扩展 Sales Workspace FastAPI endpoint
+- 除当前 Runtime PatchDraft prototype endpoint 外，新增或扩展 Sales Workspace FastAPI endpoint
 - SQLAlchemy ORM
 - Alembic migration
 - SQLite schema change
 - Postgres / pgvector
 - 新增或扩展 Android workspace 写入 UI
-- LangGraph graph
+- 正式 LangGraph graph
 - 真实 LLM
 - 联网搜索
 - 搜索 provider
@@ -147,6 +151,10 @@ Sales Workspace JSON file store prototype 已完成：
 - `backend/sales_workspace/store.py`
 - `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`
 
+当前执行 Runtime PatchDraft prototype：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
+
 ---
 
 ## 6. 当前执行入口
@@ -168,13 +176,14 @@ Sales Workspace JSON file store prototype 已完成：
 13. `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`
 14. `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`
 15. `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`
-16. 本文件
+16. `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
+17. 本文件
 
 ---
 
 ## 7. Auto-continue allowed when
 
-当前没有 next queued task，因此执行 agent 不应自动继续实现或规划新任务。
+当前只允许执行 `task_v2_sales_workspace_runtime_patchdraft_prototype.md`。该任务完成后，没有 next queued task，执行 agent 不应自动继续实现或规划新任务。
 
 ---
 

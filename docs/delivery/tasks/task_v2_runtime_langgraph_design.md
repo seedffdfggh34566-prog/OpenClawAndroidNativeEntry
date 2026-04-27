@@ -1,0 +1,28 @@
+# Task: V2 Runtime LangGraph Design
+
+状态：planned / blocked
+
+更新时间：2026-04-27
+
+## Objective
+
+设计正式 Runtime / LangGraph integration，让 Runtime 产出可审阅的 `WorkspacePatchDraft`。
+
+## Blocker
+
+必须等待 persistence baseline design 完成，并确认 Draft Review lifecycle 的正式持久化边界。
+
+## Scope Placeholder
+
+- Runtime graph 输入 / 输出边界。
+- `WorkspacePatchDraft` 生成与 validation。
+- ContextPack 读取。
+- tool output 与 source evidence 边界。
+- observability 与 failure handling。
+
+## Out Of Scope Until Unblocked
+
+- 不接真实 LLM。
+- 不实现 LangGraph graph。
+- 不接 search / contact / CRM。
+- 不改变 Sales Workspace Kernel formal writeback owner。

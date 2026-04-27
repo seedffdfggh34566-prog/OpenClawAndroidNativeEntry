@@ -17,7 +17,7 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_v2_1_clarifying_questions_backend_prototype.md`
+暂无自动排定任务。
 
 ### Next queued task
 
@@ -66,11 +66,15 @@
 - `docs/delivery/tasks/task_v2_1_conversational_completion_scope.md`（done）
 - `docs/delivery/tasks/task_v2_1_conversation_acceptance_examples.md`（done）
 - `docs/delivery/tasks/task_v2_1_conversational_implementation_queue.md`（done）
-- `docs/delivery/tasks/task_v2_1_clarifying_questions_backend_prototype.md`（planned / current）
+- `docs/delivery/tasks/task_v2_1_clarifying_questions_backend_prototype.md`（done）
+- `docs/delivery/tasks/task_v2_1_workspace_explanation_backend_prototype.md`（done）
+- `docs/delivery/tasks/task_v2_1_product_profile_extraction_runtime.md`（done）
+- `docs/delivery/tasks/task_v2_1_lead_direction_adjustment_runtime.md`（done）
+- `docs/delivery/tasks/task_v2_1_conversation_acceptance_e2e.md`（done）
 
 Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成，V2.1 engineering baseline closeout 已完成。V2.1 chat-first deterministic demo flow 已完成，但不等于 PRD-level conversational product experience 完成。
 
-V2.1 workspace/kernel engineering baseline completed；V2.1 conversational product experience remains incomplete。V2.2 evidence / search / ContactPoint implementation 仍 blocked。
+V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed；V2.1 conversational product experience remains incomplete until Android polish / device acceptance。V2.2 evidence / search / ContactPoint implementation 仍 blocked。
 
 ---
 
@@ -117,8 +121,12 @@ V2.1 workspace/kernel engineering baseline completed；V2.1 conversational produ
 34. V2.1 conversation acceptance examples。
 35. V2.1 conversational implementation queue。
 36. V2.1 clarifying questions backend prototype。
+37. V2.1 workspace explanation backend prototype。
+38. V2.1 product profile extraction runtime。
+39. V2.1 lead direction adjustment runtime。
+40. V2.1 conversation acceptance e2e。
 
-- `docs/delivery/tasks/task_v2_1_clarifying_questions_backend_prototype.md`
+当前没有自动开放 implementation task。
 
 后续 planned / blocked：
 
@@ -131,7 +139,7 @@ V2.1 workspace/kernel engineering baseline completed；V2.1 conversational produ
 - SQLite 不作为 V2 Sales Workspace runtime fallback。
 - 不开放 production hardening 或新增 API surface。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
-- 当前只自动开放 `task_v2_1_clarifying_questions_backend_prototype.md`。不自动进入正式 LangGraph implementation、真实 LLM/search 或 V2.2 implementation。
+- 当前没有自动开放 implementation task。不自动进入 Android polish、正式 LangGraph implementation、真实 LLM/search 或 V2.2 implementation。
 - 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
 - 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
 - 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
@@ -158,7 +166,11 @@ V2.1 workspace/kernel engineering baseline completed；V2.1 conversational produ
 - V2.1 conversational completion scope 已完成：`docs/delivery/tasks/task_v2_1_conversational_completion_scope.md`。
 - V2.1 conversation acceptance examples 已完成：`docs/delivery/tasks/task_v2_1_conversation_acceptance_examples.md`。
 - V2.1 conversational implementation queue 已完成：`docs/delivery/tasks/task_v2_1_conversational_implementation_queue.md`。
-- V2.1 clarifying questions backend prototype 当前开放：`docs/delivery/tasks/task_v2_1_clarifying_questions_backend_prototype.md`。
+- V2.1 clarifying questions backend prototype 已完成：`docs/delivery/tasks/task_v2_1_clarifying_questions_backend_prototype.md`。
+- V2.1 workspace explanation backend prototype 已完成：`docs/delivery/tasks/task_v2_1_workspace_explanation_backend_prototype.md`。
+- V2.1 product profile extraction runtime 已完成：`docs/delivery/tasks/task_v2_1_product_profile_extraction_runtime.md`。
+- V2.1 lead direction adjustment runtime 已完成：`docs/delivery/tasks/task_v2_1_lead_direction_adjustment_runtime.md`。
+- V2.1 conversation acceptance e2e 已完成：`docs/delivery/tasks/task_v2_1_conversation_acceptance_e2e.md`。
 - production hardening、history read API 和 DB reconstruction hardening 继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -392,9 +404,9 @@ V2.1 engineering baseline closeout 已完成：
 
 ## 7. Auto-continue allowed when
 
-当前只允许自动继续 `task_v2_1_clarifying_questions_backend_prototype.md`。
+当前没有自动开放任务。
 
-执行 agent 不应自动继续 V2.2 Runtime / LangGraph、Android review history、search evidence、DB hardening 或真实 LLM/search/contact implementation。后续 V2.2 docs-level planning 也必须等待当前 V2.1 conversational completion 队列重新收口后再评估。
+执行 agent 不应自动继续 Android polish、V2.2 Runtime / LangGraph、Android review history、search evidence、DB hardening 或真实 LLM/search/contact implementation。后续任务必须由规划层明确开放。
 
 ---
 

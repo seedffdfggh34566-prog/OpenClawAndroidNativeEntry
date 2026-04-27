@@ -74,7 +74,7 @@ V2 当前规划重点：
 - 结构化后端对象是主真相；Markdown 是 agent-readable workspace projection，不是唯一主存。
 - Product Sales Agent / Runtime 每次运行应尽量生成 `WorkspacePatchDraft`，由后端 workspace kernel 裁决正式写回。
 - V2.1 workspace/kernel engineering baseline 已验证 Sales Workspace Kernel、Draft Review ID flow、Postgres / Alembic persistence chain 与 Draft Review audit persistence。
-- V2.1 chat-first deterministic demo flow 已完成：contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook 和 closeout 均已补齐；PRD-level conversational product experience remains incomplete。
+- V2.1 chat-first deterministic demo flow 和 backend-level 5-sample conversational acceptance 已完成：contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook、PRD Traceability、clarifying questions、workspace explanation、product extraction、lead direction adjustment 和 backend e2e 均已补齐；完整 product experience 仍需 Android polish / device acceptance。
 - V2.2 再进入证据化 ResearchRound、候选客户、来源证据和候选优先级榜更新。
 - V2.3 作为 Persistent Sales Workspace MVP gate，验证长期记忆、历史研究复用、候选状态管理和用户反馈闭环是否值得进入 MVP。
 
@@ -144,7 +144,7 @@ Android / client
 
 当前处于：
 
-> **V2.1 workspace/kernel engineering baseline completed；V2.1 conversational product experience remains incomplete 阶段。**
+> **V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed；V2.1 conversational product experience remains incomplete 阶段。**
 
 已经明确：
 
@@ -232,7 +232,7 @@ V2 继续实现前，应先确保当前 task 已在 `_active.md` 中开放。当
 当前推荐顺序：
 
 1. 承认 V2.1 workspace/kernel engineering baseline completed。
-2. 承认 V2.1 conversational product experience remains incomplete；PRD acceptance gap review 已完成，当前先执行 clarifying questions backend prototype。
+2. 承认 V2.1 conversational backend acceptance 已完成，但完整 V2.1 conversational product experience remains incomplete；下一步需由规划层决定是否开放 Android conversation polish / device acceptance。
 3. V2.2 implementation 前，不直接接真实 LLM、联网搜索、ContactPoint 或 CRM/contact。
 4. Android review history、正式 LangGraph 和 DB hardening 也应通过独立 task 开放。
 
@@ -244,4 +244,4 @@ V2 继续实现前，应先确保当前 task 已在 `_active.md` 中开放。当
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2.1 workspace/kernel engineering baseline completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain 和 Draft Review audit persistence 已完成；V2.1 conversational product experience remains incomplete，下一步先做 clarifying questions backend prototype，不直接进入真实搜索或 LLM implementation。**
+> **AI 销售助手 V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain、Draft Review audit persistence 和 5-sample backend conversational acceptance 已完成；V2.1 conversational product experience remains incomplete，不直接进入真实搜索或 LLM implementation。**

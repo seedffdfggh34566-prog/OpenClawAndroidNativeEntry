@@ -114,6 +114,53 @@ def test_chat_first_review_apply_updates_product_and_direction(client) -> None:
     ]
 
 
+def test_chat_first_workspace_question_explains_current_structured_objects_without_mutation(client) -> None:
+    _create_workspace(client, "ws_demo")
+    _run_chat_turn(
+        client,
+        workspace_id="ws_demo",
+        message_id="msg_user_product_001",
+        message_type="product_profile_update",
+        content="FactoryOps AI 帮助制造企业协同排产、库存和 ERP。",
+        base_workspace_version=0,
+    )
+    _accept_and_apply(client, "ws_demo", "draft_review_sales_turn_product_profile_update_v1", expected_version=1)
+    _run_chat_turn(
+        client,
+        workspace_id="ws_demo",
+        message_id="msg_user_direction_001",
+        message_type="lead_direction_update",
+        content="先找华东地区 100 到 500 人、有 ERP 但排产库存协同弱的制造企业。",
+        base_workspace_version=1,
+    )
+    _accept_and_apply(client, "ws_demo", "draft_review_sales_turn_lead_direction_update_v2", expected_version=2)
+
+    payload = _run_chat_turn(
+        client,
+        workspace_id="ws_demo",
+        message_id="msg_user_explain_001",
+        message_type="workspace_question",
+        content="为什么建议这个方向？",
+        base_workspace_version=2,
+    )
+
+    assert payload["patch_draft"] is None
+    assert payload["draft_review"] is None
+    assistant = payload["assistant_message"]
+    assert assistant["message_type"] == "workspace_question"
+    assert "产品理解" in assistant["content"]
+    assert "当前获客方向" in assistant["content"]
+    assert "workspace_version=2" in assistant["content"]
+    assert assistant["linked_object_refs"] == [
+        "ProductProfileRevision:ppr_chat_v1",
+        "LeadDirectionVersion:dir_chat_v2",
+    ]
+
+    workspace_response = client.get("/sales-workspaces/ws_demo")
+    assert workspace_response.status_code == 200
+    assert workspace_response.json()["workspace"]["workspace_version"] == 2
+
+
 def test_chat_first_out_of_scope_v2_2_does_not_create_draft(client) -> None:
     _create_workspace(client, "ws_demo")
     _post_message(

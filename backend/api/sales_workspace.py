@@ -478,6 +478,68 @@ def _assistant_message_for_clarifying_questions(
     )
 
 
+def _assistant_message_for_workspace_question(
+    *,
+    workspace: Any,
+    context_pack: Any,
+    workspace_id: str,
+    agent_run: SalesAgentTurnRun,
+) -> ConversationMessage:
+    product = (
+        workspace.product_profile_revisions.get(workspace.current_product_profile_revision_id)
+        if workspace.current_product_profile_revision_id
+        else None
+    )
+    direction = (
+        workspace.lead_direction_versions.get(workspace.current_lead_direction_version_id)
+        if workspace.current_lead_direction_version_id
+        else None
+    )
+    refs: list[str] = []
+    if product is not None:
+        refs.append(f"ProductProfileRevision:{product.id}")
+    if direction is not None:
+        refs.append(f"LeadDirectionVersion:{direction.id}")
+
+    if product is None and direction is None:
+        content = (
+            "当前 workspace 还没有正式产品理解或获客方向。"
+            "我需要先通过产品理解和获客方向输入形成可审阅草稿，再解释推荐依据。"
+        )
+    else:
+        product_summary = (
+            f"产品理解是：{product.one_liner or product.product_name}。"
+            if product is not None
+            else "当前还没有正式产品理解。"
+        )
+        direction_summary = (
+            "当前获客方向是："
+            f"优先行业 {', '.join(direction.priority_industries) or '未明确'}；"
+            f"目标客户 {', '.join(direction.target_customer_types) or '未明确'}；"
+            f"地区 {', '.join(direction.regions) or '未明确'}；"
+            f"规模 {', '.join(direction.company_sizes) or '未明确'}。"
+            if direction is not None
+            else "当前还没有正式获客方向。"
+        )
+        rationale = (
+            "推荐依据来自当前结构化 workspace objects 和本轮 ContextPack source versions："
+            f"workspace_version={context_pack.source_versions.get('workspace_version')}，"
+            f"current_product_profile_revision_id={context_pack.source_versions.get('current_product_profile_revision_id')}，"
+            f"current_lead_direction_version_id={context_pack.source_versions.get('current_lead_direction_version_id')}。"
+        )
+        content = f"{product_summary}\n{direction_summary}\n{rationale}"
+
+    return ConversationMessage(
+        id=f"msg_assistant_{agent_run.id}",
+        workspace_id=workspace_id,
+        role="assistant",
+        message_type="workspace_question",
+        content=content,
+        linked_object_refs=refs,
+        created_by_agent_run_id=agent_run.id,
+    )
+
+
 def _generate_chat_first_patch_draft(
     workspace: Any,
     *,
@@ -586,6 +648,8 @@ def _generate_chat_first_patch_draft(
 
 def _assistant_message_for_turn(
     *,
+    workspace: Any,
+    context_pack: Any,
     workspace_id: str,
     agent_run: SalesAgentTurnRun,
     source_message: ConversationMessage,
@@ -598,6 +662,13 @@ def _assistant_message_for_turn(
         )
         message_type: MessageType = "out_of_scope_v2_2"
         refs: list[str] = []
+    elif draft_review is None and source_message.message_type == "workspace_question":
+        return _assistant_message_for_workspace_question(
+            workspace=workspace,
+            context_pack=context_pack,
+            workspace_id=workspace_id,
+            agent_run=agent_run,
+        )
     elif draft_review is None:
         content = "我可以先解释当前 workspace 状态；这轮没有生成 WorkspacePatchDraft。"
         message_type = "workspace_question"
@@ -829,6 +900,8 @@ def create_sales_agent_turn(workspace_id: str, request: Request, payload: Any = 
         review_store.save(draft_review)
 
     assistant_message = _assistant_message_for_turn(
+        workspace=workspace,
+        context_pack=context_pack,
         workspace_id=workspace_id,
         agent_run=agent_run,
         source_message=source_message,

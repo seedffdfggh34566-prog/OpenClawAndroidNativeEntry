@@ -1,6 +1,6 @@
 # Task: V2.1 Workspace Explanation Backend Prototype
 
-状态：planned / blocked
+状态：done
 
 更新时间：2026-04-27
 
@@ -19,3 +19,16 @@
 - 不接 V2.2 search / ContactPoint / CRM。
 - 不接真实 LLM，除非后续 task 明确改变策略。
 - 不改 formal workspace writeback boundary。
+
+## Outcome
+
+- `workspace_question` sales-agent turns now return an assistant explanation grounded in current `ProductProfileRevision`, `LeadDirectionVersion`, and ContextPack source versions.
+- Explanation turns do not create `WorkspacePatchDraft` or Draft Review.
+- Workspace version remains unchanged.
+
+## Validation
+
+```bash
+PYTHONPATH=$PWD backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_chat_first_api.py -q
+git diff --check
+```

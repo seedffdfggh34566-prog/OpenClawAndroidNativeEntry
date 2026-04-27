@@ -542,6 +542,139 @@ Runtime WorkspacePatchDraft
 
 ---
 
+## 5.8 `POST /sales-workspaces/{workspace_id}/runtime/patch-drafts/prototype/preview`
+
+生成 deterministic Runtime PatchDraft preview，但不写入 workspace。
+
+该 endpoint 用于验证 review gate：
+
+```text
+Runtime WorkspacePatchDraft
+-> backend materialize WorkspacePatch
+-> derive preview ranking without store mutation
+```
+
+### Request
+
+```json
+{
+  "base_workspace_version": 3,
+  "instruction": "add one deterministic runtime candidate"
+}
+```
+
+### Response `200`
+
+```json
+{
+  "patch_draft": {
+    "id": "draft_runtime_v4",
+    "workspace_id": "ws_demo",
+    "base_workspace_version": 3
+  },
+  "patch": {
+    "id": "patch_runtime_v4",
+    "workspace_id": "ws_demo",
+    "base_workspace_version": 3
+  },
+  "preview_workspace_version": 4,
+  "preview_ranking_board": {
+    "ranked_items": [
+      {
+        "candidate_id": "cand_runtime_001",
+        "rank": 1
+      }
+    ]
+  },
+  "would_mutate": false
+}
+```
+
+### Errors
+
+- `404 not_found`
+- `409 workspace_version_conflict`
+- `422 patchdraft_validation_error`
+- existing materialized patch errors such as `400 unsupported_workspace_operation`
+
+### Notes
+
+- Preview must not mutate workspace state.
+- Clients must submit a reviewed draft to the apply endpoint before formal writeback.
+
+---
+
+## 5.9 `POST /sales-workspaces/{workspace_id}/runtime/patch-drafts/prototype/apply`
+
+应用已经审阅的 `WorkspacePatchDraft`。
+
+该 endpoint 用于验证显式 apply gate：
+
+```text
+reviewed WorkspacePatchDraft
+-> backend materialize WorkspacePatch
+-> Sales Workspace Kernel validate/apply
+```
+
+### Request
+
+```json
+{
+  "patch_draft": {
+    "id": "draft_runtime_v4",
+    "workspace_id": "ws_demo",
+    "base_workspace_version": 3,
+    "operations": []
+  }
+}
+```
+
+### Response `200`
+
+```json
+{
+  "patch_draft": {
+    "id": "draft_runtime_v4"
+  },
+  "patch": {
+    "id": "patch_runtime_v4"
+  },
+  "workspace": {
+    "id": "ws_demo",
+    "workspace_version": 4
+  },
+  "commit": {
+    "patch_id": "patch_runtime_v4",
+    "workspace_version": 4
+  },
+  "ranking_board": {
+    "ranked_items": [
+      {
+        "candidate_id": "cand_runtime_001",
+        "rank": 1
+      }
+    ]
+  }
+}
+```
+
+### Errors
+
+- `404 not_found`
+- `409 workspace_version_conflict`
+- `422 validation_error` when path workspace and draft workspace do not match
+- `422 patchdraft_validation_error`
+- existing materialized patch errors such as `400 unsupported_workspace_operation`
+
+### Notes
+
+- Drafts are not persisted by this prototype.
+- Clients pass the previewed / reviewed draft back to apply.
+- Sales Workspace Kernel remains the formal object writeback owner.
+- This is not Android write UI, real LLM, formal LangGraph, search, contact, CRM, or DB persistence.
+
+---
+
 ## 6. Implementation Gates
 
 no-DB FastAPI prototype v0 已完成：
@@ -556,6 +689,6 @@ no-DB FastAPI prototype v0 已完成：
 3. 保持 `backend/sales_workspace` 作为 object 与 validation source。
 4. 继续保留 route tests for success、validation error、not found、unsupported operation 和 version conflict。
 
-Android read-only view and deterministic Runtime PatchDraft prototype have dedicated tasks and are allowed as prototypes.
+Android read-only view, deterministic Runtime PatchDraft prototype, and PatchDraft review gate prototype have dedicated tasks and are allowed as prototypes.
 
 Do not implement Android write path, formal Runtime / LangGraph integration, real LLM/search/contact workflows, or persistence-backed API before the planning layer creates dedicated tasks.

@@ -21,7 +21,7 @@
 
 当前正式主线为：
 
-> **Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype、Android read-only demo、JSON file store prototype 与 Runtime PatchDraft prototype 已完成。**
+> **Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype、Android read-only demo、JSON file store prototype、Runtime PatchDraft prototype 与 PatchDraft review gate prototype 已完成。**
 
 V1 已作为 demo-ready release candidate / learning milestone 收口，不再是默认开发方向。
 
@@ -49,6 +49,7 @@ Sales Workspace Kernel prototype 已完成：
 - Android read-only workspace demo
 - optional JSON file store prototype
 - deterministic Runtime PatchDraft prototype
+- PatchDraft review gate prototype
 - pytest coverage
 
 当前不应自动实现：

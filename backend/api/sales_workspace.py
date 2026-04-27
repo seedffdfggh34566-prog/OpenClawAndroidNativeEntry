@@ -9,11 +9,12 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from backend.api.config import get_settings
 from backend.sales_workspace.context_pack import compile_context_pack
-from backend.sales_workspace.patches import WorkspacePatchError, WorkspaceVersionConflict
+from backend.sales_workspace.patches import WorkspacePatchError, WorkspaceVersionConflict, apply_workspace_patch
 from backend.sales_workspace.projection import render_markdown_projection
 from backend.sales_workspace.schemas import WorkspacePatch
 from backend.sales_workspace.store import InMemoryWorkspaceStore, JsonFileWorkspaceStore, WorkspaceNotFound
 from backend.runtime.sales_workspace_patchdraft import (
+    WorkspacePatchDraft,
     generate_deterministic_workspace_patch_draft,
     materialize_workspace_patch,
 )
@@ -47,6 +48,10 @@ class CreateContextPackRequest(ApiModel):
 class RuntimePatchDraftPrototypeRequest(ApiModel):
     base_workspace_version: int = Field(ge=0)
     instruction: str = ""
+
+
+class ApplyRuntimePatchDraftRequest(ApiModel):
+    patch_draft: WorkspacePatchDraft
 
 
 def create_sales_workspace_store() -> InMemoryWorkspaceStore:
@@ -133,7 +138,27 @@ def _patchdraft_validation_error(exc: ValidationError, *, workspace_id: str) -> 
         status_code=422,
         code="patchdraft_validation_error",
         message="runtime WorkspacePatchDraft failed validation",
-        details={"workspace_id": workspace_id, "errors": exc.errors()},
+        details={"workspace_id": workspace_id, "errors": jsonable_encoder(exc.errors())},
+    )
+
+
+def _workspace_version_conflict_response(
+    exc: WorkspaceVersionConflict,
+    *,
+    workspace_id: str,
+    current_workspace_version: int | None,
+    base_workspace_version: int,
+) -> JSONResponse:
+    return _error_response(
+        status_code=409,
+        code="workspace_version_conflict",
+        message="base_workspace_version does not match current workspace_version",
+        details={
+            "workspace_id": workspace_id,
+            "current_workspace_version": current_workspace_version,
+            "base_workspace_version": base_workspace_version,
+            "reason": str(exc),
+        },
     )
 
 
@@ -201,16 +226,11 @@ def apply_patch(workspace_id: str, request: Request, payload: Any = Body(...)):
             current_version = store.get(workspace_id).workspace_version
         except WorkspaceNotFound:
             pass
-        return _error_response(
-            status_code=409,
-            code="workspace_version_conflict",
-            message="base_workspace_version does not match current workspace_version",
-            details={
-                "workspace_id": workspace_id,
-                "current_workspace_version": current_version,
-                "base_workspace_version": patch.base_workspace_version,
-                "reason": str(exc),
-            },
+        return _workspace_version_conflict_response(
+            exc,
+            workspace_id=workspace_id,
+            current_workspace_version=current_version,
+            base_workspace_version=patch.base_workspace_version,
         )
     except WorkspacePatchError as exc:
         return _patch_error_response(exc, workspace_id=workspace_id)
@@ -252,16 +272,100 @@ def apply_runtime_patchdraft_prototype(workspace_id: str, request: Request, payl
     except WorkspaceNotFound:
         return _not_found_response(workspace_id)
     except WorkspaceVersionConflict as exc:
+        return _workspace_version_conflict_response(
+            exc,
+            workspace_id=workspace_id,
+            current_workspace_version=workspace.workspace_version,
+            base_workspace_version=patch.base_workspace_version,
+        )
+    except WorkspacePatchError as exc:
+        return _patch_error_response(exc, workspace_id=workspace_id)
+    except ValidationError as exc:
+        return _patchdraft_validation_error(exc, workspace_id=workspace_id)
+
+    return {
+        "patch_draft": patch_draft,
+        "patch": patch,
+        "workspace": updated,
+        "commit": updated.commits[-1] if updated.commits else None,
+        "ranking_board": updated.ranking_board,
+    }
+
+
+@router.post("/{workspace_id}/runtime/patch-drafts/prototype/preview")
+def preview_runtime_patchdraft_prototype(workspace_id: str, request: Request, payload: Any = Body(...)):
+    try:
+        parsed = RuntimePatchDraftPrototypeRequest.model_validate(payload)
+    except ValidationError as exc:
+        return _validation_error(exc, workspace_id=workspace_id)
+
+    try:
+        workspace = _store(request).get(workspace_id)
+    except WorkspaceNotFound:
+        return _not_found_response(workspace_id)
+
+    try:
+        patch_draft = generate_deterministic_workspace_patch_draft(
+            workspace,
+            base_workspace_version=parsed.base_workspace_version,
+            instruction=parsed.instruction,
+        )
+        patch = materialize_workspace_patch(patch_draft)
+        preview_workspace = apply_workspace_patch(workspace, patch)
+    except WorkspaceVersionConflict as exc:
+        return _workspace_version_conflict_response(
+            exc,
+            workspace_id=workspace_id,
+            current_workspace_version=workspace.workspace_version,
+            base_workspace_version=parsed.base_workspace_version,
+        )
+    except WorkspacePatchError as exc:
+        return _patch_error_response(exc, workspace_id=workspace_id)
+    except ValidationError as exc:
+        return _patchdraft_validation_error(exc, workspace_id=workspace_id)
+
+    return {
+        "patch_draft": patch_draft,
+        "patch": patch,
+        "preview_workspace_version": preview_workspace.workspace_version,
+        "preview_ranking_board": preview_workspace.ranking_board,
+        "would_mutate": False,
+    }
+
+
+@router.post("/{workspace_id}/runtime/patch-drafts/prototype/apply")
+def apply_reviewed_runtime_patchdraft_prototype(workspace_id: str, request: Request, payload: Any = Body(...)):
+    try:
+        parsed = ApplyRuntimePatchDraftRequest.model_validate(payload)
+    except ValidationError as exc:
+        return _patchdraft_validation_error(exc, workspace_id=workspace_id)
+
+    patch_draft = parsed.patch_draft
+    if patch_draft.workspace_id != workspace_id:
         return _error_response(
-            status_code=409,
-            code="workspace_version_conflict",
-            message="base_workspace_version does not match current workspace_version",
-            details={
-                "workspace_id": workspace_id,
-                "current_workspace_version": workspace.workspace_version,
-                "base_workspace_version": patch.base_workspace_version,
-                "reason": str(exc),
-            },
+            status_code=422,
+            code="validation_error",
+            message="path workspace_id does not match patch_draft.workspace_id",
+            details={"workspace_id": workspace_id, "patch_draft_workspace_id": patch_draft.workspace_id},
+        )
+
+    store = _store(request)
+    try:
+        workspace = store.get(workspace_id)
+    except WorkspaceNotFound:
+        return _not_found_response(workspace_id)
+
+    try:
+        patch = materialize_workspace_patch(patch_draft)
+        updated = store.apply_patch(patch)
+    except WorkspaceNotFound:
+        return _not_found_response(workspace_id)
+    except WorkspaceVersionConflict as exc:
+        return _workspace_version_conflict_response(
+            exc,
+            workspace_id=workspace_id,
+            current_workspace_version=workspace.workspace_version,
+            base_workspace_version=patch_draft.base_workspace_version,
         )
     except WorkspacePatchError as exc:
         return _patch_error_response(exc, workspace_id=workspace_id)

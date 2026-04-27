@@ -140,6 +140,43 @@ def test_chat_first_out_of_scope_v2_2_does_not_create_draft(client) -> None:
     assert workspace_response.json()["workspace"]["workspace_version"] == 0
 
 
+def test_chat_first_insufficient_input_returns_clarifying_questions_without_mutation(client) -> None:
+    _create_workspace(client, "ws_demo")
+    _post_message(
+        client,
+        workspace_id="ws_demo",
+        message_id="msg_user_unclear_001",
+        message_type="product_profile_update",
+        content="帮我找客户",
+    )
+
+    response = client.post(
+        "/sales-workspaces/ws_demo/agent-runs/sales-agent-turns",
+        json={"message_id": "msg_user_unclear_001", "base_workspace_version": 0},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["patch_draft"] is None
+    assert payload["draft_review"] is None
+    assert payload["assistant_message"]["message_type"] == "clarifying_question"
+    questions = [
+        line
+        for line in payload["assistant_message"]["content"].splitlines()
+        if line[:2] in {"1.", "2.", "3.", "4.", "5."}
+    ]
+    assert len(questions) == 5
+    assert "目标客户" in payload["assistant_message"]["content"]
+    assert "哪些行业" in payload["assistant_message"]["content"]
+    assert payload["agent_run"]["output_refs"] == ["ConversationMessage:msg_assistant_run_sales_turn_unclear_001"]
+
+    workspace_response = client.get("/sales-workspaces/ws_demo")
+    assert workspace_response.status_code == 200
+    workspace = workspace_response.json()["workspace"]
+    assert workspace["workspace_version"] == 0
+    assert workspace["product_profile_revisions"] == {}
+
+
 def test_chat_first_version_conflict_records_failed_run_without_mutation(client) -> None:
     _create_workspace(client, "ws_demo")
     _post_message(

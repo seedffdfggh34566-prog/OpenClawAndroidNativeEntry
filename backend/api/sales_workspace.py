@@ -384,6 +384,100 @@ def _agent_run_ref(agent_run: SalesAgentTurnRun) -> str:
     return f"AgentRun:{agent_run.id}"
 
 
+def _needs_clarifying_questions(message: ConversationMessage) -> bool:
+    content = message.content.strip()
+    if message.message_type not in {
+        "product_profile_update",
+        "lead_direction_update",
+        "mixed_product_and_direction_update",
+    }:
+        return False
+    if len(content) < 12:
+        return True
+    if message.message_type == "product_profile_update":
+        return not _contains_any(
+            content,
+            [
+                "软件",
+                "SaaS",
+                "服务",
+                "培训",
+                "园区",
+                "招商",
+                "维保",
+                "外包",
+                "排产",
+                "库存",
+                "财税",
+                "现金流",
+                "FactoryOps",
+            ],
+        )
+    if message.message_type == "lead_direction_update":
+        return not _contains_any(
+            content,
+            [
+                "行业",
+                "地区",
+                "华东",
+                "本地",
+                "制造",
+                "企业",
+                "客户",
+                "人",
+                "优先",
+                "排除",
+                "不要",
+                "规模",
+            ],
+        )
+    return not _contains_any(content, ["客户", "行业", "地区", "产品", "软件", "服务", "优先"])
+
+
+def _contains_any(content: str, keywords: list[str]) -> bool:
+    normalized = content.lower()
+    return any(keyword.lower() in normalized for keyword in keywords)
+
+
+def _clarifying_questions_for_message(message: ConversationMessage) -> list[str]:
+    if message.message_type == "lead_direction_update":
+        return [
+            "你希望优先覆盖哪些行业或客户类型？",
+            "当前优先服务哪个地区或城市？",
+            "目标客户大概是什么规模，例如员工人数、营收或门店数量？",
+            "客户必须具备哪些前提条件，例如已有系统、预算或明确痛点？",
+            "哪些行业、客户类型或订单暂时不想优先做？",
+        ]
+    return [
+        "你的产品或服务主要解决什么具体问题？",
+        "最适合的目标客户是谁，例如老板、业务负责人、HR、设备部或财务负责人？",
+        "客户现在最痛的 1 到 2 个场景是什么？",
+        "你希望优先覆盖哪个地区、行业或企业规模？",
+        "哪些行业、客户类型或需求暂时不想优先做？",
+    ]
+
+
+def _assistant_message_for_clarifying_questions(
+    *,
+    workspace_id: str,
+    agent_run: SalesAgentTurnRun,
+    source_message: ConversationMessage,
+) -> ConversationMessage:
+    questions = _clarifying_questions_for_message(source_message)
+    content = "我还需要先确认几个关键信息，避免过早生成不可靠的工作区草稿：\n" + "\n".join(
+        f"{index}. {question}" for index, question in enumerate(questions, start=1)
+    )
+    return ConversationMessage(
+        id=f"msg_assistant_{agent_run.id}",
+        workspace_id=workspace_id,
+        role="assistant",
+        message_type="clarifying_question",
+        content=content,
+        linked_object_refs=[],
+        created_by_agent_run_id=agent_run.id,
+    )
+
+
 def _generate_chat_first_patch_draft(
     workspace: Any,
     *,
@@ -642,6 +736,30 @@ def create_sales_agent_turn(workspace_id: str, request: Request, payload: Any = 
         token_budget_chars=parsed.token_budget_chars,
     )
     trace_store.save_context_pack(context_pack)
+
+    if _needs_clarifying_questions(source_message):
+        assistant_message = _assistant_message_for_clarifying_questions(
+            workspace_id=workspace_id,
+            agent_run=agent_run,
+            source_message=source_message,
+        )
+        trace_store.save_message(assistant_message)
+        completed = agent_run.model_copy(
+            update={
+                "status": "succeeded",
+                "output_refs": [_message_ref(assistant_message)],
+                "finished_at": utc_now(),
+            }
+        )
+        trace_store.save_agent_run(completed)
+        return {
+            "conversation_message": source_message,
+            "agent_run": completed,
+            "context_pack": context_pack,
+            "assistant_message": assistant_message,
+            "patch_draft": None,
+            "draft_review": None,
+        }
 
     patch_draft = _generate_chat_first_patch_draft(
         workspace,

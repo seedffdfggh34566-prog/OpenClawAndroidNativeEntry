@@ -27,7 +27,7 @@
 
 > **Sales Workspace Kernel：结构化 workspace 状态机 + WorkspacePatch 写回门禁 + 候选排序 + Markdown projection + ContextPack Compiler。**
 
-Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline、persistence schema design、persistence migration v0、repository layer v0、API Postgres store v0、Draft Review persistence v0 和 V2.1 engineering baseline closeout 已完成。当前不是 V1 继续开发阶段，也不是扩展 Android write path、正式 Runtime / LangGraph implementation 或 V2.2 evidence / search 阶段。V2.1 product experience 仍需补齐 chat-first 产品理解、获客方向迭代、ConversationMessage / AgentRun trace 和 Runtime -> WorkspacePatchDraft 设计。
+Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline、persistence schema design、persistence migration v0、repository layer v0、API Postgres store v0、Draft Review persistence v0、V2.1 engineering baseline closeout 和 V2.1 chat-first Runtime design 已完成。当前不是 V1 继续开发阶段，也不是扩展 Android write path、正式 Runtime / LangGraph implementation 或 V2.2 evidence / search 阶段。V2.1 product experience 仍需补齐 contract examples、backend prototype 和 Android chat-first UI。
 
 当前 V2 prototype demo runbook 已补齐：
 
@@ -105,6 +105,7 @@ V1 细节可继续参考：
 - `docs/architecture/workspace/sales-workspace-kernel.md`
 - `docs/architecture/workspace/sales-workspace-persistence-baseline.md`
 - `docs/architecture/workspace/sales-workspace-persistence-schema.md`
+- `docs/architecture/runtime/v2-1-chat-first-runtime-design.md`
 - `docs/architecture/workspace/workspace-kernel-v0-scope.md`
 - `docs/architecture/workspace/markdown-projection.md`
 - `docs/architecture/workspace/context-pack-compiler.md`
@@ -149,6 +150,9 @@ V1 细节可继续参考：
 - `docs/delivery/tasks/task_v2_1_completion_closeout.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_1_completion_closeout.md`
 - `docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`
+- `docs/architecture/runtime/v2-1-chat-first-runtime-design.md`
+- `docs/reference/api/sales-workspace-chat-first-runtime-contract.md`
+- `docs/delivery/handoffs/handoff_2026_04_27_v2_1_chat_first_runtime_design.md`
 
 ### 5.4 V1 baseline 与参考
 
@@ -253,7 +257,7 @@ docs/
 
 当前自动排定任务：
 
-- `docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`
+- 暂无 implementation task 自动开放。
 
 当前 Draft review contract 为：
 
@@ -319,8 +323,9 @@ docs/
 - Sales Workspace API Postgres store v0 已完成。
 - Sales Workspace Draft Review persistence v0 已完成。
 - V2.1 engineering baseline closeout 已完成。
-- V2.1 product experience 尚未完成。
-- 当前自动排定任务：`docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`。
+- V2.1 chat-first Runtime design 已完成。
+- V2.1 product experience 仍需完成 contract examples 和 backend / Android 实现后才算闭环完成。
+- 当前没有 implementation task 自动开放。
 - V2 MVP persistence baseline 采用 Postgres / Alembic。
 - 当前不开放 Android 或 Runtime / LangGraph implementation。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
@@ -376,6 +381,8 @@ Sales Workspace Kernel backend-only v0 已完成：
 21. Sales Workspace Draft Review persistence v0。
 22. V2.1 engineering baseline closeout。
 23. V2.1 chat-first runtime design。
+24. V2.1 chat-first runtime contract examples。
+25. V2.1 chat-first runtime backend prototype。
 
 当前仍不应自动实现：
 
@@ -391,7 +398,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 
 当前自动排定任务：
 
-- `docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`
+- 暂无 implementation task 自动开放。
 
 V2.2 planned / blocked task placeholders：
 
@@ -405,4 +412,4 @@ V2.2 planned / blocked task placeholders：
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2.1 engineering baseline completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain 与 Draft Review audit persistence 已进入 main；V2.1 product experience not completed yet，当前任务是补齐 chat-first Runtime design，不直接写 V2.2 LangGraph / LLM / search 或 Android 扩展。**
+> **AI 销售助手 V2.1 engineering baseline completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain 与 Draft Review audit persistence 已进入 main；V2.1 chat-first Runtime design 已完成，但 product experience 仍需 contract examples、backend prototype 和 Android chat-first UI 才算闭环完成；当前不直接写 V2.2 LangGraph / LLM / search 或 Android 扩展。**

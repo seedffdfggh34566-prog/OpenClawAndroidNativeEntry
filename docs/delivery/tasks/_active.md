@@ -17,7 +17,7 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`
+暂无自动排定。
 
 ### Next queued task
 
@@ -54,10 +54,11 @@
 - `docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`（done）
 - `docs/delivery/tasks/task_v2_1_completion_closeout.md`（done）
+- `docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`（done）
 
 Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成，V2.1 engineering baseline closeout 已完成。
 
-V2.1 engineering baseline completed，但 V2.1 product experience not completed yet。当前任务是补齐 chat-first Runtime design；V2.2 evidence / search / ContactPoint 仍 blocked。
+V2.1 engineering baseline completed，V2.1 chat-first Runtime design 已完成，但 V2.1 product experience not completed yet。contract examples、backend prototype 和 Android chat-first UI 尚未完成；V2.2 evidence / search / ContactPoint 仍 blocked。
 
 ---
 
@@ -93,13 +94,18 @@ V2.1 engineering baseline completed，但 V2.1 product experience not completed 
 
 24. V2.1 chat-first runtime design。
 
+后续 planned / blocked：
+
+25. V2.1 chat-first runtime contract examples。
+26. V2.1 chat-first runtime backend prototype。
+
 当前结论：
 
 - V2 MVP persistence baseline 采用 Postgres / Alembic。
 - SQLite 不作为 V2 Sales Workspace runtime fallback。
 - 不开放 production hardening 或新增 API surface。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
-- 当前只开放 V2.1 chat-first runtime design，不自动进入 Android、正式 LangGraph implementation 或 V2.2 search。
+- 当前没有自动开放任务，不自动进入 Android、正式 LangGraph implementation 或 V2.2 search。
 - 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
 - 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
 - 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
@@ -120,7 +126,8 @@ V2.1 engineering baseline completed，但 V2.1 product experience not completed 
 - Sales Workspace API Postgres store v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`。
 - Sales Workspace Draft Review persistence v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`。
 - V2.1 engineering baseline closeout 已完成：`docs/delivery/tasks/task_v2_1_completion_closeout.md`。
-- V2.1 product experience 尚未完成；当前任务为 `docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`。
+- V2.1 chat-first Runtime design 已完成：`docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`。
+- V2.1 product experience 尚未完成；contract examples、backend prototype 和 Android chat-first UI 仍未完成。
 - production hardening、history read API 和 DB reconstruction hardening 继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -282,15 +289,17 @@ V2.1 engineering baseline closeout 已完成：
 
 当前自动排定任务：
 
-- `docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`
+- 暂无。
 
 后续 planned / blocked：
 
 - `docs/delivery/tasks/task_v2_2_runtime_langgraph_design.md`（blocked by V2.1 product experience）
 - `docs/delivery/tasks/task_v2_2_android_review_history_planning.md`（blocked by V2.1 product experience）
 - `docs/delivery/tasks/task_v2_2_search_evidence_boundary_design.md`（blocked by V2.1 product experience）
-- `docs/delivery/tasks/task_v2_runtime_langgraph_design.md`（blocked by V2.1 chat-first runtime design）
+- `docs/delivery/tasks/task_v2_runtime_langgraph_design.md`（blocked by V2.1 product experience）
 - `docs/delivery/tasks/task_v2_android_review_history_view.md`（blocked by V2.1 product experience）
+- `docs/delivery/tasks/task_v2_1_chat_first_runtime_contract_examples.md`（planned / blocked until explicitly opened）
+- `docs/delivery/tasks/task_v2_1_chat_first_runtime_backend_prototype.md`（planned / blocked by contract examples）
 
 ---
 
@@ -332,15 +341,17 @@ V2.1 engineering baseline closeout 已完成：
 32. `docs/delivery/tasks/task_v2_sales_workspace_persistence_migration_v0.md`
 33. `docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`
 34. `docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`
-35. 本文件
+35. `docs/architecture/runtime/v2-1-chat-first-runtime-design.md`
+36. `docs/reference/api/sales-workspace-chat-first-runtime-contract.md`
+37. 本文件
 
 ---
 
 ## 7. Auto-continue allowed when
 
-当前只允许继续 `task_v2_1_chat_first_runtime_design.md` 的 docs-only design 工作。
+当前没有自动开放任务。
 
-该任务完成前，执行 agent 不应自动继续 V2.2 Runtime / LangGraph、Android review history、search evidence 或 DB hardening。
+执行 agent 不应自动继续 V2.2 Runtime / LangGraph、Android review history、search evidence、DB hardening 或 chat-first backend implementation。下一步需要先由规划层明确是否开放 `task_v2_1_chat_first_runtime_contract_examples.md`。
 
 ---
 

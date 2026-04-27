@@ -42,8 +42,9 @@
 - `docs/delivery/tasks/task_v2_sales_workspace_prototype_demo_runbook.md`（done）
 - `docs/delivery/tasks/task_v2_post_demo_next_phase_decision.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成。
 
 ---
 
@@ -63,6 +64,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 10. Prototype demo runbook。
 11. Post-demo next phase decision。
 12. Draft review contract。
+13. Draft review routes prototype。
 
 当前结论：
 
@@ -78,6 +80,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - 当前已存在 V2 prototype demo runbook：`docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`。
 - 当前已完成 clean demo verification。
 - Draft review contract 已完成：`docs/reference/api/sales-workspace-draft-review-contract.md`。
+- Draft review routes prototype 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`。
 - backend API 的 DB-backed / production persistence 版本继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -192,6 +195,12 @@ Draft review contract 已完成：
 - `docs/reference/api/sales-workspace-draft-review-contract.md`
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`
 
+Draft review routes prototype 已完成：
+
+- `backend/sales_workspace/draft_reviews.py`
+- `backend/tests/test_sales_workspace_draft_reviews_api.py`
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
+
 ---
 
 ## 6. 当前执行入口
@@ -220,7 +229,8 @@ Draft review contract 已完成：
 20. `docs/delivery/tasks/task_v2_post_demo_next_phase_decision.md`
 21. `docs/reference/api/sales-workspace-draft-review-contract.md`
 22. `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`
-23. 本文件
+23. `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
+24. 本文件
 
 ---
 
@@ -228,7 +238,7 @@ Draft review contract 已完成：
 
 当前没有 next queued task，因此执行 agent 不应自动继续实现。
 
-Draft review contract 已完成。下一步需要人工选择是否进入 persistence decision refresh、draft review route prototype、正式 Runtime / LangGraph integration design，或 Android review UX expansion。
+Draft review routes prototype 已完成。下一步需要人工选择是否进入 Android draft review id flow、persistence decision refresh、正式 Runtime / LangGraph integration design，或 Android review UX expansion。
 
 ---
 

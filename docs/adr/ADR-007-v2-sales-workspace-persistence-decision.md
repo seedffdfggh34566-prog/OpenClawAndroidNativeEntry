@@ -215,3 +215,35 @@ V2 Sales Workspace prototype demo 已完成并通过 clean demo verification：
 - JSON file store 仍只允许作为 prototype demo continuity，不是正式 persistence baseline。
 
 若后续要实现 draft review object，应先刷新 persistence decision 或创建单独 persistence task。
+
+---
+
+## 10. 2026-04-27 Addendum：允许 Draft Review routes prototype
+
+Draft review contract 已完成后，用户明确开放一个单独的 prototype implementation task：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
+
+因此允许实现 backend-managed Draft Review routes prototype：
+
+- `POST /sales-workspaces/{workspace_id}/draft-reviews`
+- `GET /sales-workspaces/{workspace_id}/draft-reviews/{draft_review_id}`
+- `POST /sales-workspaces/{workspace_id}/draft-reviews/{draft_review_id}/review`
+- `POST /sales-workspaces/{workspace_id}/draft-reviews/{draft_review_id}/apply`
+- `POST /sales-workspaces/{workspace_id}/draft-reviews/{draft_review_id}/reject`
+
+允许范围：
+
+- 使用 app-local in-memory draft review store。
+- 在显式设置 `OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR` 时，使用 JSON file-backed draft review store 支撑本地 prototype continuity。
+- 后端负责 materialize `WorkspacePatch` 并通过 Sales Workspace Kernel apply。
+- Runtime / Product Sales Agent execution layer 仍只产出 `WorkspacePatchDraft`。
+
+该 addendum 不推翻本 ADR 的 persistence decision：
+
+- 不新增 SQLAlchemy ORM。
+- 不新增 Alembic migration。
+- 不改变 SQLite / Postgres / production persistence baseline。
+- 不开放正式 LangGraph graph。
+- 不接真实 LLM、search、contact 或 CRM。
+- 不新增 Android UI 或 Android workspace write path。

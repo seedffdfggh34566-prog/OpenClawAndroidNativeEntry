@@ -10,7 +10,7 @@
 
 本文档不是：
 
-- FastAPI route implementation
+- production FastAPI route implementation
 - SQLAlchemy / Alembic migration
 - Android UI implementation
 - LangGraph graph implementation
@@ -22,7 +22,15 @@
 - `POST /sales-workspaces/{workspace_id}/runtime/patch-drafts/prototype/preview`
 - `POST /sales-workspaces/{workspace_id}/runtime/patch-drafts/prototype/apply`
 
-这些 endpoint 仍是 prototype。本文档定义 future contract，不表示本 PR 已实现这些 routes。
+当前已实现 Draft review routes prototype：
+
+- `POST /sales-workspaces/{workspace_id}/draft-reviews`
+- `GET /sales-workspaces/{workspace_id}/draft-reviews/{draft_review_id}`
+- `POST /sales-workspaces/{workspace_id}/draft-reviews/{draft_review_id}/review`
+- `POST /sales-workspaces/{workspace_id}/draft-reviews/{draft_review_id}/apply`
+- `POST /sales-workspaces/{workspace_id}/draft-reviews/{draft_review_id}/reject`
+
+这些 endpoint 仍是 prototype routes。它们不表示 production persistence baseline、正式 Runtime / LangGraph 集成或 Android draft review id flow 已完成。
 
 ---
 
@@ -251,9 +259,17 @@ Rules:
 
 ---
 
-## 4. Future API Contract
+## 4. Prototype API Contract
 
-These endpoints are future contract targets. They are not implemented by this docs-only task.
+这些 endpoints 已作为 prototype routes 实现，用于验证 backend-managed draft review object 语义。
+
+当前实现边界：
+
+- 使用 app-local in-memory store 或可选 JSON file store。
+- 不使用 SQLAlchemy ORM。
+- 不新增 Alembic migration。
+- 不改变正式 persistence baseline。
+- 不接正式 LangGraph graph、真实 LLM、search、contact 或 CRM。
 
 ### 4.1 `POST /sales-workspaces/{workspace_id}/draft-reviews`
 
@@ -503,7 +519,7 @@ Android should not:
 - write Markdown projection
 - write ContextPack
 
-Current Android prototype may continue to pass raw `patch_draft` back to the prototype apply endpoint until draft review routes exist.
+Current Android prototype may continue to pass raw `patch_draft` back to the prototype apply endpoint until a separate Android task switches it to the `draft_review_id` flow.
 
 ### Runtime / LangGraph Runtime
 
@@ -559,7 +575,7 @@ Before production persistence, refresh `ADR-007` and decide:
 
 This contract does not open:
 
-- backend route implementation
+- production backend route implementation
 - SQLAlchemy ORM
 - Alembic migration
 - SQLite schema
@@ -568,4 +584,3 @@ This contract does not open:
 - formal LangGraph graph
 - real LLM / search / contact / CRM
 - production persistence baseline
-

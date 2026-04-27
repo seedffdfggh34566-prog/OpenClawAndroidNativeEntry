@@ -42,6 +42,9 @@ def test_postgres_dev_environment_runs_alembic_baseline(postgres_dev_env) -> Non
     assert "alembic_version" in table_names
     assert "product_profiles" in table_names
     assert "agent_runs" in table_names
+    assert "sales_workspaces" in table_names
+    assert "sales_workspace_patch_commits" in table_names
+    assert "sales_workspace_draft_reviews" in table_names
 
 
 def test_postgres_dev_environment_session_factory(postgres_dev_env) -> None:

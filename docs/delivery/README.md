@@ -39,7 +39,7 @@
 
 > **V2 workspace-native sales agent / Sales Workspace Kernel prototype 阶段**
 
-当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook、post-demo next phase decision、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline 和 persistence schema design。当前没有自动排定任务，不自动进入 Sales Workspace schema migration、扩展 Android write path、正式 LangGraph、真实 LLM 或搜索实现。
+当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook、post-demo next phase decision、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline、persistence schema design、persistence migration v0、repository layer v0、API Postgres store v0 和 Draft Review persistence v0。当前没有自动排定任务，不自动进入扩展 Android write path、正式 LangGraph、真实 LLM 或搜索实现。
 
 ---
 
@@ -91,7 +91,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 | `task_v2_sales_workspace_persistence_decision.md` | 决策 v0.1 persistence 路线 | `done` |
 | `task_v2_sales_workspace_contract_fixture_examples.md` | 补齐 API contract examples / state transitions | `done` |
 | `task_v2_sales_workspace_backend_api_prototype_v0.md` | 实现 no-DB backend API prototype v0 | `done` |
-| `task_v2_sales_workspace_backend_api_v0.md` | 实现 persistence-backed backend API v0 | `planned / blocked by persistence decision` |
+| `task_v2_sales_workspace_backend_api_v0.md` | 实现 persistence-backed backend API v0 | `superseded by API Postgres store chain` |
 | `task_v2_android_workspace_readonly_view.md` | Android read-only workspace view | `done` |
 | `task_v2_sales_workspace_json_store_prototype.md` | 可选 JSON file store prototype | `done` |
 | `task_v2_sales_workspace_runtime_patchdraft_prototype.md` | deterministic Runtime PatchDraft prototype | `done` |
@@ -106,10 +106,10 @@ Sales Workspace Kernel backend-only v0 已完成：
 | `task_v2_sales_workspace_persistence_baseline_design.md` | 设计正式 persistence baseline，优先评估 Postgres / Alembic | `done` |
 | `task_v2_postgres_dev_environment_baseline.md` | 补本地 Postgres dev environment 与验证命令 | `done` |
 | `task_v2_sales_workspace_persistence_schema_design.md` | 设计 Sales Workspace 正式 persistence schema | `done` |
-| `task_v2_sales_workspace_persistence_migration_v0.md` | 实现首版 Sales Workspace Postgres / Alembic migration | `planned / blocked by schema design review` |
-| `task_v2_sales_workspace_repository_layer_v0.md` | 实现 Sales Workspace Postgres repository layer | `planned / blocked by migration v0` |
-| `task_v2_sales_workspace_api_postgres_store_v0.md` | 将 Sales Workspace API 切到 Postgres-backed store | `planned / blocked by repository layer` |
-| `task_v2_sales_workspace_draft_review_persistence_v0.md` | 将 Draft Review lifecycle 落入 Postgres persistence | `planned / blocked by migration and repository layer` |
+| `task_v2_sales_workspace_persistence_migration_v0.md` | 实现首版 Sales Workspace Postgres / Alembic migration | `done` |
+| `task_v2_sales_workspace_repository_layer_v0.md` | 实现 Sales Workspace Postgres repository layer | `done` |
+| `task_v2_sales_workspace_api_postgres_store_v0.md` | 将 Sales Workspace API 切到 Postgres-backed store | `done` |
+| `task_v2_sales_workspace_draft_review_persistence_v0.md` | 将 Draft Review lifecycle 落入 Postgres persistence | `done` |
 | `task_v2_sales_workspace_draft_review_persistence_schema.md` | 设计 Draft Review 正式 persistence schema | `done / folded into persistence schema design` |
 | `task_v2_runtime_langgraph_design.md` | 设计正式 Runtime / LangGraph WorkspacePatchDraft flow | `planned / blocked by persistence schema and writeback boundary` |
 | `task_v2_android_review_history_view.md` | Android Draft Review history / detail view | `planned / blocked by persistence and read API` |
@@ -171,5 +171,9 @@ Sales Workspace Kernel backend-only v0 已完成：
 - persistence baseline design 已完成：`docs/architecture/workspace/sales-workspace-persistence-baseline.md`。
 - Postgres dev environment baseline 已完成：`docs/how-to/operate/postgres-dev-environment.md`。
 - Sales Workspace persistence schema design 已完成：`docs/architecture/workspace/sales-workspace-persistence-schema.md`。
+- Sales Workspace persistence migration v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_persistence_migration_v0.md`。
+- Sales Workspace repository layer v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`。
+- Sales Workspace API Postgres store v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`。
+- Sales Workspace Draft Review persistence v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`。
 - 当前没有自动排定任务。
-- 后续 Sales Workspace schema migration、Android 体验增强、persistence-backed API、正式 Runtime / LangGraph integration 必须等待对应 task 解锁后再推进。
+- 后续 Android 体验增强、正式 Runtime / LangGraph integration 或 DB hardening 必须等待对应 task 解锁后再推进。

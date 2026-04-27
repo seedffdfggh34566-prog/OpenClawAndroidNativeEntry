@@ -20,8 +20,9 @@ API contract 可调用性。该 prototype 使用进程内 `InMemoryWorkspaceStor
 persistence baseline。
 
 当前 V2 persistence baseline design 已冻结为 Postgres / Alembic，并提供本地
-Postgres dev environment。当前仍不包含 Sales Workspace 数据库 migration、
-正式 DB-backed API、Android 新 UI、LangGraph、真实 LLM、联网搜索或 CRM pipeline。
+Postgres dev environment。Sales Workspace persistence migration、repository layer、
+显式 Postgres-backed API store 和 Draft Review persistence 已完成。当前仍不包含 Android 新 UI、
+LangGraph、真实 LLM、联网搜索或 CRM pipeline。
 
 当前常用命令：
 
@@ -70,6 +71,8 @@ backend/.venv/bin/python -m pytest backend/tests -q
 - `OPENCLAW_BACKEND_LLM_API_KEY`
 - `OPENCLAW_BACKEND_LLM_PROMPT_VERSION`
 - `OPENCLAW_BACKEND_LLM_TIMEOUT_SECONDS`
+- `OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_BACKEND`
+- `OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`
 
 当前 product learning LLM Phase 1 默认使用腾讯云 TokenHub 普通按量 API：
 

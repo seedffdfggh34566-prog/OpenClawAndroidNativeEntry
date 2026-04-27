@@ -49,8 +49,12 @@
 - `docs/delivery/tasks/task_v2_postgres_dev_environment_baseline.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_persistence_schema_design.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_schema.md`（done / folded）
+- `docs/delivery/tasks/task_v2_sales_workspace_persistence_migration_v0.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成。
 
 ---
 
@@ -76,14 +80,18 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 16. Sales Workspace persistence baseline design。
 17. Postgres dev environment baseline。
 18. Sales Workspace persistence schema design。
+19. Sales Workspace persistence migration v0。
+20. Sales Workspace repository layer v0。
+21. Sales Workspace API Postgres store v0。
+22. Sales Workspace Draft Review persistence v0。
 
 当前结论：
 
 - V2 MVP persistence baseline 采用 Postgres / Alembic。
 - SQLite 不作为 V2 Sales Workspace runtime fallback。
-- 不开放 persistence-backed backend API implementation。
+- 不开放 production hardening 或新增 API surface。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
-- 当前没有自动排定任务；不开放 SQLAlchemy model 或 Alembic migration。
+- 当前没有自动开放任务，不自动进入 Android 或 Runtime。
 - 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
 - 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
 - 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
@@ -99,8 +107,11 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - Sales Workspace persistence baseline design 已完成：`docs/architecture/workspace/sales-workspace-persistence-baseline.md`。
 - Postgres dev environment baseline 已完成：`docs/delivery/tasks/task_v2_postgres_dev_environment_baseline.md`。
 - Sales Workspace persistence schema design 已完成：`docs/architecture/workspace/sales-workspace-persistence-schema.md`。
-- 当前没有自动排定任务。
-- backend API 的 DB-backed / production persistence 版本继续 blocked。
+- Sales Workspace persistence migration v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_persistence_migration_v0.md`。
+- Sales Workspace repository layer v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`。
+- Sales Workspace API Postgres store v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`。
+- Sales Workspace Draft Review persistence v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`。
+- production hardening、history read API 和 DB reconstruction hardening 继续 blocked。
 - 当前没有 next queued implementation task。
 
 ---
@@ -238,16 +249,28 @@ Sales Workspace persistence schema design 已完成：
 - `docs/delivery/tasks/task_v2_sales_workspace_persistence_schema_design.md`
 - `docs/architecture/workspace/sales-workspace-persistence-schema.md`
 
+Sales Workspace persistence migration v0 已完成：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_persistence_migration_v0.md`
+
+Sales Workspace repository layer v0 已完成：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`
+
+Sales Workspace API Postgres store v0 已完成：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`
+
+Sales Workspace Draft Review persistence v0 已完成：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`
+
 当前自动排定任务：
 
 - 暂无。
 
 后续 planned / blocked：
 
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_migration_v0.md`
-- `docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`
-- `docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`
-- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`
 - `docs/delivery/tasks/task_v2_runtime_langgraph_design.md`
 - `docs/delivery/tasks/task_v2_android_review_history_view.md`
 
@@ -288,15 +311,17 @@ Sales Workspace persistence schema design 已完成：
 29. `docs/how-to/operate/postgres-dev-environment.md`
 30. `docs/delivery/tasks/task_v2_sales_workspace_persistence_schema_design.md`
 31. `docs/architecture/workspace/sales-workspace-persistence-schema.md`
-32. 本文件
+32. `docs/delivery/tasks/task_v2_sales_workspace_persistence_migration_v0.md`
+33. `docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`
+34. 本文件
 
 ---
 
 ## 7. Auto-continue allowed when
 
-当前没有自动开放任务；执行 agent 不应自动继续实现 SQLAlchemy model、Alembic migration、API、Android 或 Runtime。
+当前长线程的四个 persistence task 已完成；执行 agent 不应自动继续 Android 或 Runtime。
 
-Postgres dev environment baseline 与 Sales Workspace persistence schema design 已完成。下一步需要人工确认是否开放 `task_v2_sales_workspace_persistence_migration_v0.md`，不应自动写 migration。
+下一步需要先由规划层选择：Runtime / LangGraph design、Android review history view，或 DB hardening。
 
 ---
 
@@ -305,9 +330,8 @@ Postgres dev environment baseline 与 Sales Workspace persistence schema design 
 命中以下任一条件时停止并交回规划层：
 
 - 需要改变 V2 产品方向。
-- 需要实现 DB migration。
 - 需要新增或扩展 API route。
 - 需要新增 Android write path 或复杂交互。
 - 需要接 LangGraph / LLM / search。
 - 需要引入新外部依赖。
-- 需要开放 persistence-backed backend API implementation。
+- 需要开放 production hardening 或新增 API surface。

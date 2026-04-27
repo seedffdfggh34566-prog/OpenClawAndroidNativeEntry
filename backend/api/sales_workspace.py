@@ -21,6 +21,7 @@ from backend.sales_workspace.draft_reviews import (
 )
 from backend.sales_workspace.patches import WorkspacePatchError, WorkspaceVersionConflict, apply_workspace_patch
 from backend.sales_workspace.projection import render_markdown_projection
+from backend.sales_workspace.repository import PostgresDraftReviewStore, PostgresWorkspaceStore
 from backend.sales_workspace.schemas import WorkspacePatch, utc_now
 from backend.sales_workspace.store import InMemoryWorkspaceStore, JsonFileWorkspaceStore, WorkspaceNotFound
 from backend.runtime.sales_workspace_patchdraft import (
@@ -84,21 +85,43 @@ class RejectDraftReviewRequest(ApiModel):
     reason: str = ""
 
 
-def create_sales_workspace_store() -> InMemoryWorkspaceStore:
-    store_path = get_settings().sales_workspace_store_path
-    if store_path is not None:
+def _sales_workspace_store_backend() -> str:
+    settings = get_settings()
+    if settings.sales_workspace_store_backend:
+        return settings.sales_workspace_store_backend.strip().lower()
+    if settings.sales_workspace_store_path is not None:
+        return "json"
+    return "memory"
+
+
+def create_sales_workspace_store() -> InMemoryWorkspaceStore | JsonFileWorkspaceStore | PostgresWorkspaceStore:
+    settings = get_settings()
+    backend = _sales_workspace_store_backend()
+    if backend == "postgres":
+        return PostgresWorkspaceStore()
+    if backend == "json":
+        store_path = settings.sales_workspace_store_path
+        if store_path is None:
+            raise ValueError("OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR is required for json store backend")
         return JsonFileWorkspaceStore(store_path)
-    return InMemoryWorkspaceStore()
+    if backend == "memory":
+        return InMemoryWorkspaceStore()
+    raise ValueError(f"unsupported sales workspace store backend: {backend}")
 
 
-def create_draft_review_store() -> InMemoryDraftReviewStore:
+def create_draft_review_store() -> InMemoryDraftReviewStore | JsonFileDraftReviewStore | PostgresDraftReviewStore:
+    backend = _sales_workspace_store_backend()
+    if backend == "postgres":
+        return PostgresDraftReviewStore()
     store_path = get_settings().sales_workspace_store_path
-    if store_path is not None:
+    if backend == "json" and store_path is not None:
         return JsonFileDraftReviewStore(store_path)
+    if backend == "json":
+        raise ValueError("OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR is required for json store backend")
     return InMemoryDraftReviewStore()
 
 
-def _store(request: Request) -> InMemoryWorkspaceStore:
+def _store(request: Request) -> InMemoryWorkspaceStore | JsonFileWorkspaceStore | PostgresWorkspaceStore:
     store = getattr(request.app.state, "sales_workspace_store", None)
     if store is None:
         store = create_sales_workspace_store()
@@ -106,7 +129,7 @@ def _store(request: Request) -> InMemoryWorkspaceStore:
     return store
 
 
-def _draft_review_store(request: Request) -> InMemoryDraftReviewStore:
+def _draft_review_store(request: Request) -> InMemoryDraftReviewStore | JsonFileDraftReviewStore | PostgresDraftReviewStore:
     store = getattr(request.app.state, "sales_workspace_draft_review_store", None)
     if store is None:
         store = create_draft_review_store()

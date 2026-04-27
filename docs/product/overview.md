@@ -73,8 +73,8 @@ V2 当前规划重点：
 - 产品侧信息、获客方向、客户挖掘、来源证据、候选排序、用户反馈和报告输出应像软件工程 workspace 一样分层沉淀。
 - 结构化后端对象是主真相；Markdown 是 agent-readable workspace projection，不是唯一主存。
 - Product Sales Agent / Runtime 每次运行应尽量生成 `WorkspacePatchDraft`，由后端 workspace kernel 裁决正式写回。
-- V2.1 engineering baseline 已验证 Sales Workspace Kernel、Draft Review ID flow、Postgres / Alembic persistence chain 与 Draft Review audit persistence。
-- V2.1 chat-first product experience prototype 已完成：contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook 和 closeout 均已补齐。
+- V2.1 workspace/kernel engineering baseline 已验证 Sales Workspace Kernel、Draft Review ID flow、Postgres / Alembic persistence chain 与 Draft Review audit persistence。
+- V2.1 chat-first deterministic demo flow 已完成：contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook 和 closeout 均已补齐；PRD-level conversational product experience remains incomplete。
 - V2.2 再进入证据化 ResearchRound、候选客户、来源证据和候选优先级榜更新。
 - V2.3 作为 Persistent Sales Workspace MVP gate，验证长期记忆、历史研究复用、候选状态管理和用户反馈闭环是否值得进入 MVP。
 
@@ -144,33 +144,33 @@ Android / client
 
 当前处于：
 
-> **V2.1 engineering baseline completed；V2.1 product experience prototype completed 阶段。**
+> **V2.1 workspace/kernel engineering baseline completed；V2.1 conversational product experience remains incomplete 阶段。**
 
 已经明确：
 
 - V1 已冻结，不继续追加 V1 功能。
 - V1 是资产库，不是 V2 产品主路径。
 - V2 北极星是 Sales Workspace，而不是一次性报告生成器。
-- V2.1 engineering baseline 已完成 Sales Workspace Kernel、FastAPI prototype、Android Draft Review ID flow、Postgres / Alembic persistence chain、Sales Workspace Postgres store 和 Draft Review audit persistence。
-- V2.1 chat-first Runtime design、contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook 和 product experience closeout 已完成。
+- V2.1 workspace/kernel engineering baseline 已完成 Sales Workspace Kernel、FastAPI prototype、Android Draft Review ID flow、Postgres / Alembic persistence chain、Sales Workspace Postgres store 和 Draft Review audit persistence。
+- V2.1 chat-first Runtime design、contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook 和 product experience closeout 已形成 deterministic demo flow，但不代表 PRD-level conversational product experience completed。
 - V2.2 允许主动联网 / 中文公开网页搜索。
 - V2.2 可以产出具体公司候选，但候选必须带来源证据和排序解释。
 - V2 不做 Web 前端。
 - V2 不做自动触达或联系人抓取产品。
 - 后端仍是 formal truth layer。
 
-尚未冻结：
+尚未冻结或仍需重新验收：
 
 - V2 是否作为 MVP。
 - 是否需要正式云部署。
 - 是否需要账号、多用户、租户隔离和权限。
-- Chat-first Runtime design。
-- `WorkspacePatchDraft` 如何覆盖产品理解与获客方向迭代。
+- PRD-level V2.1 conversational product experience 是否完成。
+- Product Sales Agent 主动追问、解释型回答和多中文业务样例验收。
 - 搜索 provider。
 - 数据保留策略。
 - 个人联系方式展示和删除策略。
-- V2 domain/schema baseline。
-- V2 backend API contract。
+- production-grade V2 domain/schema baseline。
+- production-grade V2 backend API contract。
 - V2.2 research/search task queue。
 
 ---
@@ -231,8 +231,8 @@ V2 继续实现前，应先确保当前 task 已在 `_active.md` 中开放。当
 
 当前推荐顺序：
 
-1. 承认 V2.1 engineering baseline completed 和 V2.1 product experience prototype completed。
-2. 下一步如推进 V2.2，应先补 evidence/search/contact 的 docs-level boundary planning。
+1. 承认 V2.1 workspace/kernel engineering baseline completed。
+2. 承认 V2.1 conversational product experience remains incomplete，并先执行 PRD acceptance gap review。
 3. V2.2 implementation 前，不直接接真实 LLM、联网搜索、ContactPoint 或 CRM/contact。
 4. Android review history、正式 LangGraph 和 DB hardening 也应通过独立 task 开放。
 
@@ -244,4 +244,4 @@ V2 继续实现前，应先确保当前 task 已在 `_active.md` 中开放。当
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2.1 completed prototype baseline：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain、Draft Review audit persistence、chat-first backend prototype 与 Android chat-first workspace UI 已完成；下一步只适合开放 V2.2 docs-level evidence/search/contact planning，不直接进入真实搜索或 LLM implementation。**
+> **AI 销售助手 V2.1 workspace/kernel engineering baseline completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain 和 Draft Review audit persistence 已完成；V2.1 conversational product experience remains incomplete，下一步先做 PRD acceptance gap review，不直接进入真实搜索或 LLM implementation。**

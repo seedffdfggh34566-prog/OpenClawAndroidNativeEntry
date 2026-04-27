@@ -8,6 +8,12 @@
 
 在 chat-first backend prototype、Android UI prototype 和 demo runbook 验证完成后，正式收口 V2.1 product experience，并决定是否可以进入 V2.2 evidence/search 规划。
 
+## Correction Note
+
+2026-04-27 rebaseline：本任务保留为 `done`，但其 closeout 结论被 `task_v2_1_prd_acceptance_gap_review.md` 重新约束。
+
+本任务证明的是 deterministic chat-first demo flow 可以复现，不等于 PRD-level V2.1 conversational product experience completed。完整 V2.1 判断必须回到 PRD success criteria，并通过 `PRD Acceptance Traceability` 标注 `done / partial / missing / out of scope`。
+
 ## Required Precondition
 
 - `task_v2_1_chat_first_runtime_contract_examples.md`
@@ -40,15 +46,15 @@
 
 ## Outcome
 
-- V2.1 product experience prototype closeout 已完成。
-- 文档入口已更新为：V2.1 engineering baseline completed；V2.1 product experience prototype completed。
+- V2.1 deterministic chat-first demo flow closeout 已完成。
+- 2026-04-27 rebaseline 后，文档入口应更新为：V2.1 workspace/kernel engineering baseline completed；V2.1 conversational product experience remains incomplete。
 - `_active.md` 保持暂无自动排定任务。
-- V2.2 evidence/search/contact 可进入 docs-level planning，但 implementation 仍 blocked。
+- V2.2 evidence/search/contact implementation 仍 blocked；下一步先做 PRD acceptance gap review。
 
 ## Validation
 
 ```bash
-rg "V2.1 product experience prototype completed|task_v2_1_product_experience_closeout.md|V2.2.*blocked" README.md docs
+rg "task_v2_1_product_experience_closeout.md|V2.2.*blocked" README.md docs
 git diff --check
 ```
 

@@ -17,7 +17,7 @@
 
 ### Current task
 
-暂无自动排定。
+`docs/delivery/tasks/task_v2_1_prd_acceptance_gap_review.md`
 
 ### Next queued task
 
@@ -62,10 +62,11 @@
 - `docs/delivery/tasks/task_v2_1_android_chat_first_workspace_ui_prototype.md`（done）
 - `docs/delivery/tasks/task_v2_1_product_experience_demo_runbook.md`（done）
 - `docs/delivery/tasks/task_v2_1_product_experience_closeout.md`（done）
+- `docs/delivery/tasks/task_v2_1_prd_acceptance_gap_review.md`（planned / current）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成，V2.1 engineering baseline closeout 已完成，V2.1 product experience prototype 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成，V2.1 engineering baseline closeout 已完成。V2.1 chat-first deterministic demo flow 已完成，但不等于 PRD-level conversational product experience 完成。
 
-V2.1 engineering baseline completed，V2.1 product experience prototype completed。V2.2 evidence / search / ContactPoint implementation 仍 blocked。
+V2.1 workspace/kernel engineering baseline completed；V2.1 conversational product experience remains incomplete。V2.2 evidence / search / ContactPoint implementation 仍 blocked。
 
 ---
 
@@ -107,7 +108,9 @@ V2.1 engineering baseline completed，V2.1 product experience prototype complete
 
 当前执行：
 
-- 暂无。
+32. V2.1 PRD acceptance gap review。
+
+- `docs/delivery/tasks/task_v2_1_prd_acceptance_gap_review.md`
 
 后续 planned / blocked：
 
@@ -142,7 +145,8 @@ V2.1 engineering baseline completed，V2.1 product experience prototype complete
 - Sales Workspace Draft Review persistence v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`。
 - V2.1 engineering baseline closeout 已完成：`docs/delivery/tasks/task_v2_1_completion_closeout.md`。
 - V2.1 chat-first Runtime design 已完成：`docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`。
-- V2.1 product experience closeout 已完成：`docs/delivery/tasks/task_v2_1_product_experience_closeout.md`。
+- V2.1 product experience closeout 仅证明 deterministic chat-first demo flow，不代表 PRD-level conversational product experience 完成：`docs/delivery/tasks/task_v2_1_product_experience_closeout.md`。
+- V2.1 PRD acceptance gap review 当前开放：`docs/delivery/tasks/task_v2_1_prd_acceptance_gap_review.md`。
 - production hardening、history read API 和 DB reconstruction hardening 继续 blocked。
 - 当前没有 next queued implementation task。
 

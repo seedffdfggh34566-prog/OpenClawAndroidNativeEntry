@@ -187,6 +187,40 @@ The next task must come from repository docs such as:
 
 When the queue is exhausted or unclear, stop and hand control back to the planning layer.
 
+### Milestone acceptance and PRD traceability
+
+Task files are execution entrypoints, not product completion standards.
+
+In Chinese: **task 是执行入口，不是产品完成标准**.
+
+For version-level or milestone-level closeout, Dev Agents must treat the following
+documents as higher-level sources than task or handoff summaries:
+
+- PRD
+- roadmap
+- ADRs
+- architecture baseline documents
+
+In short: **PRD / roadmap / ADR / architecture baseline** are higher-level
+milestone acceptance sources than task closeouts.
+
+Any milestone closeout must include a `PRD Acceptance Traceability` table. Each
+PRD success criterion must be marked as one of:
+
+- `done`
+- `partial`
+- `missing`
+- `out of scope`
+
+Use exactly this status set in milestone tables: **done / partial / missing / out of scope**.
+
+Do not declare a version, milestone, or product experience complete only because
+tasks are marked done, tests pass, or a demo flow works.
+
+If a task closeout, handoff, README, or `_active.md` status conflicts with PRD,
+roadmap, ADR, or architecture baseline success criteria, the Dev Agent must stop,
+surface the mismatch, and avoid upgrading the result into version completion.
+
 ---
 
 ## 6. Scope Discipline

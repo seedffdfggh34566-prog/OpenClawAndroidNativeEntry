@@ -7,6 +7,7 @@
 - `api/`
   - `api/sales-workspace-kernel-v0-contract.md`
   - `api/sales-workspace-kernel-v0-examples.md`
+  - `api/sales-workspace-kernel-v0-contract.md` runtime PatchDraft prototype endpoint section
   - `api/backend-v1-minimum-contract.md`
 - `schemas/`
 - `runtime-v1-observability-eval-baseline.md`

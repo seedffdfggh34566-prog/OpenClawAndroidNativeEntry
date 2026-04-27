@@ -5,7 +5,7 @@
 ## 1. 任务定位
 
 - 任务名称：V2 Sales Workspace Runtime PatchDraft prototype
-- 当前状态：`in_progress`
+- 当前状态：`done`
 - 优先级：P0
 
 本任务在 no-DB FastAPI prototype、Android read-only demo 和 JSON file store prototype 完成后，打通 Runtime / Product Sales Agent execution layer 到 Sales Workspace Kernel 的最小受控写回边界。
@@ -107,10 +107,10 @@ Prototype 固定生成：
 ## 6. 验证标准
 
 ```bash
-backend/.venv/bin/python -m pytest backend/tests/sales_workspace backend/tests/test_sales_workspace_api.py -q
-backend/.venv/bin/python -m pytest backend/tests -q
-backend/.venv/bin/alembic -c alembic.ini upgrade head
-backend/.venv/bin/python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8013
+PYTHONPATH=$PWD /home/yulin/projects/OpenClawAndroidNativeEntry/backend/.venv/bin/python -m pytest backend/tests/sales_workspace backend/tests/test_sales_workspace_api.py -q
+PYTHONPATH=$PWD /home/yulin/projects/OpenClawAndroidNativeEntry/backend/.venv/bin/python -m pytest backend/tests -q
+PYTHONPATH=$PWD OPENCLAW_BACKEND_DATABASE_URL=sqlite:////tmp/openclaw_runtime_patchdraft_alembic.db /home/yulin/projects/OpenClawAndroidNativeEntry/backend/.venv/bin/alembic -c alembic.ini upgrade head
+PYTHONPATH=$PWD OPENCLAW_BACKEND_DATABASE_URL=sqlite:////tmp/openclaw_runtime_patchdraft_smoke.db OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR=/tmp/openclaw_runtime_patchdraft_store /home/yulin/projects/OpenClawAndroidNativeEntry/backend/.venv/bin/python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8013
 curl http://127.0.0.1:8013/health
 python3 scripts/seed_sales_workspace_demo.py --base-url http://127.0.0.1:8013 --workspace-id ws_demo
 curl -X POST http://127.0.0.1:8013/sales-workspaces/ws_demo/runtime/patch-drafts/prototype \
@@ -120,6 +120,17 @@ curl http://127.0.0.1:8013/sales-workspaces/ws_demo/ranking-board/current
 git diff --check
 git status --short
 ```
+
+结果：
+
+- targeted backend/API tests：`19 passed`。
+- full backend tests：`66 passed`。
+- Alembic upgrade head：通过；未修改 migration。
+- backend startup + `/health` smoke：通过。
+- seed script：成功创建 `ws_demo` 到 version `3`。
+- runtime patchdraft prototype：成功生成 `draft_runtime_v4` / `patch_runtime_v4`，workspace version 变为 `4`。
+- ranking curl：`cand_runtime_001` / `Runtime Draft Co` 排名第一，score=`365`；`cand_d` 下移第二。
+- projection 和 ContextPack 均能读取 `Runtime Draft Co` / `cand_runtime_001`。
 
 ---
 

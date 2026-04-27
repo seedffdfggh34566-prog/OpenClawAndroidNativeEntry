@@ -469,6 +469,79 @@ task_type = research_round
 
 ---
 
+## 5.7 `POST /sales-workspaces/{workspace_id}/runtime/patch-drafts/prototype`
+
+执行 deterministic Runtime PatchDraft prototype。
+
+该 endpoint 只用于验证边界：
+
+```text
+Runtime WorkspacePatchDraft
+-> backend materialize WorkspacePatch
+-> Sales Workspace Kernel validate/apply
+```
+
+它不是正式 LangGraph / LLM / search integration。
+
+### Request
+
+```json
+{
+  "base_workspace_version": 3,
+  "instruction": "add one deterministic runtime candidate"
+}
+```
+
+### Response `200`
+
+```json
+{
+  "patch_draft": {
+    "id": "draft_runtime_v4",
+    "workspace_id": "ws_demo",
+    "base_workspace_version": 3,
+    "author": "runtime_patchdraft_prototype"
+  },
+  "patch": {
+    "id": "patch_runtime_v4",
+    "workspace_id": "ws_demo",
+    "base_workspace_version": 3
+  },
+  "workspace": {
+    "id": "ws_demo",
+    "workspace_version": 4
+  },
+  "commit": {
+    "patch_id": "patch_runtime_v4",
+    "workspace_version": 4
+  },
+  "ranking_board": {
+    "ranked_items": [
+      {
+        "candidate_id": "cand_runtime_001",
+        "rank": 1
+      }
+    ]
+  }
+}
+```
+
+### Errors
+
+- `404 not_found`
+- `409 workspace_version_conflict`
+- `422 patchdraft_validation_error`
+- existing materialized patch errors such as `400 unsupported_workspace_operation`
+
+### Notes
+
+- Runtime / Product Sales Agent execution layer only produces `WorkspacePatchDraft`.
+- Backend materializes draft into `WorkspacePatch`.
+- Sales Workspace Kernel remains the formal object writeback owner.
+- Prototype uses deterministic fixture data and does not call real LLM, LangGraph graph, search, contact, or CRM tools.
+
+---
+
 ## 6. Implementation Gates
 
 no-DB FastAPI prototype v0 已完成：
@@ -483,4 +556,6 @@ no-DB FastAPI prototype v0 已完成：
 3. 保持 `backend/sales_workspace` 作为 object 与 validation source。
 4. 继续保留 route tests for success、validation error、not found、unsupported operation 和 version conflict。
 
-Do not implement Android read-only view or Runtime / LangGraph integration before planning layer creates a dedicated task.
+Android read-only view and deterministic Runtime PatchDraft prototype have dedicated tasks and are allowed as prototypes.
+
+Do not implement Android write path, formal Runtime / LangGraph integration, real LLM/search/contact workflows, or persistence-backed API before the planning layer creates dedicated tasks.

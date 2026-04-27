@@ -1,6 +1,6 @@
 # 开发者工作流手册
 
-更新时间：2026-04-24
+更新时间：2026-04-27
 
 ## 1. 文档定位
 
@@ -223,6 +223,25 @@
 3. 必要时更新 `reference/`、`architecture/`、`how-to/`
 4. 若 docs 中已排定 next queued tasks，则允许执行 agent 继续
 5. 若 task 队列耗尽或边界变化，则回到规划层重新排队
+
+### Codex GitHub plugin / connector 边界
+
+Codex CLI 的 GitHub plugin / connector 可以作为协作辅助工具使用，但不改变本仓库的正式工作流。
+
+允许用途：
+
+- 总结 PR / issue 状态
+- 查看 PR review comments
+- 排查 GitHub Actions CI
+- 在人工明确要求时辅助创建 draft PR
+
+使用约束：
+
+- `AGENTS.md`、`docs/README.md` 和 `docs/delivery/tasks/_active.md` 仍是任务入口与边界来源。
+- GitHub issue、PR 或 review comment 不会自动形成实现范围。
+- 未经人工明确要求，不得执行 `git add`、commit、push、创建 PR、回复 review、更新 issue / label 或 merge。
+- 工作区存在未提交改动时，必须先列出拟纳入范围的文件，不得默认 `git add -A`。
+- PR body 应在适用时引用对应 task、handoff 与验证命令。
 
 ---
 

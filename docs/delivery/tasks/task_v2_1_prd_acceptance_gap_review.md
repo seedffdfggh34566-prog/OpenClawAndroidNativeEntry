@@ -1,6 +1,6 @@
 # Task: V2.1 PRD Acceptance Gap Review
 
-状态：planned
+状态：done
 
 更新时间：2026-04-27
 
@@ -52,6 +52,13 @@
 - 缺口清单。
 - 后续 V2.1 completion task 建议。
 - 明确结论：是否允许宣称完整 V2.1 completed。
+
+## Outcome
+
+- 新增 `docs/product/research/v2_1_prd_acceptance_gap_review_2026_04_27.md`。
+- 当前结论：V2.1 workspace/kernel engineering baseline completed；deterministic chat-first demo flow completed；完整 V2.1 conversational product experience 未完成。
+- PRD success criteria 已初步标注为 `done / partial / missing / out of scope`。
+- 下一步应定义 V2.1 conversational completion scope，而不是进入 V2.2 implementation。
 
 ## Validation
 

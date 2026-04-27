@@ -21,7 +21,9 @@ V2.1 engineering baseline 已完成：
 - Sales Workspace Postgres store。
 - Draft Review audit persistence。
 
-但 V2.1 product experience 尚未完成。当前缺口是：
+本文完成时，V2.1 product experience 尚未完成。后续已由 `task_v2_1_product_experience_closeout.md` 收口。
+
+当时缺口是：
 
 - 用户通过 chat-first 入口表达产品信息、获客方向和修改意见时，系统如何形成 `ConversationMessage`。
 - Product Sales Agent / Runtime 如何读取 `ContextPack` 和当前 workspace state。
@@ -76,7 +78,7 @@ Backend prototype 仍 blocked：
 
 ## Acceptance Criteria
 
-- 文档明确 V2.1 engineering baseline completed 与 V2.1 product experience not completed yet 的区别。
+- 文档明确 V2.1 engineering baseline completed 与当时 V2.1 product experience not completed yet 的区别。
 - 文档定义 chat-first 产品理解和获客方向迭代的最小端到端流。
 - 文档明确 Runtime 只产出 `WorkspacePatchDraft`，backend / Sales Workspace Kernel 仍是正式写回裁决层。
 - 文档明确 `ConversationMessage`、`AgentRun`、`DraftReview`、`WorkspaceCommit` 的追踪关系。

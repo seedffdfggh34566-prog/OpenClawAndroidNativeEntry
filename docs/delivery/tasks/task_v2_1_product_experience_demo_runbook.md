@@ -52,3 +52,13 @@
 rg "v2-1-product-experience-demo-runbook.md|ProductProfileRevision|LeadDirectionVersion|ConversationMessage|AgentRun" docs/how-to docs/delivery
 git diff --check
 ```
+
+Additional smoke evidence:
+
+```text
+health: {"status":"ok"}
+workspace_id: ws_v21_smoke
+product_draft_review: draft_review_sales_turn_product_profile_update_v1
+direction_draft_review: draft_review_sales_turn_lead_direction_update_v2
+final_workspace_version: 2
+```

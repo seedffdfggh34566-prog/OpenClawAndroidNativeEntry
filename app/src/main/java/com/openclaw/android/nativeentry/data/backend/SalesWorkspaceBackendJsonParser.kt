@@ -50,6 +50,33 @@ fun parseSalesWorkspaceDraftReviewApplyResponse(rawJson: String): SalesWorkspace
     )
 }
 
+fun parseSalesWorkspaceChatTurnResponse(rawJson: String): SalesWorkspaceChatTurnResponseDto {
+    val json = JSONObject(rawJson)
+    return SalesWorkspaceChatTurnResponseDto(
+        conversationMessage = json.getJSONObject("conversation_message").toSalesWorkspaceConversationMessageDto(),
+        agentRun = json.getJSONObject("agent_run").toSalesWorkspaceAgentRunDto(),
+        assistantMessage = json.getJSONObject("assistant_message").toSalesWorkspaceConversationMessageDto(),
+        draftReview = json.optJSONObject("draft_review")?.toSalesWorkspaceDraftReviewDto(),
+        patchDraft = json.optJSONObject("patch_draft")?.toSalesWorkspacePatchDraftDto(),
+    )
+}
+
+private fun JSONObject.toSalesWorkspaceConversationMessageDto(): SalesWorkspaceConversationMessageDto =
+    SalesWorkspaceConversationMessageDto(
+        id = getString("id"),
+        role = getString("role"),
+        messageType = getString("message_type"),
+        content = getString("content"),
+    )
+
+private fun JSONObject.toSalesWorkspaceAgentRunDto(): SalesWorkspaceAgentRunDto =
+    SalesWorkspaceAgentRunDto(
+        id = getString("id"),
+        status = getString("status"),
+        inputRefs = optJSONArray("input_refs").toStringList(),
+        outputRefs = optJSONArray("output_refs").toStringList(),
+    )
+
 private fun JSONObject.toSalesWorkspaceDraftReviewDto(): SalesWorkspaceDraftReviewDto =
     SalesWorkspaceDraftReviewDto(
         id = getString("id"),

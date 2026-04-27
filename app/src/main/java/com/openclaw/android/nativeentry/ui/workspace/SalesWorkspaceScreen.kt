@@ -3,6 +3,7 @@ package com.openclaw.android.nativeentry.ui.workspace
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,12 +14,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceChatTurnResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewApplyResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
@@ -29,8 +32,14 @@ fun SalesWorkspaceScreen(
     workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
     draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
     patchDraftApplyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
+    chatFirstTurnState: V1SectionState<SalesWorkspaceChatTurnResponseDto>,
+    chatInput: String,
+    chatMessageType: String,
     onRefreshClick: () -> Unit,
     onCreateDraftReviewClick: () -> Unit,
+    onChatInputChange: (String) -> Unit,
+    onChatMessageTypeChange: (String) -> Unit,
+    onSubmitChatTurnClick: () -> Unit,
     onAcceptDraftReviewClick: () -> Unit,
     onRejectDraftReviewClick: () -> Unit,
     onApplyDraftReviewClick: () -> Unit,
@@ -74,6 +83,15 @@ fun SalesWorkspaceScreen(
 
                 is V1SectionState.Loaded -> {
                     WorkspaceContent(workspaceState.value)
+                    ChatFirstWorkspaceTurn(
+                        workspaceVersion = workspaceState.value.workspace.workspaceVersion,
+                        chatInput = chatInput,
+                        chatMessageType = chatMessageType,
+                        chatFirstTurnState = chatFirstTurnState,
+                        onChatInputChange = onChatInputChange,
+                        onChatMessageTypeChange = onChatMessageTypeChange,
+                        onSubmitChatTurnClick = onSubmitChatTurnClick,
+                    )
                     PatchDraftReviewGate(
                         workspaceVersion = workspaceState.value.workspace.workspaceVersion,
                         draftReviewState = draftReviewState,
@@ -94,6 +112,119 @@ fun SalesWorkspaceScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ChatFirstWorkspaceTurn(
+    workspaceVersion: Int,
+    chatInput: String,
+    chatMessageType: String,
+    chatFirstTurnState: V1SectionState<SalesWorkspaceChatTurnResponseDto>,
+    onChatInputChange: (String) -> Unit,
+    onChatMessageTypeChange: (String) -> Unit,
+    onSubmitChatTurnClick: () -> Unit,
+) {
+    val isLoading = chatFirstTurnState is V1SectionState.Loading
+    WorkspaceCard(title = "Chat-first Workspace Turn") {
+        Text(
+            text = "输入产品理解或获客方向；Android 只提交文本，backend Runtime 生成 Draft Review。",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(text = "当前 workspace version：$workspaceVersion", style = MaterialTheme.typography.bodyMedium)
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ChatMessageTypeButton(
+                label = "产品理解",
+                selected = chatMessageType == "product_profile_update",
+                onClick = { onChatMessageTypeChange("product_profile_update") },
+                modifier = Modifier.weight(1f),
+            )
+            ChatMessageTypeButton(
+                label = "获客方向",
+                selected = chatMessageType == "lead_direction_update",
+                onClick = { onChatMessageTypeChange("lead_direction_update") },
+                modifier = Modifier.weight(1f),
+            )
+            ChatMessageTypeButton(
+                label = "混合",
+                selected = chatMessageType == "mixed_product_and_direction_update",
+                onClick = { onChatMessageTypeChange("mixed_product_and_direction_update") },
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        OutlinedTextField(
+            value = chatInput,
+            onValueChange = onChatInputChange,
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 3,
+            label = { Text(text = "对 Sales Agent 说") },
+            placeholder = { Text(text = "例如：我们做 FactoryOps AI，先找华东 100 到 500 人制造企业。") },
+        )
+
+        Button(
+            onClick = onSubmitChatTurnClick,
+            enabled = !isLoading && chatInput.isNotBlank(),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(text = if (isLoading) "正在生成 Draft Review" else "提交 chat-first turn")
+        }
+
+        when (chatFirstTurnState) {
+            V1SectionState.Idle -> Text(text = "尚未提交 chat-first 输入。", style = MaterialTheme.typography.bodyMedium)
+            V1SectionState.Loading -> Text(text = "backend 正在创建 ConversationMessage / AgentRun / ContextPack。")
+            V1SectionState.Empty -> Text(text = "本轮没有生成 Draft Review。", style = MaterialTheme.typography.bodyMedium)
+            is V1SectionState.Failed -> {
+                Text(text = chatFirstTurnState.error.title, style = MaterialTheme.typography.titleSmall)
+                Text(text = chatFirstTurnState.error.detail, style = MaterialTheme.typography.bodyMedium)
+            }
+            is V1SectionState.Loaded -> ChatFirstTurnDetails(chatFirstTurnState.value)
+        }
+    }
+}
+
+@Composable
+private fun ChatMessageTypeButton(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (selected) {
+        Button(onClick = onClick, modifier = modifier) {
+            Text(text = label)
+        }
+    } else {
+        OutlinedButton(onClick = onClick, modifier = modifier) {
+            Text(text = label)
+        }
+    }
+}
+
+@Composable
+private fun ChatFirstTurnDetails(response: SalesWorkspaceChatTurnResponseDto) {
+    Text(text = "Message：${response.conversationMessage.id}", style = MaterialTheme.typography.bodyMedium)
+    Text(text = "AgentRun：${response.agentRun.id} · ${response.agentRun.status}", style = MaterialTheme.typography.bodyMedium)
+    Text(text = "Assistant：${response.assistantMessage.content}", style = MaterialTheme.typography.bodyMedium)
+    response.draftReview?.let { review ->
+        Text(
+            text = "Draft Review：${review.id} · ${review.status}",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = "Preview version：${review.preview.previewWorkspaceVersion}；operations=${review.draft.operationCount}",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    } ?: Text(
+        text = "本轮没有 patch draft；workspace 未写入。",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

@@ -1,0 +1,47 @@
+{
+  "draft_review": {
+    "id": "draft_review_sales_turn_direction_001",
+    "workspace_id": "ws_demo",
+    "status": "applied",
+    "draft_id": "draft_sales_turn_direction_001",
+    "base_workspace_version": 1,
+    "preview": {
+      "preview_workspace_version": 2,
+      "materialized_patch_id": "patch_sales_turn_direction_001",
+      "preview_changed_object_refs": [
+        "LeadDirectionVersion:dir_chat_001"
+      ]
+    },
+    "review": {
+      "decision": "accept",
+      "reviewer": "local_user",
+      "reviewed_at": "2026-04-27T00:06:00Z",
+      "reason": "Direction matches target ICP."
+    },
+    "apply_result": {
+      "status": "applied",
+      "commit_id": "commit_v2",
+      "workspace_version": 2,
+      "applied_at": "2026-04-27T00:06:02Z",
+      "failure_reason": null
+    }
+  },
+  "workspace_commit": {
+    "id": "commit_v2",
+    "workspace_id": "ws_demo",
+    "patch_id": "patch_sales_turn_direction_001",
+    "workspace_version": 2,
+    "message": "Runtime PatchDraft reviewed and applied.",
+    "changed_object_refs": [
+      "LeadDirectionVersion:dir_chat_001"
+    ],
+    "created_at": "2026-04-27T00:06:02Z"
+  },
+  "agent_run_output_refs": [
+    "WorkspacePatchDraftReview:draft_review_sales_turn_direction_001",
+    "WorkspacePatch:patch_sales_turn_direction_001",
+    "WorkspaceCommit:commit_v2",
+    "LeadDirectionVersion:dir_chat_001",
+    "ConversationMessage:msg_assistant_direction_001"
+  ]
+}

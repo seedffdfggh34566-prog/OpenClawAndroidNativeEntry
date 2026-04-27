@@ -229,13 +229,22 @@ Optional active direction operation:
 }
 ```
 
-## 6. Future API Surface
+## 6. Prototype API Surface
 
-The following endpoints are future contract placeholders, not implemented by this PR:
+The following endpoints are implemented as deterministic V2.1 backend prototype routes:
 
 - `POST /sales-workspaces/{workspace_id}/messages`
+- `GET /sales-workspaces/{workspace_id}/messages`
 - `POST /sales-workspaces/{workspace_id}/agent-runs/sales-agent-turns`
 - `GET /sales-workspaces/{workspace_id}/agent-runs/{agent_run_id}`
+
+Prototype constraints:
+
+- `POST /messages` records a user `ConversationMessage`.
+- `POST /agent-runs/sales-agent-turns` uses deterministic no-LLM logic to create an `AgentRun`, `ContextPack`, assistant message, optional `WorkspacePatchDraft`, and optional Draft Review.
+- Product profile and lead direction updates can produce Draft Review objects.
+- V2.2 search/contact/CRM requests return an out-of-scope assistant message and do not mutate workspace state.
+- Formal workspace writeback still happens only through Draft Review apply and Sales Workspace Kernel.
 
 Current prototype endpoints remain valid:
 

@@ -1,6 +1,6 @@
 # Task: V2.1 Chat-first Runtime Backend Prototype
 
-状态：planned / blocked by contract examples and trace persistence migration
+状态：done
 
 更新时间：2026-04-27
 
@@ -41,3 +41,25 @@
 完成后进入：
 
 - `task_v2_1_android_chat_first_workspace_ui_prototype.md`
+
+## Outcome
+
+- 新增 backend chat-first trace models and stores。
+- 新增 prototype routes：
+  - `POST /sales-workspaces/{workspace_id}/messages`
+  - `GET /sales-workspaces/{workspace_id}/messages`
+  - `POST /sales-workspaces/{workspace_id}/agent-runs/sales-agent-turns`
+  - `GET /sales-workspaces/{workspace_id}/agent-runs/{agent_run_id}`
+- deterministic runtime stub 支持 product profile、lead direction、mixed update 和 V2.2 out-of-scope response。
+- product / direction draft 通过 existing Draft Review routes 进入人工审阅；正式写回仍由 Sales Workspace Kernel apply。
+- Postgres mode 下 trace rows persist 到 migration v0 tables；memory/json prototype path 使用 app-local trace store。
+
+## Validation
+
+```bash
+backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_chat_first_api.py -q
+OPENCLAW_BACKEND_POSTGRES_VERIFY_URL=postgresql+psycopg://openclaw:openclaw_dev_password@127.0.0.1:55432/openclaw_dev backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_chat_first_api.py -q
+backend/.venv/bin/python -m pytest backend/tests/sales_workspace backend/tests/test_sales_workspace_api.py backend/tests/test_sales_workspace_draft_reviews_api.py backend/tests/test_sales_workspace_chat_first_api.py -q
+backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_persistence_schema.py backend/tests/test_persistence.py -q
+git diff --check
+```

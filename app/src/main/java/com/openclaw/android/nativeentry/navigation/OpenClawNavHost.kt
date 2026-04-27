@@ -24,6 +24,7 @@ import com.openclaw.android.nativeentry.ui.shell.V1BackendUiState
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewApplyResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceChatTurnResponseDto
 import com.openclaw.android.nativeentry.ui.shell.V1ShellPlaceholderState
 import com.openclaw.android.nativeentry.ui.shell.V1SectionState
 
@@ -34,6 +35,7 @@ fun OpenClawNavHost(
     workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
     draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
     patchDraftApplyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
+    chatFirstTurnState: V1SectionState<SalesWorkspaceChatTurnResponseDto>,
     placeholderState: V1ShellPlaceholderState,
     gatewaySnapshot: GatewayCheckSnapshot,
     launchSnapshot: OpenClawLaunchSnapshot,
@@ -42,6 +44,11 @@ fun OpenClawNavHost(
     onRefreshBackend: () -> Unit,
     onRefreshWorkspace: () -> Unit,
     onCreateDraftReview: () -> Unit,
+    workspaceChatInput: String,
+    workspaceChatMessageType: String,
+    onWorkspaceChatInputChange: (String) -> Unit,
+    onWorkspaceChatMessageTypeChange: (String) -> Unit,
+    onSubmitWorkspaceChatTurn: () -> Unit,
     onAcceptDraftReview: () -> Unit,
     onRejectDraftReview: () -> Unit,
     onApplyDraftReview: () -> Unit,
@@ -103,8 +110,14 @@ fun OpenClawNavHost(
                 workspaceState = workspaceState,
                 draftReviewState = draftReviewState,
                 patchDraftApplyState = patchDraftApplyState,
+                chatFirstTurnState = chatFirstTurnState,
+                chatInput = workspaceChatInput,
+                chatMessageType = workspaceChatMessageType,
                 onRefreshClick = onRefreshWorkspace,
                 onCreateDraftReviewClick = onCreateDraftReview,
+                onChatInputChange = onWorkspaceChatInputChange,
+                onChatMessageTypeChange = onWorkspaceChatMessageTypeChange,
+                onSubmitChatTurnClick = onSubmitWorkspaceChatTurn,
                 onAcceptDraftReviewClick = onAcceptDraftReview,
                 onRejectDraftReviewClick = onRejectDraftReview,
                 onApplyDraftReviewClick = onApplyDraftReview,

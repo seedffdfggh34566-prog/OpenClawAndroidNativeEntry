@@ -1,6 +1,6 @@
 # Task: V2.1 Android Chat-first Workspace UI Prototype
 
-状态：planned / blocked by chat-first backend prototype
+状态：done
 
 更新时间：2026-04-27
 
@@ -40,3 +40,22 @@
 ## Recommended Next
 
 - `task_v2_1_product_experience_demo_runbook.md`
+
+## Outcome
+
+- Android Workspace 页面新增最小 chat-first 输入区。
+- Android 调用 backend message + sales-agent-turn routes，生成 backend-managed Draft Review。
+- UI 展示 assistant draft summary、AgentRun、Draft Review ID、preview version 和 operation count。
+- accept / reject / apply 继续走 backend Draft Review routes。
+- Apply 成功后继续刷新 workspace / ranking / projection / ContextPack。
+- Android 仍不构造正式 `WorkspacePatch`，不自由编辑 workspace。
+
+## Validation
+
+```bash
+./gradlew :app:assembleDebug
+./gradlew :app:lintDebug
+adb devices
+```
+
+Device was available on `jianglab`; full manual UI smoke is recorded in the handoff if executed.

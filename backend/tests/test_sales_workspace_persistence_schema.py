@@ -15,6 +15,9 @@ SALES_WORKSPACE_TABLES = {
     "sales_workspace_patch_commits",
     "sales_workspace_draft_reviews",
     "sales_workspace_draft_review_events",
+    "sales_workspace_conversation_messages",
+    "sales_workspace_agent_runs",
+    "sales_workspace_context_packs",
 }
 
 
@@ -51,4 +54,13 @@ def test_sales_workspace_persistence_schema_core_columns_exist(backend_env) -> N
     )
     assert {"workspace_id", "draft_review_id", "event_id", "event_type", "event_json"}.issubset(
         columns_by_table["sales_workspace_draft_review_events"]
+    )
+    assert {"workspace_id", "message_id", "role", "message_type", "content", "payload_json"}.issubset(
+        columns_by_table["sales_workspace_conversation_messages"]
+    )
+    assert {"workspace_id", "agent_run_id", "run_type", "status", "input_refs_json", "output_refs_json"}.issubset(
+        columns_by_table["sales_workspace_agent_runs"]
+    )
+    assert {"workspace_id", "context_pack_id", "agent_run_id", "task_type", "payload_json"}.issubset(
+        columns_by_table["sales_workspace_context_packs"]
     )

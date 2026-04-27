@@ -1,0 +1,30 @@
+{
+  "draft_review": {
+    "id": "draft_review_sales_turn_mixed_001",
+    "workspace_id": "ws_demo",
+    "status": "rejected",
+    "draft_id": "draft_sales_turn_mixed_001",
+    "base_workspace_version": 2,
+    "preview": {
+      "preview_workspace_version": 3,
+      "materialized_patch_id": "patch_sales_turn_mixed_001",
+      "preview_changed_object_refs": [
+        "ProductProfileRevision:ppr_chat_002",
+        "LeadDirectionVersion:dir_chat_002"
+      ]
+    },
+    "review": {
+      "decision": "reject",
+      "reviewer": "local_user",
+      "reviewed_at": "2026-04-27T00:10:00Z",
+      "reason": "The South China expansion is premature for V2.1 demo."
+    },
+    "apply_result": null
+  },
+  "workspace_commit": null,
+  "agent_run_output_refs": [
+    "WorkspacePatchDraftReview:draft_review_sales_turn_mixed_001",
+    "ConversationMessage:msg_assistant_mixed_001"
+  ],
+  "workspace_mutated": false
+}

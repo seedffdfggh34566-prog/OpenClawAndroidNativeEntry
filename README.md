@@ -1,6 +1,6 @@
 # OpenClawAndroidNativeEntry
 
-> 仓库名保留历史来源；当前已完成 **AI Sales Assistant V2.1 engineering baseline**，但 **V2.1 product experience** 仍未完成。
+> 仓库名保留历史来源；当前已完成 **AI Sales Assistant V2.1 engineering baseline** 和 **V2.1 product experience prototype**。
 
 当前建议先阅读：
 
@@ -22,7 +22,7 @@
 
 当前正式主线为：
 
-> **V2.1 engineering baseline completed：Sales Workspace Kernel、FastAPI prototype、Android workspace / Draft Review ID demo、Postgres / Alembic persistence baseline、Sales Workspace Postgres store 与 Draft Review audit persistence 均已进入 main。V2.1 chat-first Runtime design 已完成，但 product experience not completed yet：contract examples、backend prototype 和 Android chat-first UI 仍需补齐。**
+> **V2.1 completed prototype baseline：Sales Workspace Kernel、FastAPI prototype、Android workspace / Draft Review ID demo、Postgres / Alembic persistence baseline、Sales Workspace Postgres store、Draft Review audit persistence、chat-first backend prototype 与 Android chat-first workspace UI 均已完成。**
 
 V1 已作为 demo-ready release candidate / learning milestone 收口，不再是默认开发方向。
 
@@ -70,7 +70,7 @@ Sales Workspace Kernel prototype 已完成：
 
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
 
-V2.1 chat-first Runtime design 已完成。后续应先补 contract examples，再决定是否开放 backend prototype；真正 V2.2 evidence / search / ContactPoint、正式 LangGraph、Android review history view 或 DB hardening 仍不自动开放。
+V2.1 chat-first product experience 已完成 prototype closeout。后续如推进 V2.2，应先做 docs-level evidence/search boundary planning；真正 V2.2 evidence / search / ContactPoint、正式 LangGraph、Android review history view 或 DB hardening 仍不自动开放。
 
 当前不应自动实现：
 

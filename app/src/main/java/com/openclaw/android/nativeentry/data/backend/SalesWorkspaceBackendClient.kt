@@ -26,7 +26,13 @@ class SalesWorkspaceBackendClient(
             is BackendReadResult.Success -> result.value.workspace
         }
         val rankingBoard = when (val result = getRankingBoard(workspaceId)) {
-            is BackendReadResult.Failure -> return@withContext result
+            is BackendReadResult.Failure -> {
+                if (result.error.isMissingCandidateRankingBoard()) {
+                    null
+                } else {
+                    return@withContext result
+                }
+            }
             is BackendReadResult.Success -> result.value.rankingBoard
         }
         val projection = when (val result = getProjection(workspaceId)) {
@@ -121,6 +127,60 @@ class SalesWorkspaceBackendClient(
                 .put("requested_by", "android_demo_user")
                 .toString(),
             parser = ::parseSalesWorkspaceDraftReviewApplyResponse,
+        )
+
+    suspend fun runChatFirstSalesAgentTurn(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+        baseWorkspaceVersion: Int,
+        messageType: String,
+        content: String,
+    ): BackendReadResult<SalesWorkspaceChatTurnResponseDto> = withContext(Dispatchers.IO) {
+        val message = when (
+            val result = createConversationMessage(
+                workspaceId = workspaceId,
+                messageType = messageType,
+                content = content,
+            )
+        ) {
+            is BackendReadResult.Failure -> return@withContext result
+            is BackendReadResult.Success -> result.value
+        }
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/agent-runs/sales-agent-turns",
+            body = JSONObject()
+                .put("message_id", message.id)
+                .put("base_workspace_version", baseWorkspaceVersion)
+                .put("instruction", "handle Android chat-first workspace input")
+                .toString(),
+            parser = ::parseSalesWorkspaceChatTurnResponse,
+        )
+    }
+
+    private suspend fun createConversationMessage(
+        workspaceId: String,
+        messageType: String,
+        content: String,
+    ): BackendReadResult<SalesWorkspaceConversationMessageDto> =
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/messages",
+            body = JSONObject()
+                .put("message_type", messageType)
+                .put("content", content)
+                .toString(),
+            parser = { rawJson ->
+                JSONObject(rawJson)
+                    .getJSONObject("message")
+                    .let { messageJson ->
+                        SalesWorkspaceConversationMessageDto(
+                            id = messageJson.getString("id"),
+                            role = messageJson.getString("role"),
+                            messageType = messageJson.getString("message_type"),
+                            content = messageJson.getString("content"),
+                        )
+                    }
+            },
         )
 
     private suspend fun createDraftReview(
@@ -251,8 +311,11 @@ private fun Exception.toSalesWorkspaceReadFailure(): BackendReadResult.Failure =
             detail = when (this) {
                 is ConnectException,
                 is NoRouteToHostException,
-                is SocketTimeoutException -> "请确认后端已在 127.0.0.1:8013 启动，demo 数据已 seed，并已执行 adb reverse tcp:8013 tcp:8013。"
+                is SocketTimeoutException -> "请确认后端已在 127.0.0.1:8013 启动，已执行 adb reverse tcp:8013 tcp:8013，并已创建 ws_demo workspace。候选排序 demo 才需要额外 seed 数据。"
                 else -> message ?: javaClass.simpleName
             },
         ),
     )
+
+private fun BackendReadError.isMissingCandidateRankingBoard(): Boolean =
+    title.contains("HTTP 404") && detail.contains("candidate_ranking_board")

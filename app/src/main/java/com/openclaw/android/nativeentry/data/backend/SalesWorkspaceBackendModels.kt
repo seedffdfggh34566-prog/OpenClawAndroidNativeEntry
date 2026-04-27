@@ -69,6 +69,28 @@ data class SalesWorkspaceDraftReviewApplyResponseDto(
         get() = rankingBoard?.rankedItems?.firstOrNull()
 }
 
+data class SalesWorkspaceChatTurnResponseDto(
+    val conversationMessage: SalesWorkspaceConversationMessageDto,
+    val agentRun: SalesWorkspaceAgentRunDto,
+    val assistantMessage: SalesWorkspaceConversationMessageDto,
+    val draftReview: SalesWorkspaceDraftReviewDto?,
+    val patchDraft: SalesWorkspacePatchDraftDto?,
+)
+
+data class SalesWorkspaceConversationMessageDto(
+    val id: String,
+    val role: String,
+    val messageType: String,
+    val content: String,
+)
+
+data class SalesWorkspaceAgentRunDto(
+    val id: String,
+    val status: String,
+    val inputRefs: List<String>,
+    val outputRefs: List<String>,
+)
+
 data class SalesWorkspacePatchDraftDto(
     val id: String,
     val workspaceId: String,

@@ -21,7 +21,9 @@
 
 这不是完整 V2 产品上线，也不是 V2.1 product experience 完成，更不是 V2.2。
 
-V2.1 product experience 仍需补齐：
+后续 V2.1 product experience 已在 `task_v2_1_product_experience_closeout.md` 中完成 closeout。本文保留当时 engineering baseline closeout 的历史边界。
+
+当时 product experience 仍需补齐：
 
 - chat-first 输入如何进入 Runtime。
 - Runtime 如何基于 ContextPack 生成 `WorkspacePatchDraft`。

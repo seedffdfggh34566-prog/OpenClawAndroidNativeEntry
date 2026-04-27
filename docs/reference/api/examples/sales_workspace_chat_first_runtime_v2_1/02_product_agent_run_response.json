@@ -1,0 +1,120 @@
+{
+  "conversation_message": {
+    "id": "msg_user_product_001",
+    "workspace_id": "ws_demo",
+    "role": "user",
+    "message_type": "product_profile_update",
+    "content": "我们做 FactoryOps AI，帮助 100 到 500 人的制造企业把排产、库存和 ERP 协同起来，减少生产计划变化后信息不同步的问题。",
+    "linked_object_refs": [],
+    "created_by_agent_run_id": null,
+    "created_at": "2026-04-27T00:00:00Z"
+  },
+  "agent_run": {
+    "id": "run_sales_turn_product_001",
+    "workspace_id": "ws_demo",
+    "run_type": "sales_agent_turn",
+    "status": "succeeded",
+    "input_refs": [
+      "ConversationMessage:msg_user_product_001",
+      "SalesWorkspace:ws_demo",
+      "ContextPack:ctx_sales_turn_product_001"
+    ],
+    "output_refs": [
+      "WorkspacePatchDraftReview:draft_review_sales_turn_product_001",
+      "ConversationMessage:msg_assistant_product_001"
+    ],
+    "runtime_metadata": {
+      "provider": "deterministic_chat_first_runtime",
+      "mode": "no_llm_no_langgraph",
+      "intent": "product_profile_update"
+    },
+    "error": null
+  },
+  "context_pack": {
+    "id": "ctx_sales_turn_product_001",
+    "workspace_id": "ws_demo",
+    "task_type": "sales_agent_turn",
+    "token_budget_chars": 6000,
+    "workspace_summary": "FactoryOps AI workspace",
+    "current_product_profile_revision": null,
+    "current_lead_direction_version": null,
+    "recent_messages": [
+      {
+        "id": "msg_user_product_001",
+        "role": "user",
+        "content_excerpt": "我们做 FactoryOps AI，帮助 100 到 500 人的制造企业..."
+      }
+    ],
+    "active_draft_review_summary": null,
+    "open_questions": [],
+    "blocked_capabilities": [
+      "V2.2 evidence/search/contact"
+    ],
+    "kernel_boundary": "Runtime returns WorkspacePatchDraft; Sales Workspace Kernel validates and writes formal objects."
+  },
+  "assistant_message": {
+    "id": "msg_assistant_product_001",
+    "workspace_id": "ws_demo",
+    "role": "assistant",
+    "message_type": "draft_summary",
+    "content": "我整理了一版产品理解草稿，请审阅后应用到 Sales Workspace。",
+    "linked_object_refs": [
+      "WorkspacePatchDraftReview:draft_review_sales_turn_product_001"
+    ],
+    "created_by_agent_run_id": "run_sales_turn_product_001",
+    "created_at": "2026-04-27T00:00:02Z"
+  },
+  "patch_draft": {
+    "id": "draft_sales_turn_product_001",
+    "workspace_id": "ws_demo",
+    "base_workspace_version": 0,
+    "author": "sales_agent_turn_runtime",
+    "instruction": "update product profile from chat-first input",
+    "runtime_metadata": {
+      "agent_run_id": "run_sales_turn_product_001",
+      "context_pack_id": "ctx_sales_turn_product_001",
+      "intent": "product_profile_update",
+      "source_message_ids": [
+        "msg_user_product_001"
+      ]
+    },
+    "operations": [
+      {
+        "type": "upsert_product_profile_revision",
+        "payload": {
+          "id": "ppr_chat_001",
+          "version": 1,
+          "product_name": "FactoryOps AI",
+          "one_liner": "Manufacturing scheduling, inventory, and ERP coordination assistant.",
+          "target_customers": [
+            "100-500 employee manufacturing companies"
+          ],
+          "target_industries": [
+            "manufacturing"
+          ],
+          "pain_points": [
+            "production plan changes do not sync with inventory and ERP context"
+          ],
+          "value_props": [
+            "reduce operational data fragmentation",
+            "help teams coordinate scheduling and inventory changes"
+          ],
+          "constraints": [
+            "needs ERP-adjacent workflow data"
+          ]
+        }
+      }
+    ]
+  },
+  "draft_review": {
+    "id": "draft_review_sales_turn_product_001",
+    "workspace_id": "ws_demo",
+    "status": "previewed",
+    "draft_id": "draft_sales_turn_product_001",
+    "base_workspace_version": 0,
+    "reviewer": null,
+    "preview_top_change_refs": [
+      "ProductProfileRevision:ppr_chat_001"
+    ]
+  }
+}

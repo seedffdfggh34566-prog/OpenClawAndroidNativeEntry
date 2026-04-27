@@ -1,0 +1,136 @@
+{
+  "conversation_message": {
+    "id": "msg_user_direction_001",
+    "workspace_id": "ws_demo",
+    "role": "user",
+    "message_type": "lead_direction_update",
+    "content": "先找华东地区 100 到 500 人、有 ERP 但排产和库存协同弱的制造企业。教育和超大型集团先排除。",
+    "linked_object_refs": [
+      "ProductProfileRevision:ppr_chat_001"
+    ],
+    "created_by_agent_run_id": null,
+    "created_at": "2026-04-27T00:05:00Z"
+  },
+  "agent_run": {
+    "id": "run_sales_turn_direction_001",
+    "workspace_id": "ws_demo",
+    "run_type": "sales_agent_turn",
+    "status": "succeeded",
+    "input_refs": [
+      "ConversationMessage:msg_user_direction_001",
+      "SalesWorkspace:ws_demo",
+      "ContextPack:ctx_sales_turn_direction_001"
+    ],
+    "output_refs": [
+      "WorkspacePatchDraftReview:draft_review_sales_turn_direction_001",
+      "ConversationMessage:msg_assistant_direction_001"
+    ],
+    "runtime_metadata": {
+      "provider": "deterministic_chat_first_runtime",
+      "mode": "no_llm_no_langgraph",
+      "intent": "lead_direction_update"
+    },
+    "error": null
+  },
+  "context_pack": {
+    "id": "ctx_sales_turn_direction_001",
+    "workspace_id": "ws_demo",
+    "task_type": "sales_agent_turn",
+    "token_budget_chars": 6000,
+    "workspace_summary": "FactoryOps AI workspace",
+    "current_product_profile_revision": {
+      "id": "ppr_chat_001",
+      "summary": "Manufacturing scheduling, inventory, and ERP coordination assistant."
+    },
+    "current_lead_direction_version": null,
+    "recent_messages": [
+      {
+        "id": "msg_user_direction_001",
+        "role": "user",
+        "content_excerpt": "先找华东地区 100 到 500 人、有 ERP..."
+      }
+    ],
+    "active_draft_review_summary": null,
+    "open_questions": [],
+    "blocked_capabilities": [
+      "V2.2 evidence/search/contact"
+    ],
+    "kernel_boundary": "Runtime returns WorkspacePatchDraft; Sales Workspace Kernel validates and writes formal objects."
+  },
+  "assistant_message": {
+    "id": "msg_assistant_direction_001",
+    "workspace_id": "ws_demo",
+    "role": "assistant",
+    "message_type": "draft_summary",
+    "content": "我整理了一版获客方向草稿，请审阅后应用到 Sales Workspace。",
+    "linked_object_refs": [
+      "WorkspacePatchDraftReview:draft_review_sales_turn_direction_001"
+    ],
+    "created_by_agent_run_id": "run_sales_turn_direction_001",
+    "created_at": "2026-04-27T00:05:02Z"
+  },
+  "patch_draft": {
+    "id": "draft_sales_turn_direction_001",
+    "workspace_id": "ws_demo",
+    "base_workspace_version": 1,
+    "author": "sales_agent_turn_runtime",
+    "instruction": "update lead direction from chat-first input",
+    "runtime_metadata": {
+      "agent_run_id": "run_sales_turn_direction_001",
+      "context_pack_id": "ctx_sales_turn_direction_001",
+      "intent": "lead_direction_update",
+      "source_message_ids": [
+        "msg_user_direction_001"
+      ]
+    },
+    "operations": [
+      {
+        "type": "upsert_lead_direction_version",
+        "payload": {
+          "id": "dir_chat_001",
+          "version": 1,
+          "priority_industries": [
+            "manufacturing"
+          ],
+          "target_customer_types": [
+            "manufacturers with ERP but weak scheduling and inventory coordination"
+          ],
+          "regions": [
+            "East China"
+          ],
+          "company_sizes": [
+            "100-500 employees"
+          ],
+          "priority_constraints": [
+            "has ERP",
+            "scheduling and inventory coordination is weak"
+          ],
+          "excluded_industries": [
+            "education"
+          ],
+          "excluded_customer_types": [
+            "large conglomerates"
+          ],
+          "change_reason": "User clarified target segment in chat."
+        }
+      },
+      {
+        "type": "set_active_lead_direction",
+        "payload": {
+          "lead_direction_version_id": "dir_chat_001"
+        }
+      }
+    ]
+  },
+  "draft_review": {
+    "id": "draft_review_sales_turn_direction_001",
+    "workspace_id": "ws_demo",
+    "status": "previewed",
+    "draft_id": "draft_sales_turn_direction_001",
+    "base_workspace_version": 1,
+    "reviewer": null,
+    "preview_top_change_refs": [
+      "LeadDirectionVersion:dir_chat_001"
+    ]
+  }
+}

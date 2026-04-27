@@ -54,13 +54,14 @@ Sales Workspace Kernel prototype 已完成：
 - Android PatchDraft review UI prototype
 - V2 prototype demo runbook
 - clean demo verification
+- Draft review contract
 - pytest coverage
 
-当前推荐下一阶段：
+当前 Draft review contract：
 
-- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`
+- `docs/reference/api/sales-workspace-draft-review-contract.md`
 
-该任务应先定义 Draft persistence / review history contract，再决定是否进入 DB-backed persistence、正式 Runtime / LangGraph integration 或 Android review UX 扩展。
+后续需要人工选择是否进入 persistence decision refresh、draft review route prototype、正式 Runtime / LangGraph integration design 或 Android review UX expansion。
 
 当前不应自动实现：
 

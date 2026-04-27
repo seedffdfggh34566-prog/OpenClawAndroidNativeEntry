@@ -183,3 +183,35 @@ no-DB FastAPI prototype 和 Android read-only workspace demo 已完成后，`ws_
 - 不开放 Android write path、Runtime / LangGraph、LLM、search 或 CRM。
 
 该 addendum 不推翻本 ADR 的 persistence decision：正式 DB-backed API、SQLite / Alembic 或 Postgres 仍需单独任务和决策。
+
+---
+
+## 9. 2026-04-27 Addendum：允许定义 Draft Review contract
+
+V2 Sales Workspace prototype demo 已完成并通过 clean demo verification：
+
+- Runtime 生成 deterministic `WorkspacePatchDraft`。
+- Android 预览并显式 apply。
+- Backend materialize `WorkspacePatch` 后由 Sales Workspace Kernel 正式写回。
+- apply 后 workspace version 从 3 变为 4，`cand_runtime_001` 排名第一。
+
+当前 prototype 的薄弱点是：previewed draft 只存在于 Android UI state / request body 中，没有 backend-managed review object。
+
+因此允许定义 Draft persistence / review history contract：
+
+- 新增 contract 文档：`docs/reference/api/sales-workspace-draft-review-contract.md`。
+- 定义 `WorkspacePatchDraftReview` 作为 backend-managed review object 语义。
+- 定义 draft lifecycle：`previewed`、`reviewed`、`applied`、`rejected`、`expired`。
+- 明确 Android 未来推荐提交 `draft_review_id` 执行 apply。
+- 明确 Runtime / Product Sales Agent execution layer 仍只产出 `WorkspacePatchDraft`。
+- 明确 Sales Workspace Kernel 仍是 formal workspace writeback owner。
+
+该 addendum 不推翻本 ADR 的 persistence decision：
+
+- 不实现 backend route。
+- 不新增 SQLAlchemy ORM。
+- 不新增 Alembic migration。
+- 不改变 SQLite / Postgres / production persistence baseline。
+- JSON file store 仍只允许作为 prototype demo continuity，不是正式 persistence baseline。
+
+若后续要实现 draft review object，应先刷新 persistence decision 或创建单独 persistence task。

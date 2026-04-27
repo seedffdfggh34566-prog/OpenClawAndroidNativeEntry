@@ -1,6 +1,6 @@
 # Task: V2 Sales Workspace Draft Review Contract
 
-状态：planned
+状态：done
 
 更新时间：2026-04-27
 
@@ -55,6 +55,18 @@
 - 更新 `_active.md`，在任务完成后仍不自动开放 implementation。
 - 新增 handoff，记录后续是否应进入 DB decision refresh 或 implementation task。
 
+## Result
+
+已完成：
+
+- 新增 `docs/reference/api/sales-workspace-draft-review-contract.md`。
+- 定义 `WorkspacePatchDraftReview` backend-managed review object 语义。
+- 定义 draft lifecycle：`previewed`、`reviewed`、`applied`、`rejected`、`expired`。
+- 定义 future draft review API contract，但未实现 route。
+- 更新 ADR-007 addendum，允许 draft review contract，但不改变 persistence baseline。
+- 明确 Android 未来推荐通过 `draft_review_id` apply；当前 prototype 仍可 raw `patch_draft` 回传。
+- 明确 DB-backed persistence、SQLAlchemy / Alembic、LangGraph、LLM/search/contact/CRM 仍 blocked。
+
 ## Validation Criteria
 
 - Contract 明确 draft lifecycle、错误语义、apply 边界和 Android / Runtime 责任边界。
@@ -62,3 +74,9 @@
 - 明确是否允许 prototype JSON store 继续支撑下一轮 demo。
 - 不引入 code change。
 
+## Actual Validation
+
+- `rg "sales-workspace-draft-review-contract.md|WorkspacePatchDraftReview|draft_review_id" docs`
+- `rg "previewed|reviewed|applied|rejected|expired|workspace_version_conflict|stale draft" docs/reference/api/sales-workspace-draft-review-contract.md`
+- `rg "不实现 backend route|不改 Android|不写 DB|不接 LangGraph" docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md docs/delivery/handoffs/handoff_2026_04_27_v2_draft_review_contract.md`
+- `git diff --check`

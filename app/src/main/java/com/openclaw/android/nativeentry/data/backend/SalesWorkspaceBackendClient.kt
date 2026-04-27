@@ -62,17 +62,78 @@ class SalesWorkspaceBackendClient(
             parser = ::parseSalesWorkspacePatchDraftPreviewResponse,
         )
 
-    suspend fun applyReviewedRuntimePatchDraft(
+    suspend fun createDraftReviewFromRuntimePreview(
         workspaceId: String = SalesWorkspaceDemoWorkspaceId,
-        patchDraft: SalesWorkspacePatchDraftDto,
-    ): BackendReadResult<SalesWorkspacePatchDraftApplyResponseDto> =
+        baseWorkspaceVersion: Int,
+        instruction: String = "add one deterministic runtime candidate",
+    ): BackendReadResult<SalesWorkspaceDraftReviewDto> = withContext(Dispatchers.IO) {
+        val preview = when (
+            val result = previewRuntimePatchDraft(
+                workspaceId = workspaceId,
+                baseWorkspaceVersion = baseWorkspaceVersion,
+                instruction = instruction,
+            )
+        ) {
+            is BackendReadResult.Failure -> return@withContext result
+            is BackendReadResult.Success -> result.value
+        }
+        createDraftReview(workspaceId = workspaceId, patchDraft = preview.patchDraft)
+    }
+
+    suspend fun reviewDraftReview(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+        draftReviewId: String,
+        decision: String,
+    ): BackendReadResult<SalesWorkspaceDraftReviewDto> =
         requestJson(
             method = "POST",
-            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/runtime/patch-drafts/prototype/apply",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/draft-reviews/${draftReviewId.encodePathSegment()}/review",
+            body = JSONObject()
+                .put("decision", decision)
+                .put("reviewed_by", "android_demo_user")
+                .put("client", "android")
+                .toString(),
+            parser = ::parseSalesWorkspaceDraftReviewResponse,
+        )
+
+    suspend fun rejectDraftReview(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+        draftReviewId: String,
+    ): BackendReadResult<SalesWorkspaceDraftReviewDto> =
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/draft-reviews/${draftReviewId.encodePathSegment()}/reject",
+            body = JSONObject()
+                .put("rejected_by", "android_demo_user")
+                .put("reason", "Rejected from Android prototype review UI.")
+                .toString(),
+            parser = ::parseSalesWorkspaceDraftReviewResponse,
+        )
+
+    suspend fun applyDraftReview(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+        draftReviewId: String,
+    ): BackendReadResult<SalesWorkspaceDraftReviewApplyResponseDto> =
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/draft-reviews/${draftReviewId.encodePathSegment()}/apply",
+            body = JSONObject()
+                .put("requested_by", "android_demo_user")
+                .toString(),
+            parser = ::parseSalesWorkspaceDraftReviewApplyResponse,
+        )
+
+    private suspend fun createDraftReview(
+        workspaceId: String,
+        patchDraft: SalesWorkspacePatchDraftDto,
+    ): BackendReadResult<SalesWorkspaceDraftReviewDto> =
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/draft-reviews",
             body = JSONObject()
                 .put("patch_draft", JSONObject(patchDraft.rawJson))
                 .toString(),
-            parser = ::parseSalesWorkspacePatchDraftApplyResponse,
+            parser = ::parseSalesWorkspaceDraftReviewResponse,
         )
 
     private suspend fun getWorkspace(workspaceId: String): BackendReadResult<SalesWorkspaceResponseDto> =

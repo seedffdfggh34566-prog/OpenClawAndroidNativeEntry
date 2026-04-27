@@ -39,8 +39,8 @@ import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichRequest
 import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceBackendClient
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDemoWorkspaceId
-import com.openclaw.android.nativeentry.data.backend.SalesWorkspacePatchDraftApplyResponseDto
-import com.openclaw.android.nativeentry.data.backend.SalesWorkspacePatchDraftPreviewDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewApplyResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
 import com.openclaw.android.nativeentry.data.backend.V1BackendClient
 import com.openclaw.android.nativeentry.navigation.OpenClawDestination
@@ -90,11 +90,11 @@ fun OpenClawApp() {
     var workspaceState by remember {
         mutableStateOf<V1SectionState<SalesWorkspaceReadOnlySnapshot>>(V1SectionState.Idle)
     }
-    var patchDraftPreviewState by remember {
-        mutableStateOf<V1SectionState<SalesWorkspacePatchDraftPreviewDto>>(V1SectionState.Idle)
+    var draftReviewState by remember {
+        mutableStateOf<V1SectionState<SalesWorkspaceDraftReviewDto>>(V1SectionState.Idle)
     }
     var patchDraftApplyState by remember {
-        mutableStateOf<V1SectionState<SalesWorkspacePatchDraftApplyResponseDto>>(V1SectionState.Idle)
+        mutableStateOf<V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>>(V1SectionState.Idle)
     }
     var productName by remember { mutableStateOf("") }
     var productDescription by remember { mutableStateOf("") }
@@ -108,7 +108,7 @@ fun OpenClawApp() {
     var refreshJob by remember { mutableStateOf<Job?>(null) }
     var backendRefreshJob by remember { mutableStateOf<Job?>(null) }
     var workspaceLoadJob by remember { mutableStateOf<Job?>(null) }
-    var patchDraftPreviewJob by remember { mutableStateOf<Job?>(null) }
+    var draftReviewJob by remember { mutableStateOf<Job?>(null) }
     var patchDraftApplyJob by remember { mutableStateOf<Job?>(null) }
     var productProfileLoadJob by remember { mutableStateOf<Job?>(null) }
     var productProfileCreateJob by remember { mutableStateOf<Job?>(null) }
@@ -192,26 +192,26 @@ fun OpenClawApp() {
         }
     }
 
-    fun previewRuntimePatchDraft() {
+    fun createDraftReviewFromRuntimePreview() {
         val loadedWorkspace = (workspaceState as? V1SectionState.Loaded<SalesWorkspaceReadOnlySnapshot>)
             ?.value
             ?.workspace
         if (loadedWorkspace == null) {
-            patchDraftPreviewState = V1SectionState.Failed(
+            draftReviewState = V1SectionState.Failed(
                 BackendReadError(
-                    title = "无法生成 PatchDraft 预览",
+                    title = "无法生成 Draft Review",
                     detail = "请先刷新并加载 Sales Workspace。",
                 ),
             )
             return
         }
 
-        patchDraftPreviewJob?.cancel()
+        draftReviewJob?.cancel()
         patchDraftApplyState = V1SectionState.Idle
-        patchDraftPreviewState = V1SectionState.Loading
-        patchDraftPreviewJob = scope.launch {
-            patchDraftPreviewState = when (
-                val result = workspaceClient.previewRuntimePatchDraft(
+        draftReviewState = V1SectionState.Loading
+        draftReviewJob = scope.launch {
+            draftReviewState = when (
+                val result = workspaceClient.createDraftReviewFromRuntimePreview(
                     workspaceId = loadedWorkspace.id,
                     baseWorkspaceVersion = loadedWorkspace.workspaceVersion,
                 )
@@ -222,14 +222,73 @@ fun OpenClawApp() {
         }
     }
 
-    fun applyReviewedRuntimePatchDraft() {
-        val preview = (patchDraftPreviewState as? V1SectionState.Loaded<SalesWorkspacePatchDraftPreviewDto>)
+    fun acceptDraftReview() {
+        val draftReview = (draftReviewState as? V1SectionState.Loaded<SalesWorkspaceDraftReviewDto>)
             ?.value
-        if (preview == null) {
+        if (draftReview == null) {
+            draftReviewState = V1SectionState.Failed(
+                BackendReadError(
+                    title = "无法审阅 Draft Review",
+                    detail = "请先生成 Draft Review。",
+                ),
+            )
+            return
+        }
+
+        draftReviewJob?.cancel()
+        patchDraftApplyState = V1SectionState.Idle
+        draftReviewState = V1SectionState.Loading
+        draftReviewJob = scope.launch {
+            draftReviewState = when (
+                val result = workspaceClient.reviewDraftReview(
+                    workspaceId = draftReview.workspaceId,
+                    draftReviewId = draftReview.id,
+                    decision = "accept",
+                )
+            ) {
+                is BackendReadResult.Failure -> V1SectionState.Failed(result.error)
+                is BackendReadResult.Success -> V1SectionState.Loaded(result.value)
+            }
+        }
+    }
+
+    fun rejectDraftReview() {
+        val draftReview = (draftReviewState as? V1SectionState.Loaded<SalesWorkspaceDraftReviewDto>)
+            ?.value
+        if (draftReview == null) {
+            draftReviewState = V1SectionState.Failed(
+                BackendReadError(
+                    title = "无法拒绝 Draft Review",
+                    detail = "请先生成 Draft Review。",
+                ),
+            )
+            return
+        }
+
+        draftReviewJob?.cancel()
+        patchDraftApplyState = V1SectionState.Idle
+        draftReviewState = V1SectionState.Loading
+        draftReviewJob = scope.launch {
+            draftReviewState = when (
+                val result = workspaceClient.rejectDraftReview(
+                    workspaceId = draftReview.workspaceId,
+                    draftReviewId = draftReview.id,
+                )
+            ) {
+                is BackendReadResult.Failure -> V1SectionState.Failed(result.error)
+                is BackendReadResult.Success -> V1SectionState.Loaded(result.value)
+            }
+        }
+    }
+
+    fun applyReviewedDraftReview() {
+        val draftReview = (draftReviewState as? V1SectionState.Loaded<SalesWorkspaceDraftReviewDto>)
+            ?.value
+        if (draftReview == null) {
             patchDraftApplyState = V1SectionState.Failed(
                 BackendReadError(
-                    title = "无法应用 PatchDraft",
-                    detail = "请先生成并审阅 PatchDraft 预览。",
+                    title = "无法应用 Draft Review",
+                    detail = "请先生成并接受 Draft Review。",
                 ),
             )
             return
@@ -239,9 +298,9 @@ fun OpenClawApp() {
         patchDraftApplyState = V1SectionState.Loading
         patchDraftApplyJob = scope.launch {
             when (
-                val result = workspaceClient.applyReviewedRuntimePatchDraft(
-                    workspaceId = preview.patchDraft.workspaceId,
-                    patchDraft = preview.patchDraft,
+                val result = workspaceClient.applyDraftReview(
+                    workspaceId = draftReview.workspaceId,
+                    draftReviewId = draftReview.id,
                 )
             ) {
                 is BackendReadResult.Failure -> {
@@ -250,7 +309,7 @@ fun OpenClawApp() {
 
                 is BackendReadResult.Success -> {
                     patchDraftApplyState = V1SectionState.Loaded(result.value)
-                    patchDraftPreviewState = V1SectionState.Idle
+                    draftReviewState = V1SectionState.Idle
                     workspaceState = V1SectionState.Loading
                     workspaceState = when (
                         val snapshot = workspaceClient.getReadOnlySnapshot(result.value.workspace.id)
@@ -1188,7 +1247,7 @@ fun OpenClawApp() {
             navController = navController,
             backendState = backendState,
             workspaceState = workspaceState,
-            patchDraftPreviewState = patchDraftPreviewState,
+            draftReviewState = draftReviewState,
             patchDraftApplyState = patchDraftApplyState,
             placeholderState = placeholderState,
             gatewaySnapshot = gatewaySnapshot,
@@ -1197,8 +1256,10 @@ fun OpenClawApp() {
             onRefreshGatewayStatus = ::refreshGatewayStatus,
             onRefreshBackend = ::refreshV1History,
             onRefreshWorkspace = ::refreshSalesWorkspace,
-            onPreviewRuntimePatchDraft = ::previewRuntimePatchDraft,
-            onApplyReviewedRuntimePatchDraft = ::applyReviewedRuntimePatchDraft,
+            onCreateDraftReview = ::createDraftReviewFromRuntimePreview,
+            onAcceptDraftReview = ::acceptDraftReview,
+            onRejectDraftReview = ::rejectDraftReview,
+            onApplyDraftReview = ::applyReviewedDraftReview,
             onUseDebugFallback = ::useDebugFallback,
             onLoadLatestProductProfile = ::loadLatestProductProfile,
             onLoadLatestReport = ::loadLatestReport,

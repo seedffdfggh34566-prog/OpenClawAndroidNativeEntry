@@ -163,3 +163,23 @@ contract fixture examples / state transition examples 已完成：
 - 不开放 Android UI、Runtime / LangGraph、LLM、search 或 CRM。
 
 该 addendum 不推翻本 ADR 的 persistence decision：正式 persistence 仍未冻结，DB-backed API 仍需单独任务。
+
+---
+
+## 8. 2026-04-27 Addendum：允许 prototype JSON file store
+
+no-DB FastAPI prototype 和 Android read-only workspace demo 已完成后，`ws_demo` 仍存在一个开发体验问题：backend 进程重启后 app-local in-memory state 会丢失，需要重复 seed。
+
+因此允许补一个可选的 JSON file store prototype：
+
+- 仅在显式设置 `OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR` 时启用。
+- 未设置该环境变量时，默认仍是 app-local `InMemoryWorkspaceStore`。
+- JSON file store 只服务本地 demo continuity 与 contract smoke。
+- 每个 workspace 保存为一个 JSON 文件，backend 可跨进程重启 lazy load。
+- 不新增或扩展 API endpoint。
+- 不使用 SQLAlchemy ORM。
+- 不新增 Alembic migration。
+- 不改变正式 persistence baseline。
+- 不开放 Android write path、Runtime / LangGraph、LLM、search 或 CRM。
+
+该 addendum 不推翻本 ADR 的 persistence decision：正式 DB-backed API、SQLite / Alembic 或 Postgres 仍需单独任务和决策。

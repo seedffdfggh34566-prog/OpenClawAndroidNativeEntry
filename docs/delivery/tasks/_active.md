@@ -35,8 +35,9 @@
 - `docs/reference/api/sales-workspace-kernel-v0-examples.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`（done）
 - `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成。
 
 ---
 
@@ -49,6 +50,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 3. Contract fixture examples / state transition examples。
 4. Sales Workspace Backend API prototype v0。
 5. Android read-only workspace demo。
+6. Sales Workspace JSON file store prototype。
 
 当前结论：
 
@@ -57,6 +59,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑，不是正式 persistence baseline。
 - 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
 - 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
+- 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
 - backend API 的 DB-backed / production persistence 版本继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -138,6 +141,12 @@ Android read-only workspace demo 已完成：
 - Android top-level `Workspace` 页面
 - `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`
 
+Sales Workspace JSON file store prototype 已完成：
+
+- `OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`
+- `backend/sales_workspace/store.py`
+- `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`
+
 ---
 
 ## 6. 当前执行入口
@@ -158,7 +167,8 @@ Android read-only workspace demo 已完成：
 12. `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
 13. `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`
 14. `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`
-15. 本文件
+15. `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`
+16. 本文件
 
 ---
 

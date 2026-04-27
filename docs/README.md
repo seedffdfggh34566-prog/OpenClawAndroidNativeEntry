@@ -27,7 +27,7 @@
 
 > **Sales Workspace Kernel：结构化 workspace 状态机 + WorkspacePatch 写回门禁 + 候选排序 + Markdown projection + ContextPack Compiler。**
 
-Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo 已完成。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、Android write path 或 Runtime / LangGraph 集成阶段。
+Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo 和可选 JSON file store prototype 已完成。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、Android write path 或 Runtime / LangGraph 集成阶段。
 
 ---
 
@@ -108,6 +108,7 @@ V1 细节可继续参考：
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_persistence_decision.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_api_contract_v0.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_post_kernel_v0_planning.md`
+- `docs/delivery/handoffs/handoff_2026_04_27_v2_sales_workspace_json_store_prototype.md`
 
 ### 5.4 V1 baseline 与参考
 

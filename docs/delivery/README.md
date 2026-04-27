@@ -21,12 +21,13 @@
 - V2 Sales Workspace Kernel backend-only v0 设计与实现。
 - V2 Sales Workspace no-DB FastAPI prototype v0。
 - V2 Android read-only workspace demo。
+- V2 Sales Workspace JSON file store prototype。
 
 当前项目处于：
 
 > **V2 workspace-native sales agent / Sales Workspace Kernel prototype 阶段**
 
-当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype 和 Android read-only workspace demo。当前不自动进入数据库 migration、Android write path、LangGraph、LLM 或搜索实现。
+当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype、Android read-only workspace demo 和可选 JSON file store prototype。当前不自动进入数据库 migration、Android write path、LangGraph、LLM 或搜索实现。
 
 ---
 
@@ -50,6 +51,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 - pytest
 - no-DB FastAPI prototype endpoints
 - Android read-only workspace demo
+- optional JSON file store prototype
 
 ---
 
@@ -67,6 +69,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 | `task_v2_sales_workspace_backend_api_prototype_v0.md` | 实现 no-DB backend API prototype v0 | `done` |
 | `task_v2_sales_workspace_backend_api_v0.md` | 实现 persistence-backed backend API v0 | `planned / blocked by persistence decision` |
 | `task_v2_android_workspace_readonly_view.md` | Android read-only workspace view | `done` |
+| `task_v2_sales_workspace_json_store_prototype.md` | 可选 JSON file store prototype | `done` |
 | `task_v2_sales_workspace_runtime_patchdraft_integration.md` | Runtime / LangGraph WorkspacePatchDraft integration | `planned / blocked by API and persistence` |
 | `task_v2_conversational_sales_agent_definition_update.md` | 2026-04-25 旧 V2 定义更新 | `done / superseded by workspace-native direction` |
 | `task_v2_planning_baseline_update.md` | 将仓库入口、ADR、roadmap 和 active task 状态对齐到 V2 planning baseline | `done` |
@@ -116,5 +119,5 @@ Sales Workspace Kernel backend-only v0 已完成：
 - Backend services / workspace kernel 负责正式对象写回裁决。
 - Runtime / Product Sales Agent execution layer 后续只产出 draft payload、工具结果和中间推理。
 - 若对象模型、页面结构与代码现实冲突，先更新 task / spec，再动实现。
-- V2.1 已完成 API contract -> persistence decision -> contract examples -> no-DB backend API prototype。
+- V2.1 已完成 API contract -> persistence decision -> contract examples -> no-DB backend API prototype -> Android read-only demo -> JSON file store prototype。
 - 后续 Android 体验增强、persistence-backed API、Runtime integration 必须单独创建 task 后再推进。

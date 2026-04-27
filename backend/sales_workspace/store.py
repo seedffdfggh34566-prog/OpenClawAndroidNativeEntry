@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from tempfile import NamedTemporaryFile
+from urllib.parse import quote
 
 from backend.sales_workspace.patches import apply_workspace_patch
 from backend.sales_workspace.schemas import SalesWorkspace, WorkspacePatch
@@ -50,9 +52,46 @@ class InMemoryWorkspaceStore:
         return updated
 
 
+class JsonFileWorkspaceStore(InMemoryWorkspaceStore):
+    def __init__(self, store_dir: str | Path) -> None:
+        super().__init__()
+        self.store_dir = Path(store_dir)
+        self.store_dir.mkdir(parents=True, exist_ok=True)
+
+    def get(self, workspace_id: str) -> SalesWorkspace:
+        try:
+            return super().get(workspace_id)
+        except WorkspaceNotFound:
+            path = self._workspace_path(workspace_id)
+            if not path.exists():
+                raise
+            workspace = load_workspace_json(path)
+            self._workspaces[workspace.id] = workspace
+            return workspace
+
+    def save(self, workspace: SalesWorkspace) -> None:
+        self._workspaces[workspace.id] = workspace
+        save_workspace_json(self._workspace_path(workspace.id), workspace)
+
+    def _workspace_path(self, workspace_id: str) -> Path:
+        filename = f"{quote(workspace_id, safe='')}.json"
+        return self.store_dir / filename
+
+
 def save_workspace_json(path: str | Path, workspace: SalesWorkspace) -> None:
     output_path = Path(path)
-    output_path.write_text(workspace.model_dump_json(indent=2), encoding="utf-8")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        dir=output_path.parent,
+        prefix=f".{output_path.name}.",
+        suffix=".tmp",
+        delete=False,
+    ) as tmp_file:
+        tmp_file.write(workspace.model_dump_json(indent=2))
+        tmp_path = Path(tmp_file.name)
+    tmp_path.replace(output_path)
 
 
 def load_workspace_json(path: str | Path) -> SalesWorkspace:

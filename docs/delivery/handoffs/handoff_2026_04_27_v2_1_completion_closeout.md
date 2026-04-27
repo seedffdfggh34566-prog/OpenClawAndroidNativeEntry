@@ -1,20 +1,24 @@
-# Handoff: V2.1 Completion Closeout
+# Handoff: V2.1 Engineering Baseline Closeout
 
 日期：2026-04-27
 
 ## Summary
 
-本次完成 V2.1 baseline closeout。PR #24 已合入 `main`，Sales Workspace Kernel、Draft Review ID flow、Postgres persistence chain 和 Draft Review audit baseline 已作为 main 当前状态记录。
+本次完成 V2.1 engineering baseline closeout。PR #24 已合入 `main`，Sales Workspace Kernel、Draft Review ID flow、Postgres persistence chain 和 Draft Review audit baseline 已作为 main 当前状态记录。
+
+本 closeout 不代表 V2.1 product experience 已完成。chat-first 产品理解、获客方向迭代、ConversationMessage / AgentRun trace，以及 Runtime 基于 ContextPack 生成 `WorkspacePatchDraft` 的产品体验闭环仍需单独设计。
 
 ## Changed
 
 - 新增 `docs/delivery/tasks/task_v2_1_completion_closeout.md`。
 - 新增本 handoff。
 - 更新 `README.md`、`docs/README.md`、`docs/delivery/README.md`、`docs/delivery/tasks/_active.md`、`backend/README.md`、`docs/product/roadmap.md`。
-- 新增 V2.2 planned task placeholders：
+- 新增 V2.2 planned / blocked task placeholders：
   - `task_v2_2_runtime_langgraph_design.md`
   - `task_v2_2_android_review_history_planning.md`
   - `task_v2_2_search_evidence_boundary_design.md`
+- 后续修正中新增当前任务：
+  - `task_v2_1_chat_first_runtime_design.md`
 
 ## V2.1 Closeout State
 
@@ -26,6 +30,8 @@
 - Postgres / Alembic persistence baseline：done。
 - Sales Workspace Postgres migration / repository / API store：done。
 - Draft Review Postgres persistence and lifecycle events：done。
+- Engineering baseline：done。
+- Product experience：not completed yet。
 
 ## Validation
 
@@ -48,6 +54,7 @@ Actual validation commands:
 ## Known Limitations
 
 - `adb devices` 检测到一台设备，但本次未安装 / 启动 app；本任务是 closeout 与 build-level verification，没有改 Android 行为。
+- 未完成 V2.1 chat-first Product Sales Agent 体验设计。
 - 未接真实 Runtime / LangGraph。
 - 未接真实 LLM / search / CRM / contact。
 - 未实现 Draft Review history read API 或 Android history view。
@@ -55,4 +62,4 @@ Actual validation commands:
 
 ## Recommended Next Step
 
-优先做 `task_v2_2_runtime_langgraph_design.md`，不要直接接真实 LLM。先定义 Runtime / LangGraph 如何生成 `WorkspacePatchDraft`、如何进入 Draft Review、如何处理失败和证据边界。
+优先做 `task_v2_1_chat_first_runtime_design.md`，不要直接接真实 LLM。先定义 chat-first 输入、ContextPack、Runtime、`WorkspacePatchDraft`、Draft Review 和 WorkspaceCommit 如何串起来，完成 V2.1 product experience 设计后再讨论 V2.2 evidence / search。

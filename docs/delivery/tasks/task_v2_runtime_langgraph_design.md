@@ -1,6 +1,6 @@
 # Task: V2 Runtime LangGraph Design
 
-状态：planned / blocked
+状态：planned / blocked by V2.1 chat-first runtime design
 
 更新时间：2026-04-27
 
@@ -10,7 +10,7 @@
 
 ## Blocker
 
-必须等待 Postgres dev environment、Sales Workspace persistence schema design、Draft Review persistence schema 和 writeback 边界完成后才能执行。
+必须等待 `task_v2_1_chat_first_runtime_design.md` 完成后才能执行；Postgres dev environment、Sales Workspace persistence schema design、Draft Review persistence schema 和 writeback 边界已完成，但 V2.1 product experience 仍未完成。
 
 ## Scope Placeholder
 

@@ -1,6 +1,6 @@
 # Task: V2.2 Android Review History Planning
 
-状态：planned / blocked
+状态：planned / blocked by V2.1 product experience
 
 更新时间：2026-04-27
 
@@ -23,4 +23,4 @@
 
 ## Blocker
 
-必须等待 Draft Review history read API contract 或 Runtime / LangGraph design 明确后再开放。
+必须等待 V2.1 product experience 完成，并等待 Draft Review history read API contract 或 Runtime / LangGraph design 明确后再开放。

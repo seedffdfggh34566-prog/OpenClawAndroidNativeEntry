@@ -1,4 +1,4 @@
-# Task: V2.1 Completion Closeout
+# Task: V2.1 Engineering Baseline Closeout
 
 状态：done
 
@@ -6,20 +6,27 @@
 
 ## Objective
 
-将 V2.1 从功能分支完成推进到 `main` 上的正式 baseline closeout，并明确下一阶段不自动开放。
+将 V2.1 工程基线从功能分支推进到 `main` 上的正式 baseline closeout，并明确这不代表 V2.1 chat-first 产品体验已经完成。
 
 ## Completion Definition
 
-本任务中的 V2.1 completion 指：
+本任务中的 V2.1 engineering baseline completion 指：
 
 - Sales Workspace Kernel 已可通过 API 使用。
 - Android 已能走 workspace / Draft Review ID demo flow。
 - Workspace 与 Draft Review 已具备显式 Postgres-backed persistence path。
 - Draft Review lifecycle 具备 append-only audit event baseline。
 - V2.1 验证命令已在 main 上重新跑通。
-- 文档入口明确 V2.1 已完成，且 V2.2 / Runtime / Android / search 任务未自动开放。
+- 文档入口明确 V2.1 engineering baseline completed，且 V2.2 / Runtime implementation / Android / search 任务未自动开放。
 
-这不是完整 V2 产品上线，也不是 V2.2。
+这不是完整 V2 产品上线，也不是 V2.1 product experience 完成，更不是 V2.2。
+
+V2.1 product experience 仍需补齐：
+
+- chat-first 输入如何进入 Runtime。
+- Runtime 如何基于 ContextPack 生成 `WorkspacePatchDraft`。
+- 产品理解 `ProductProfileRevision` 与获客方向 `LeadDirectionVersion` 的最小 chat-first flow。
+- `ConversationMessage`、`AgentRun`、`DraftReview`、`WorkspaceCommit` 的追踪关系。
 
 ## Scope
 
@@ -45,9 +52,9 @@
 
 - PR #24 已 merge 到 `main`。
 - V2.1 Postgres persistence chain 已进入 `main`。
-- V2.1 closeout 文档已补齐。
-- `_active.md` 保持暂无自动排定。
-- 下一阶段 task 仅作为 planned placeholder 存在。
+- V2.1 engineering baseline closeout 文档已补齐。
+- `_active.md` 已重新开放 V2.1 chat-first Runtime design。
+- V2.2 task 仅作为 planned / blocked placeholder 存在。
 
 ## Actual Validation
 
@@ -57,6 +64,6 @@
 
 下一阶段建议先执行 docs-only：
 
-- `task_v2_2_runtime_langgraph_design.md`
+- `task_v2_1_chat_first_runtime_design.md`
 
-目标是先冻结真实 Runtime / LangGraph 如何产出 `WorkspacePatchDraft`，再进入任何 LLM、search 或 Android 扩展实现。
+目标是先冻结 V2.1 chat-first 产品体验如何驱动 Runtime 产出 `WorkspacePatchDraft`，再进入任何 LangGraph implementation、LLM、search 或 Android 扩展实现。

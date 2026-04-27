@@ -1,6 +1,6 @@
 # Task: V2.2 Search Evidence Boundary Design
 
-状态：planned / blocked
+状态：planned / blocked by V2.1 product experience
 
 更新时间：2026-04-27
 
@@ -25,4 +25,4 @@
 
 ## Blocker
 
-必须等待 Runtime / LangGraph design 明确后再开放。
+必须等待 V2.1 product experience 完成，且 Runtime / LangGraph design 明确后再开放。

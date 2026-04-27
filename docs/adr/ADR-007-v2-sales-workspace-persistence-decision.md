@@ -298,3 +298,33 @@ Android 人工审阅入口
 - persistence-backed Sales Workspace API。
 - formal Runtime / LangGraph integration。
 - Android review history / broader UX expansion。
+
+---
+
+## 12. 2026-04-27 Addendum：V2 Sales Workspace persistence baseline
+
+`task_v2_sales_workspace_persistence_baseline_design.md` 已完成，正式 baseline 记录在：
+
+- `docs/architecture/workspace/sales-workspace-persistence-baseline.md`
+
+当前冻结结论：
+
+- V2 MVP persistence baseline 采用 Postgres / Alembic。
+- SQLite 不作为 V2 Sales Workspace runtime fallback；现有 SQLite 继续保留在 V1 / tests / legacy backend baseline 语境中。
+- JSON file store 只作为 prototype / demo continuity，不承诺正式数据兼容或迁移。
+- Draft Review 需要长期 audit history，不只保留最新状态。
+- MVP baseline 需要支持 multi-workspace；不能只围绕 `ws_demo` 设计。
+- multi-user / permission / tenant isolation 暂不实现，但后续 schema design 可预留 metadata 概念。
+
+下一步只开放：
+
+- `docs/delivery/tasks/task_v2_postgres_dev_environment_baseline.md`
+
+继续不开放：
+
+- SQLAlchemy model implementation。
+- Alembic migration。
+- Sales Workspace persistence-backed API。
+- Android review history implementation。
+- formal Runtime / LangGraph integration。
+- real LLM / search / contact / CRM。

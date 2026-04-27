@@ -10,7 +10,7 @@
 
 ## Blocker
 
-必须等待 `task_v2_sales_workspace_persistence_baseline_design.md` 完成并明确 persistence baseline 后才能执行。
+必须等待 Postgres dev environment baseline 与 Sales Workspace persistence schema design 完成后才能执行。
 
 ## Scope Placeholder
 

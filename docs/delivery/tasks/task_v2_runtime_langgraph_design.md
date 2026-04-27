@@ -10,7 +10,7 @@
 
 ## Blocker
 
-必须等待 persistence baseline design 完成，并确认 Draft Review lifecycle 的正式持久化边界。
+必须等待 Postgres dev environment、Sales Workspace persistence schema design、Draft Review persistence schema 和 writeback 边界完成后才能执行。
 
 ## Scope Placeholder
 

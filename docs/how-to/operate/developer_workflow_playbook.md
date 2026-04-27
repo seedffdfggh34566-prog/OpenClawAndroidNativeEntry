@@ -224,6 +224,32 @@
 4. 若 docs 中已排定 next queued tasks，则允许执行 agent 继续
 5. 若 task 队列耗尽或边界变化，则回到规划层重新排队
 
+### Step 7：清理 worktree / branch
+
+PR merge 后做一次轻量 cleanup，避免本地长期堆积旧分支和旧目录。
+
+推荐保留：
+
+- 一个干净的主工作区：`/home/yulin/projects/OpenClawAndroidNativeEntry`，通常在 `main`
+- 当前 open PR 对应的 worktree
+- 必要时一个临时 review / debugging worktree
+
+清理顺序：
+
+1. `git fetch origin --prune`
+2. `git worktree list`
+3. 对每个已 merge 的 task worktree 先运行 `git status --short`
+4. 只有 clean worktree 才能 `git worktree remove <path>`
+5. 删除已 merge 的本地分支
+6. 确认没有 open PR 后删除或 prune 对应远端分支
+7. 回到主工作区，确认 `git status --short --branch` 显示 clean `main`
+
+注意：
+
+- 如果 worktree 有未提交改动，先判断是 current task、独立 follow-up，还是 local-only state。
+- 不要默认 `git reset --hard` 或删除有改动的 worktree。
+- 如果本地 `main` 和 `origin/main` 分叉，先检查本地独有提交；必要时创建 backup branch，再由人工确认是否对齐。
+
 ### Codex GitHub plugin / connector 边界
 
 Codex CLI 的 GitHub plugin / connector 可以作为协作辅助工具使用，但不改变本仓库的正式工作流。

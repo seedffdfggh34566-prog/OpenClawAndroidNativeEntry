@@ -224,10 +224,35 @@ Do not treat `main` as a scratchpad.
 
 Preferred branch naming:
 
+- `codex/...` for Codex / Dev Agent execution branches
 - `feat/...`
 - `fix/...`
 - `docs/...`
 - `chore/...`
+
+The canonical checkout at `/home/yulin/projects/OpenClawAndroidNativeEntry` should normally stay on clean `main`.
+Use a separate branch or worktree for implementation tasks.
+If the main checkout has uncommitted changes, first classify them as current-task work, separate follow-up work, or local-only state before starting another task.
+
+### Worktree and branch hygiene
+
+Keep local worktrees short-lived:
+
+- Default to one clean `main` worktree plus currently open PR worktrees.
+- Do not keep merged task worktrees after their PR is merged.
+- If local worktrees exceed three, clean merged and unused worktrees before starting new work.
+- Only remove a worktree after confirming it is clean with `git status --short`.
+- Never delete or reset a worktree with uncommitted changes unless the human explicitly approves that exact cleanup.
+
+After a PR is merged:
+
+1. Fetch and prune remotes.
+2. Remove the merged PR worktree.
+3. Delete the merged local branch.
+4. Delete or prune the merged remote branch when it has no open PR.
+5. Return the canonical checkout to clean `main`.
+
+If `gh pr merge --delete-branch` reports a local cleanup failure because the branch is checked out in a worktree, first confirm whether the PR was merged, then remove the clean worktree and delete the local branch. Do not retry merge blindly.
 
 ### Commit style
 Use short, conventional, descriptive commit messages, for example:

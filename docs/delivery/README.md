@@ -106,8 +106,8 @@ Sales Workspace Kernel backend-only v0 已完成：
 | `task_v2_sales_workspace_persistence_baseline_design.md` | 设计正式 persistence baseline，优先评估 Postgres / Alembic | `done` |
 | `task_v2_postgres_dev_environment_baseline.md` | 补本地 Postgres dev environment 与验证命令 | `done` |
 | `task_v2_sales_workspace_persistence_schema_design.md` | 设计 Sales Workspace 正式 persistence schema | `done` |
-| `task_v2_sales_workspace_persistence_migration_v0.md` | 实现首版 Sales Workspace Postgres / Alembic migration | `planned / blocked by schema design review` |
-| `task_v2_sales_workspace_repository_layer_v0.md` | 实现 Sales Workspace Postgres repository layer | `planned / blocked by migration v0` |
+| `task_v2_sales_workspace_persistence_migration_v0.md` | 实现首版 Sales Workspace Postgres / Alembic migration | `done` |
+| `task_v2_sales_workspace_repository_layer_v0.md` | 实现 Sales Workspace Postgres repository layer | `planned / current` |
 | `task_v2_sales_workspace_api_postgres_store_v0.md` | 将 Sales Workspace API 切到 Postgres-backed store | `planned / blocked by repository layer` |
 | `task_v2_sales_workspace_draft_review_persistence_v0.md` | 将 Draft Review lifecycle 落入 Postgres persistence | `planned / blocked by migration and repository layer` |
 | `task_v2_sales_workspace_draft_review_persistence_schema.md` | 设计 Draft Review 正式 persistence schema | `done / folded into persistence schema design` |

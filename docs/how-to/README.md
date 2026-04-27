@@ -12,6 +12,7 @@
 - `operate/developer_workflow_playbook.md`
 - `operate/codex_backend_first_workflow.md`
 - `operate/dev-agent-vs-sales-agent-runbook.md`
+- `operate/sales-workspace-prototype-demo-runbook.md`
 - `operate/skills/README.md`
 
 其他补充型工作流文档包括：

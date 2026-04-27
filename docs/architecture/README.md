@@ -18,6 +18,7 @@
 
 - `workspace/workspace-object-model.md`
 - `workspace/sales-workspace-kernel.md`
+- `workspace/sales-workspace-persistence-baseline.md`
 - `workspace/workspace-kernel-v0-scope.md`
 - `workspace/markdown-projection.md`
 - `workspace/context-pack-compiler.md`
@@ -29,6 +30,7 @@
 - 结构化 workspace state 是主真相。
 - Markdown 是 projection，不是唯一主存。
 - ContextPack 从结构化 state 编译。
+- V2 MVP persistence baseline 采用 Postgres / Alembic；JSON file store 只作为 prototype continuity。
 - LangGraph 后续只作为 runtime execution layer。
 
 当前与客户端边界直接相关的重点文档包括：

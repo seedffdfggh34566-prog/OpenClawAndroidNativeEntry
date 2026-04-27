@@ -1,6 +1,6 @@
 # Task: V2 Sales Workspace Persistence Baseline Design
 
-状态：planned / current
+状态：done
 
 更新时间：2026-04-27
 
@@ -41,9 +41,22 @@
 
 ## Deliverables
 
-- persistence baseline design 文档或 ADR addendum。
+- persistence baseline design 文档：`docs/architecture/workspace/sales-workspace-persistence-baseline.md`。
+- ADR-007 addendum。
 - 后续 implementation task 的清晰前置条件。
 - 对 Postgres / SQLite / JSON prototype store 的取舍结论。
+
+## Result
+
+已完成：
+
+- V2 MVP persistence baseline 冻结为 Postgres / Alembic。
+- SQLite 不作为 V2 Sales Workspace runtime fallback。
+- JSON file store 只作为 prototype / demo continuity。
+- Draft Review 需要长期 audit history。
+- MVP baseline 必须支持 multi-workspace。
+- multi-user / permission 暂不实现，只允许后续 schema design 预留 metadata。
+- 下一项唯一开放任务设为 `task_v2_postgres_dev_environment_baseline.md`。
 
 ## Validation Criteria
 
@@ -51,3 +64,13 @@
 - 文档明确仍不开放 DB migration。
 - `_active.md` 不自动开放 implementation task。
 - `git diff --check` 通过。
+
+## Actual Validation
+
+- `rg "Postgres / Alembic|SQLite|JSON file store|Draft Review|audit history|multi-workspace" docs/architecture docs/adr docs/delivery docs/README.md`
+- `rg "不写 Alembic|不实现 SQLAlchemy|不改 Android|不接 LangGraph|不接真实 LLM" docs/delivery/tasks/_active.md docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md docs/delivery/handoffs`
+- `rg "task_v2_sales_workspace_persistence_baseline_design.md|sales-workspace-persistence-baseline.md" docs/README.md docs/architecture/README.md docs/delivery/README.md docs/delivery/tasks/_active.md`
+- `git diff --check`
+- `git status --short`
+
+不运行 backend / Android build；本轮是 Markdown-only design。

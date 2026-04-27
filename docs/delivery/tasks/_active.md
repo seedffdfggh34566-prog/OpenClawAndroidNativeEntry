@@ -17,7 +17,7 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`
+`docs/delivery/tasks/task_v2_postgres_dev_environment_baseline.md`
 
 ### Next queued task
 
@@ -45,8 +45,9 @@
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`（done）
 - `docs/delivery/tasks/task_v2_android_draft_review_id_flow_prototype.md`（done）
 - `docs/delivery/tasks/task_v2_post_review_id_flow_persistence_decision_refresh.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成。
 
 ---
 
@@ -69,13 +70,15 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 13. Draft review routes prototype。
 14. Android Draft Review ID flow prototype。
 15. Post Review-ID Flow persistence decision refresh。
+16. Sales Workspace persistence baseline design。
 
 当前结论：
 
-- 不直接进入 SQLite / Alembic migration。
+- V2 MVP persistence baseline 采用 Postgres / Alembic。
+- SQLite 不作为 V2 Sales Workspace runtime fallback。
 - 不开放 persistence-backed backend API implementation。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
-- 如果 V2 继续向 MVP 推进，下一步只开放正式 persistence baseline design，优先评估 Postgres / Alembic。
+- 当前只开放 Postgres dev environment baseline，不开放 Sales Workspace schema migration。
 - 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
 - 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
 - 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
@@ -88,7 +91,8 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - Draft review routes prototype 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`。
 - Android Draft Review ID flow prototype 已完成：`docs/delivery/tasks/task_v2_android_draft_review_id_flow_prototype.md`。
 - Post Review-ID Flow persistence decision refresh 已完成：`docs/delivery/tasks/task_v2_post_review_id_flow_persistence_decision_refresh.md`。
-- 当前唯一开放任务是 persistence baseline design：`docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`。
+- Sales Workspace persistence baseline design 已完成：`docs/architecture/workspace/sales-workspace-persistence-baseline.md`。
+- 当前唯一开放任务是 Postgres dev environment baseline：`docs/delivery/tasks/task_v2_postgres_dev_environment_baseline.md`。
 - backend API 的 DB-backed / production persistence 版本继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -217,9 +221,14 @@ Post Review-ID Flow persistence decision refresh 已完成：
 
 - `docs/delivery/tasks/task_v2_post_review_id_flow_persistence_decision_refresh.md`
 
-当前唯一开放的设计任务：
+Sales Workspace persistence baseline design 已完成：
 
 - `docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`
+- `docs/architecture/workspace/sales-workspace-persistence-baseline.md`
+
+当前唯一开放任务：
+
+- `docs/delivery/tasks/task_v2_postgres_dev_environment_baseline.md`
 
 后续 planned / blocked：
 
@@ -259,15 +268,17 @@ Post Review-ID Flow persistence decision refresh 已完成：
 24. `docs/delivery/tasks/task_v2_android_draft_review_id_flow_prototype.md`
 25. `docs/delivery/tasks/task_v2_post_review_id_flow_persistence_decision_refresh.md`
 26. `docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`
-27. 本文件
+27. `docs/architecture/workspace/sales-workspace-persistence-baseline.md`
+28. `docs/delivery/tasks/task_v2_postgres_dev_environment_baseline.md`
+29. 本文件
 
 ---
 
 ## 7. Auto-continue allowed when
 
-当前只有 persistence baseline design task 被开放；执行 agent 不应自动继续实现 DB / API / Android / Runtime。
+当前只有 Postgres dev environment baseline task 被开放；执行 agent 不应自动继续实现 Sales Workspace schema / API / Android / Runtime。
 
-Post Review-ID Flow persistence decision refresh 已完成。下一步应执行 `task_v2_sales_workspace_persistence_baseline_design.md`，只做 persistence baseline design，不写 migration。
+Sales Workspace persistence baseline design 已完成。下一步应执行 `task_v2_postgres_dev_environment_baseline.md`，只补本地 Postgres dev environment 和验证命令，不写 Sales Workspace schema migration。
 
 ---
 

@@ -8,6 +8,16 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from backend.api.config import get_settings
+from backend.sales_workspace.chat_first import (
+    ChatTraceNotFound,
+    ConversationMessage,
+    InMemoryChatTraceStore,
+    MessageType,
+    PostgresChatTraceStore,
+    SalesAgentTurnRun,
+    compile_sales_agent_turn_context_pack,
+    next_trace_id,
+)
 from backend.sales_workspace.context_pack import compile_context_pack
 from backend.sales_workspace.draft_reviews import (
     DraftReviewNotFound,
@@ -85,6 +95,21 @@ class RejectDraftReviewRequest(ApiModel):
     reason: str = ""
 
 
+class CreateConversationMessageRequest(ApiModel):
+    id: str | None = None
+    role: Literal["user"] = "user"
+    message_type: MessageType
+    content: str = Field(min_length=1)
+    linked_object_refs: list[str] = Field(default_factory=list)
+
+
+class CreateSalesAgentTurnRequest(ApiModel):
+    message_id: str
+    base_workspace_version: int = Field(ge=0)
+    instruction: str = ""
+    token_budget_chars: int = Field(default=6000, ge=1)
+
+
 def _sales_workspace_store_backend() -> str:
     settings = get_settings()
     if settings.sales_workspace_store_backend:
@@ -121,6 +146,12 @@ def create_draft_review_store() -> InMemoryDraftReviewStore | JsonFileDraftRevie
     return InMemoryDraftReviewStore()
 
 
+def create_chat_trace_store() -> InMemoryChatTraceStore | PostgresChatTraceStore:
+    if _sales_workspace_store_backend() == "postgres":
+        return PostgresChatTraceStore()
+    return InMemoryChatTraceStore()
+
+
 def _store(request: Request) -> InMemoryWorkspaceStore | JsonFileWorkspaceStore | PostgresWorkspaceStore:
     store = getattr(request.app.state, "sales_workspace_store", None)
     if store is None:
@@ -134,6 +165,14 @@ def _draft_review_store(request: Request) -> InMemoryDraftReviewStore | JsonFile
     if store is None:
         store = create_draft_review_store()
         request.app.state.sales_workspace_draft_review_store = store
+    return store
+
+
+def _chat_trace_store(request: Request) -> InMemoryChatTraceStore | PostgresChatTraceStore:
+    store = getattr(request.app.state, "sales_workspace_chat_trace_store", None)
+    if store is None:
+        store = create_chat_trace_store()
+        request.app.state.sales_workspace_chat_trace_store = store
     return store
 
 
@@ -282,6 +321,15 @@ def _draft_review_version_conflict_response(
     )
 
 
+def _chat_trace_not_found_response(workspace_id: str, object_type: str, object_id: str) -> JSONResponse:
+    return _error_response(
+        status_code=404,
+        code="not_found",
+        message=f"{object_type} not found",
+        details={"workspace_id": workspace_id, "object_type": object_type, "object_id": object_id},
+    )
+
+
 def _ranking_impact_summary(ranking_board: Any) -> dict[str, str | int | None]:
     ranked_items = getattr(ranking_board, "ranked_items", None) or []
     if not ranked_items:
@@ -328,6 +376,154 @@ def _failed_apply_review(
     )
 
 
+def _message_ref(message: ConversationMessage) -> str:
+    return f"ConversationMessage:{message.id}"
+
+
+def _agent_run_ref(agent_run: SalesAgentTurnRun) -> str:
+    return f"AgentRun:{agent_run.id}"
+
+
+def _generate_chat_first_patch_draft(
+    workspace: Any,
+    *,
+    message: ConversationMessage,
+    agent_run: SalesAgentTurnRun,
+    context_pack_id: str,
+    base_workspace_version: int,
+    instruction: str,
+) -> WorkspacePatchDraft | None:
+    next_version = workspace.workspace_version + 1
+    operations: list[dict[str, Any]] = []
+
+    if message.message_type in {"product_profile_update", "mixed_product_and_direction_update"}:
+        current_product = (
+            workspace.product_profile_revisions.get(workspace.current_product_profile_revision_id)
+            if workspace.current_product_profile_revision_id
+            else None
+        )
+        product_version = (current_product.version + 1) if current_product else 1
+        operations.append(
+            {
+                "type": "upsert_product_profile_revision",
+                "payload": {
+                    "id": f"ppr_chat_v{next_version}",
+                    "version": product_version,
+                    "product_name": "FactoryOps AI",
+                    "one_liner": "Manufacturing scheduling, inventory, and ERP coordination assistant.",
+                    "target_customers": ["100-500 employee manufacturing companies"],
+                    "target_industries": ["manufacturing"],
+                    "pain_points": [
+                        "production plan changes do not sync with inventory and ERP context",
+                    ],
+                    "value_props": [
+                        "reduce operational data fragmentation",
+                        "help teams coordinate scheduling and inventory changes",
+                    ],
+                    "constraints": [
+                        "needs ERP-adjacent workflow data",
+                        f"derived from message {message.id}",
+                    ],
+                },
+            }
+        )
+
+    if message.message_type in {"lead_direction_update", "mixed_product_and_direction_update"}:
+        current_direction = (
+            workspace.lead_direction_versions.get(workspace.current_lead_direction_version_id)
+            if workspace.current_lead_direction_version_id
+            else None
+        )
+        direction_version = (current_direction.version + 1) if current_direction else 1
+        direction_id = f"dir_chat_v{next_version}"
+        operations.extend(
+            [
+                {
+                    "type": "upsert_lead_direction_version",
+                    "payload": {
+                        "id": direction_id,
+                        "version": direction_version,
+                        "priority_industries": ["manufacturing"],
+                        "target_customer_types": [
+                            "manufacturers with ERP but weak scheduling and inventory coordination",
+                        ],
+                        "regions": ["East China"],
+                        "company_sizes": ["100-500 employees"],
+                        "priority_constraints": [
+                            "has ERP",
+                            "scheduling and inventory coordination is weak",
+                        ],
+                        "excluded_industries": ["education"],
+                        "excluded_customer_types": ["large conglomerates"],
+                        "change_reason": f"User clarified target segment in chat message {message.id}.",
+                    },
+                },
+                {
+                    "type": "set_active_lead_direction",
+                    "payload": {"lead_direction_version_id": direction_id},
+                },
+            ]
+        )
+
+    if not operations:
+        return None
+
+    intent = message.message_type
+    return WorkspacePatchDraft(
+        id=f"draft_sales_turn_{intent}_v{next_version}",
+        workspace_id=workspace.id,
+        base_workspace_version=base_workspace_version,
+        author="sales_agent_turn_runtime",
+        instruction=instruction or f"chat-first {intent}",
+        runtime_metadata={
+            "provider": "deterministic_chat_first_runtime",
+            "mode": "no_llm_no_langgraph",
+            "intent": intent,
+            "agent_run_id": agent_run.id,
+            "context_pack_id": context_pack_id,
+            "source_message_ids": [message.id],
+            "kernel_boundary": (
+                "Runtime returns WorkspacePatchDraft; Sales Workspace Kernel validates and writes formal objects."
+            ),
+        },
+        operations=operations,
+    )
+
+
+def _assistant_message_for_turn(
+    *,
+    workspace_id: str,
+    agent_run: SalesAgentTurnRun,
+    source_message: ConversationMessage,
+    draft_review: WorkspacePatchDraftReview | None,
+) -> ConversationMessage:
+    if source_message.message_type == "out_of_scope_v2_2":
+        content = (
+            "V2.1 先完成产品理解和获客方向的 chat-first 工作区闭环。"
+            "联网搜索、联系人和 CRM 属于 V2.2，当前不会生成 formal lead research result。"
+        )
+        message_type: MessageType = "out_of_scope_v2_2"
+        refs: list[str] = []
+    elif draft_review is None:
+        content = "我可以先解释当前 workspace 状态；这轮没有生成 WorkspacePatchDraft。"
+        message_type = "workspace_question"
+        refs = []
+    else:
+        content = "我已整理出一版工作区更新草稿，请审阅 Draft Review 后再应用。"
+        message_type = "draft_summary"
+        refs = [f"WorkspacePatchDraftReview:{draft_review.id}"]
+
+    return ConversationMessage(
+        id=f"msg_assistant_{agent_run.id}",
+        workspace_id=workspace_id,
+        role="assistant",
+        message_type=message_type,
+        content=content,
+        linked_object_refs=refs,
+        created_by_agent_run_id=agent_run.id,
+    )
+
+
 @router.post("")
 def create_workspace(request: Request, payload: Any = Body(...)):
     try:
@@ -363,6 +559,198 @@ def get_workspace(workspace_id: str, request: Request):
     except WorkspaceNotFound:
         return _not_found_response(workspace_id)
     return {"workspace": workspace}
+
+
+@router.post("/{workspace_id}/messages")
+def create_conversation_message(workspace_id: str, request: Request, payload: Any = Body(...)):
+    try:
+        parsed = CreateConversationMessageRequest.model_validate(payload)
+    except ValidationError as exc:
+        return _validation_error(exc, workspace_id=workspace_id)
+
+    try:
+        _store(request).get(workspace_id)
+    except WorkspaceNotFound:
+        return _not_found_response(workspace_id)
+
+    trace_store = _chat_trace_store(request)
+    message_id = parsed.id or next_trace_id("msg_user", len(trace_store.list_messages(workspace_id)))
+    message = ConversationMessage(
+        id=message_id,
+        workspace_id=workspace_id,
+        role=parsed.role,
+        message_type=parsed.message_type,
+        content=parsed.content,
+        linked_object_refs=parsed.linked_object_refs,
+    )
+    trace_store.save_message(message)
+    return JSONResponse(status_code=201, content=jsonable_encoder({"message": message}))
+
+
+@router.get("/{workspace_id}/messages")
+def list_conversation_messages(workspace_id: str, request: Request):
+    try:
+        _store(request).get(workspace_id)
+    except WorkspaceNotFound:
+        return _not_found_response(workspace_id)
+    return {"messages": _chat_trace_store(request).list_messages(workspace_id)}
+
+
+@router.post("/{workspace_id}/agent-runs/sales-agent-turns")
+def create_sales_agent_turn(workspace_id: str, request: Request, payload: Any = Body(...)):
+    try:
+        parsed = CreateSalesAgentTurnRequest.model_validate(payload)
+    except ValidationError as exc:
+        return _validation_error(exc, workspace_id=workspace_id)
+
+    store = _store(request)
+    trace_store = _chat_trace_store(request)
+    review_store = _draft_review_store(request)
+    try:
+        workspace = store.get(workspace_id)
+    except WorkspaceNotFound:
+        return _not_found_response(workspace_id)
+    try:
+        source_message = trace_store.get_message(workspace_id, parsed.message_id)
+    except ChatTraceNotFound:
+        return _chat_trace_not_found_response(workspace_id, "conversation_message", parsed.message_id)
+
+    existing_messages = trace_store.list_messages(workspace_id)
+    agent_run_suffix = source_message.id.removeprefix("msg_user_")
+    agent_run_id = f"run_sales_turn_{agent_run_suffix}"
+    context_pack_id = f"ctx_{agent_run_id}"
+    started_at = utc_now()
+    agent_run = SalesAgentTurnRun(
+        id=agent_run_id,
+        workspace_id=workspace_id,
+        status="running",
+        input_refs=[_message_ref(source_message), f"SalesWorkspace:{workspace_id}", f"ContextPack:{context_pack_id}"],
+        runtime_metadata={
+            "provider": "deterministic_chat_first_runtime",
+            "mode": "no_llm_no_langgraph",
+            "intent": source_message.message_type,
+        },
+        started_at=started_at,
+    )
+    trace_store.save_agent_run(agent_run)
+
+    context_pack = compile_sales_agent_turn_context_pack(
+        workspace,
+        agent_run_id=agent_run.id,
+        context_pack_id=context_pack_id,
+        recent_messages=existing_messages,
+        token_budget_chars=parsed.token_budget_chars,
+    )
+    trace_store.save_context_pack(context_pack)
+
+    patch_draft = _generate_chat_first_patch_draft(
+        workspace,
+        message=source_message,
+        agent_run=agent_run,
+        context_pack_id=context_pack.id,
+        base_workspace_version=parsed.base_workspace_version,
+        instruction=parsed.instruction,
+    )
+
+    draft_review: WorkspacePatchDraftReview | None = None
+    if patch_draft is not None:
+        try:
+            patch = materialize_workspace_patch(patch_draft)
+            preview_workspace = apply_workspace_patch(workspace, patch)
+        except WorkspaceVersionConflict as exc:
+            failed = agent_run.model_copy(
+                update={
+                    "status": "failed",
+                    "error": {"code": "workspace_version_conflict", "message": str(exc)},
+                    "finished_at": utc_now(),
+                }
+            )
+            trace_store.save_agent_run(failed)
+            return _workspace_version_conflict_response(
+                exc,
+                workspace_id=workspace_id,
+                current_workspace_version=workspace.workspace_version,
+                base_workspace_version=parsed.base_workspace_version,
+            )
+        except WorkspacePatchError as exc:
+            failed = agent_run.model_copy(
+                update={
+                    "status": "failed",
+                    "error": {"code": "validation_error", "message": str(exc)},
+                    "finished_at": utc_now(),
+                }
+            )
+            trace_store.save_agent_run(failed)
+            return _patch_error_response(exc, workspace_id=workspace_id)
+        except ValidationError as exc:
+            failed = agent_run.model_copy(
+                update={
+                    "status": "failed",
+                    "error": {"code": "patchdraft_validation_error", "message": "invalid patch draft"},
+                    "finished_at": utc_now(),
+                }
+            )
+            trace_store.save_agent_run(failed)
+            return _patchdraft_validation_error(exc, workspace_id=workspace_id)
+
+        draft_review = WorkspacePatchDraftReview(
+            id=draft_review_id_for_draft(patch_draft.id),
+            workspace_id=workspace_id,
+            draft=patch_draft,
+            base_workspace_version=patch_draft.base_workspace_version,
+            created_by=patch_draft.author,
+            instruction=patch_draft.instruction,
+            runtime_metadata=patch_draft.runtime_metadata,
+            preview=WorkspacePatchDraftPreview(
+                materialized_patch=patch,
+                preview_workspace_version=preview_workspace.workspace_version,
+                preview_ranking_board=preview_workspace.ranking_board,
+                would_mutate=False,
+            ),
+        )
+        review_store.save(draft_review)
+
+    assistant_message = _assistant_message_for_turn(
+        workspace_id=workspace_id,
+        agent_run=agent_run,
+        source_message=source_message,
+        draft_review=draft_review,
+    )
+    trace_store.save_message(assistant_message)
+
+    output_refs = [_message_ref(assistant_message)]
+    if draft_review is not None:
+        output_refs.insert(0, f"WorkspacePatchDraftReview:{draft_review.id}")
+    completed = agent_run.model_copy(
+        update={
+            "status": "succeeded",
+            "output_refs": output_refs,
+            "finished_at": utc_now(),
+        }
+    )
+    trace_store.save_agent_run(completed)
+
+    return {
+        "conversation_message": source_message,
+        "agent_run": completed,
+        "context_pack": context_pack,
+        "assistant_message": assistant_message,
+        "patch_draft": patch_draft,
+        "draft_review": draft_review,
+    }
+
+
+@router.get("/{workspace_id}/agent-runs/{agent_run_id}")
+def get_sales_agent_turn(workspace_id: str, agent_run_id: str, request: Request):
+    try:
+        _store(request).get(workspace_id)
+    except WorkspaceNotFound:
+        return _not_found_response(workspace_id)
+    try:
+        agent_run = _chat_trace_store(request).get_agent_run(workspace_id, agent_run_id)
+    except ChatTraceNotFound:
+        return _chat_trace_not_found_response(workspace_id, "agent_run", agent_run_id)
+    return {"agent_run": agent_run}
 
 
 @router.post("/{workspace_id}/patches")

@@ -18,6 +18,7 @@ from backend.api.logging_utils import (
     set_request_context,
 )
 from backend.api.sales_workspace import (
+    create_chat_trace_store,
     create_draft_review_store,
     create_sales_workspace_store,
     router as sales_workspace_router,
@@ -193,6 +194,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
     app.state.sales_workspace_store = create_sales_workspace_store()
     app.state.sales_workspace_draft_review_store = create_draft_review_store()
+    app.state.sales_workspace_chat_trace_store = create_chat_trace_store()
     app.include_router(sales_workspace_router)
 
     @app.middleware("http")

@@ -1,6 +1,6 @@
 # Task: V2.1 Chat-first Runtime Design
 
-状态：planned / current
+状态：done
 
 更新时间：2026-04-27
 
@@ -57,6 +57,22 @@ V2.1 engineering baseline 已完成：
 - 如需要，补充 reference contract，说明 chat-first Runtime 与 `WorkspacePatchDraft` 的最小 schema 边界。
 - 更新 `_active.md`、delivery README 和 handoff。
 - 明确后续是否开放 V2.1 runtime implementation task。
+
+## Result
+
+已完成：
+
+- `docs/architecture/runtime/v2-1-chat-first-runtime-design.md`
+- `docs/reference/api/sales-workspace-chat-first-runtime-contract.md`
+- `docs/delivery/handoffs/handoff_2026_04_27_v2_1_chat_first_runtime_design.md`
+
+后续不直接开放 implementation。先创建并规划 docs / examples-only task：
+
+- `task_v2_1_chat_first_runtime_contract_examples.md`
+
+Backend prototype 仍 blocked：
+
+- `task_v2_1_chat_first_runtime_backend_prototype.md`
 
 ## Acceptance Criteria
 

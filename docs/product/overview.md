@@ -74,7 +74,7 @@ V2 当前规划重点：
 - 结构化后端对象是主真相；Markdown 是 agent-readable workspace projection，不是唯一主存。
 - Product Sales Agent / Runtime 每次运行应尽量生成 `WorkspacePatchDraft`，由后端 workspace kernel 裁决正式写回。
 - V2.1 engineering baseline 已验证 Sales Workspace Kernel、Draft Review ID flow、Postgres / Alembic persistence chain 与 Draft Review audit persistence。
-- V2.1 product experience 尚未完成；下一步应先设计 chat-first 输入如何进入 Runtime、如何基于 ContextPack 生成 `WorkspacePatchDraft`，以及如何覆盖产品理解和获客方向迭代。
+- V2.1 chat-first Runtime design 已完成，但 product experience 尚未闭环；下一步应先补 contract examples，再决定是否开放 backend prototype 和 Android chat-first UI。
 - V2.2 再进入证据化 ResearchRound、候选客户、来源证据和候选优先级榜更新。
 - V2.3 作为 Persistent Sales Workspace MVP gate，验证长期记忆、历史研究复用、候选状态管理和用户反馈闭环是否值得进入 MVP。
 
@@ -152,7 +152,7 @@ Android / client
 - V1 是资产库，不是 V2 产品主路径。
 - V2 北极星是 Sales Workspace，而不是一次性报告生成器。
 - V2.1 engineering baseline 已完成 Sales Workspace Kernel、FastAPI prototype、Android Draft Review ID flow、Postgres / Alembic persistence chain、Sales Workspace Postgres store 和 Draft Review audit persistence。
-- V2.1 product experience 尚未完成；chat-first 产品理解、获客方向迭代、ConversationMessage / AgentRun trace 和 Runtime -> WorkspacePatchDraft 设计仍需补齐。
+- V2.1 chat-first Runtime design 已完成，但 product experience 尚未闭环；contract examples、backend prototype 和 Android chat-first UI 仍未完成。
 - V2.2 允许主动联网 / 中文公开网页搜索。
 - V2.2 可以产出具体公司候选，但候选必须带来源证据和排序解释。
 - V2 不做 Web 前端。
@@ -231,10 +231,10 @@ V2 继续实现前，应先确保当前 task 已在 `_active.md` 中开放。当
 
 当前推荐顺序：
 
-1. 承认 V2.1 engineering baseline completed，但不要把它等同于 V2.1 product experience 完成。
-2. 执行 `task_v2_1_chat_first_runtime_design.md`，先定义 chat-first input、Runtime、ContextPack、WorkspacePatchDraft、DraftReview、WorkspaceCommit 的最小产品体验闭环。
-3. 设计完成后，再决定是否开放 V2.1 runtime implementation。
-4. V2.1 product experience 完成前，不启动真正 V2.2 evidence/search/contact。
+1. 承认 V2.1 engineering baseline completed 和 V2.1 chat-first Runtime design completed，但不要把它等同于 V2.1 product experience 完成。
+2. 下一步先补 `task_v2_1_chat_first_runtime_contract_examples.md`，固定 chat-first state transition examples。
+3. Examples 完成后，再决定是否开放 `task_v2_1_chat_first_runtime_backend_prototype.md`。
+4. V2.1 product experience backend / Android 闭环完成前，不启动真正 V2.2 evidence/search/contact。
 
 当前不建议直接实现真实 LangGraph graph、真实 LLM、搜索 provider、Android UI 扩展或 CRM/contact。
 
@@ -244,4 +244,4 @@ V2 继续实现前，应先确保当前 task 已在 `_active.md` 中开放。当
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2.1 engineering baseline completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain 与 Draft Review audit persistence 已完成；V2.1 product experience 尚未完成，下一步先补齐 chat-first Runtime design，再决定是否进入 Runtime implementation 或 V2.2 证据化客户挖掘。**
+> **AI 销售助手 V2.1 engineering baseline completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain 与 Draft Review audit persistence 已完成；V2.1 chat-first Runtime design 已完成，但 product experience 尚未闭环，下一步先补 contract examples，再决定是否进入 backend prototype 或 V2.2 证据化客户挖掘。**

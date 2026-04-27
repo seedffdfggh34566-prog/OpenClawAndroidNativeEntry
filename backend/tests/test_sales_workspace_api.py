@@ -266,3 +266,163 @@ def test_runtime_patchdraft_prototype_missing_workspace(client) -> None:
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "not_found"
+
+
+def test_runtime_patchdraft_review_preview_does_not_mutate(client) -> None:
+    _build_demo_workspace(client)
+
+    preview_response = client.post(
+        "/sales-workspaces/ws_demo/runtime/patch-drafts/prototype/preview",
+        json={
+            "base_workspace_version": 3,
+            "instruction": "add one deterministic runtime candidate",
+        },
+    )
+    assert preview_response.status_code == 200
+    preview = preview_response.json()
+    assert preview["would_mutate"] is False
+    assert preview["patch_draft"]["id"] == "draft_runtime_v4"
+    assert preview["patch"]["id"] == "patch_runtime_v4"
+    assert preview["preview_workspace_version"] == 4
+    assert preview["preview_ranking_board"]["ranked_items"][0]["candidate_id"] == "cand_runtime_001"
+
+    workspace_response = client.get("/sales-workspaces/ws_demo")
+    assert workspace_response.status_code == 200
+    workspace = workspace_response.json()["workspace"]
+    assert workspace["workspace_version"] == 3
+    assert "cand_runtime_001" not in workspace["company_candidates"]
+
+    ranking_response = client.get("/sales-workspaces/ws_demo/ranking-board/current")
+    assert ranking_response.status_code == 200
+    assert ranking_response.json()["ranking_board"]["ranked_items"][0]["candidate_id"] == "cand_d"
+
+
+def test_runtime_patchdraft_review_apply_writes_reviewed_draft(client) -> None:
+    _build_demo_workspace(client)
+
+    preview_response = client.post(
+        "/sales-workspaces/ws_demo/runtime/patch-drafts/prototype/preview",
+        json={
+            "base_workspace_version": 3,
+            "instruction": "add one deterministic runtime candidate",
+        },
+    )
+    assert preview_response.status_code == 200
+
+    apply_response = client.post(
+        "/sales-workspaces/ws_demo/runtime/patch-drafts/prototype/apply",
+        json={"patch_draft": preview_response.json()["patch_draft"]},
+    )
+    assert apply_response.status_code == 200
+    payload = apply_response.json()
+    assert payload["patch_draft"]["id"] == "draft_runtime_v4"
+    assert payload["patch"]["id"] == "patch_runtime_v4"
+    assert payload["workspace"]["workspace_version"] == 4
+    assert payload["commit"]["patch_id"] == "patch_runtime_v4"
+    assert payload["ranking_board"]["ranked_items"][0]["candidate_id"] == "cand_runtime_001"
+
+    projection_response = client.get("/sales-workspaces/ws_demo/projection")
+    assert projection_response.status_code == 200
+    assert "Runtime Draft Co" in projection_response.json()["files"]["rankings/current.md"]
+
+    context_pack_response = client.post(
+        "/sales-workspaces/ws_demo/context-packs",
+        json={"task_type": "research_round", "token_budget_chars": 6000, "top_n_candidates": 5},
+    )
+    assert context_pack_response.status_code == 200
+    assert context_pack_response.json()["context_pack"]["top_candidates"][0]["candidate_id"] == "cand_runtime_001"
+
+
+def test_runtime_patchdraft_review_conflicts_do_not_mutate(client) -> None:
+    _build_demo_workspace(client)
+
+    stale_preview_response = client.post(
+        "/sales-workspaces/ws_demo/runtime/patch-drafts/prototype/preview",
+        json={
+            "base_workspace_version": 2,
+            "instruction": "stale preview",
+        },
+    )
+    assert stale_preview_response.status_code == 409
+    assert stale_preview_response.json()["error"]["code"] == "workspace_version_conflict"
+
+    valid_preview_response = client.post(
+        "/sales-workspaces/ws_demo/runtime/patch-drafts/prototype/preview",
+        json={
+            "base_workspace_version": 3,
+            "instruction": "add one deterministic runtime candidate",
+        },
+    )
+    assert valid_preview_response.status_code == 200
+    stale_draft = valid_preview_response.json()["patch_draft"]
+    stale_draft["base_workspace_version"] = 2
+
+    stale_apply_response = client.post(
+        "/sales-workspaces/ws_demo/runtime/patch-drafts/prototype/apply",
+        json={"patch_draft": stale_draft},
+    )
+    assert stale_apply_response.status_code == 409
+    assert stale_apply_response.json()["error"]["code"] == "workspace_version_conflict"
+
+    workspace_response = client.get("/sales-workspaces/ws_demo")
+    assert workspace_response.status_code == 200
+    workspace = workspace_response.json()["workspace"]
+    assert workspace["workspace_version"] == 3
+    assert "cand_runtime_001" not in workspace["company_candidates"]
+
+
+def test_runtime_patchdraft_review_path_mismatch_and_missing_workspace(client) -> None:
+    _build_demo_workspace(client)
+    preview_response = client.post(
+        "/sales-workspaces/ws_demo/runtime/patch-drafts/prototype/preview",
+        json={
+            "base_workspace_version": 3,
+            "instruction": "add one deterministic runtime candidate",
+        },
+    )
+    assert preview_response.status_code == 200
+
+    mismatch_response = client.post(
+        "/sales-workspaces/ws_other/runtime/patch-drafts/prototype/apply",
+        json={"patch_draft": preview_response.json()["patch_draft"]},
+    )
+    assert mismatch_response.status_code == 422
+    assert mismatch_response.json()["error"]["code"] == "validation_error"
+
+    missing_preview_response = client.post(
+        "/sales-workspaces/ws_missing/runtime/patch-drafts/prototype/preview",
+        json={
+            "base_workspace_version": 0,
+            "instruction": "add one deterministic runtime candidate",
+        },
+    )
+    assert missing_preview_response.status_code == 404
+    assert missing_preview_response.json()["error"]["code"] == "not_found"
+
+    missing_draft = preview_response.json()["patch_draft"]
+    missing_draft["workspace_id"] = "ws_missing"
+    missing_apply_response = client.post(
+        "/sales-workspaces/ws_missing/runtime/patch-drafts/prototype/apply",
+        json={"patch_draft": missing_draft},
+    )
+    assert missing_apply_response.status_code == 404
+    assert missing_apply_response.json()["error"]["code"] == "not_found"
+
+
+def test_runtime_patchdraft_review_invalid_draft_returns_patchdraft_error(client) -> None:
+    _build_demo_workspace(client)
+
+    response = client.post(
+        "/sales-workspaces/ws_demo/runtime/patch-drafts/prototype/apply",
+        json={
+            "patch_draft": {
+                "id": "draft_invalid",
+                "workspace_id": "ws_demo",
+                "base_workspace_version": 3,
+                "operations": [],
+            }
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "patchdraft_validation_error"

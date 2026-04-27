@@ -17,7 +17,7 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`
+暂无自动排定。
 
 ### Next queued task
 
@@ -37,10 +37,9 @@
 - `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`（done）
+- `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成。
-
-当前开放 PatchDraft review gate prototype：Runtime 可以生成 draft preview，但正式写入必须通过显式 apply，由 Sales Workspace Kernel 校验并写回 workspace。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成。
 
 ---
 
@@ -66,7 +65,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
 - 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
 - 当前已存在 deterministic Runtime PatchDraft prototype：`task_v2_sales_workspace_runtime_patchdraft_prototype.md`。
-- 当前开放 PatchDraft review gate prototype：`task_v2_sales_workspace_patchdraft_review_gate_prototype.md`。
+- 当前已存在 PatchDraft review gate prototype：`task_v2_sales_workspace_patchdraft_review_gate_prototype.md`。
 - backend API 的 DB-backed / production persistence 版本继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -76,7 +75,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 
 除非后续单独创建 task 并写入本文件，否则执行 agent 不应自动实现：
 
-- 除当前 PatchDraft review gate prototype endpoints 外，新增或扩展 Sales Workspace FastAPI endpoint
+- 新增或扩展 Sales Workspace FastAPI endpoint
 - SQLAlchemy ORM
 - Alembic migration
 - SQLite schema change
@@ -158,7 +157,7 @@ Runtime PatchDraft prototype 已完成：
 
 - `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
 
-当前执行 PatchDraft review gate prototype：
+PatchDraft review gate prototype 已完成：
 
 - `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`
 
@@ -191,7 +190,7 @@ Runtime PatchDraft prototype 已完成：
 
 ## 7. Auto-continue allowed when
 
-当前只允许执行 `task_v2_sales_workspace_patchdraft_review_gate_prototype.md`。该任务完成后，没有 next queued task，执行 agent 不应自动继续实现或规划新任务。
+当前没有 next queued task，因此执行 agent 不应自动继续实现或规划新任务。
 
 ---
 

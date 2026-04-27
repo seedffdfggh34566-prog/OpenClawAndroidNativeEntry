@@ -21,7 +21,7 @@
 
 当前正式主线为：
 
-> **Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype、Android read-only demo、JSON file store prototype 与 Runtime PatchDraft prototype 已完成；当前开放 PatchDraft review gate prototype。**
+> **Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype、Android read-only demo、JSON file store prototype、Runtime PatchDraft prototype 与 PatchDraft review gate prototype 已完成。**
 
 V1 已作为 demo-ready release candidate / learning milestone 收口，不再是默认开发方向。
 
@@ -31,7 +31,7 @@ V1 已作为 demo-ready release candidate / learning milestone 收口，不再�
 
 当前 active task：
 
-- [docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md](docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md)
+- 暂无自动排定。
 
 Next queued task：
 
@@ -49,7 +49,7 @@ Sales Workspace Kernel prototype 已完成：
 - Android read-only workspace demo
 - optional JSON file store prototype
 - deterministic Runtime PatchDraft prototype
-- PatchDraft review gate prototype（当前任务）
+- PatchDraft review gate prototype
 - pytest coverage
 
 当前不应自动实现：

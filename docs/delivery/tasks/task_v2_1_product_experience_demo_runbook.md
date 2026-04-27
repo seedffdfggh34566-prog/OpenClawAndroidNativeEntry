@@ -1,6 +1,6 @@
 # Task: V2.1 Product Experience Demo Runbook
 
-状态：planned / blocked by Android chat-first UI prototype
+状态：done
 
 更新时间：2026-04-27
 
@@ -39,3 +39,16 @@
 ## Recommended Next
 
 - `task_v2_1_product_experience_closeout.md`
+
+## Outcome
+
+- 新增 `docs/how-to/operate/v2-1-product-experience-demo-runbook.md`。
+- runbook 固定 Postgres backend、chat-first 产品理解、chat-first 获客方向、Draft Review accept/apply 和 Android UI demo steps。
+- 本任务未新增产品能力、真实 LLM、search、ContactPoint、CRM 或 deployment。
+
+## Validation
+
+```bash
+rg "v2-1-product-experience-demo-runbook.md|ProductProfileRevision|LeadDirectionVersion|ConversationMessage|AgentRun" docs/how-to docs/delivery
+git diff --check
+```

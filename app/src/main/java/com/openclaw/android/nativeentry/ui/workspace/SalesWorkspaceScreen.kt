@@ -127,7 +127,7 @@ private fun ChatFirstWorkspaceTurn(
     val isLoading = chatFirstTurnState is V1SectionState.Loading
     WorkspaceCard(title = "Chat-first Workspace Turn") {
         Text(
-            text = "输入产品理解或获客方向；Android 只提交文本，backend Runtime 生成 Draft Review。",
+            text = "输入产品理解、获客方向或解释问题；Android 只提交文本，backend 决定返回追问、解释或可审阅 Draft Review。",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -150,9 +150,21 @@ private fun ChatFirstWorkspaceTurn(
                 modifier = Modifier.weight(1f),
             )
             ChatMessageTypeButton(
-                label = "混合",
+                label = "产品+方向",
                 selected = chatMessageType == "mixed_product_and_direction_update",
                 onClick = { onChatMessageTypeChange("mixed_product_and_direction_update") },
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ChatMessageTypeButton(
+                label = "解释当前方向",
+                selected = chatMessageType == "workspace_question",
+                onClick = { onChatMessageTypeChange("workspace_question") },
                 modifier = Modifier.weight(1f),
             )
         }
@@ -163,7 +175,7 @@ private fun ChatFirstWorkspaceTurn(
             modifier = Modifier.fillMaxWidth(),
             minLines = 3,
             label = { Text(text = "对 Sales Agent 说") },
-            placeholder = { Text(text = "例如：我们做 FactoryOps AI，先找华东 100 到 500 人制造企业。") },
+            placeholder = { Text(text = "例如：我们做工业设备维保软件，帮工厂减少停机时间。也可以问：为什么建议这个方向？") },
         )
 
         Button(
@@ -171,13 +183,13 @@ private fun ChatFirstWorkspaceTurn(
             enabled = !isLoading && chatInput.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(text = if (isLoading) "正在生成 Draft Review" else "提交 chat-first turn")
+            Text(text = if (isLoading) "正在处理 chat-first turn" else "提交 chat-first turn")
         }
 
         when (chatFirstTurnState) {
             V1SectionState.Idle -> Text(text = "尚未提交 chat-first 输入。", style = MaterialTheme.typography.bodyMedium)
             V1SectionState.Loading -> Text(text = "backend 正在创建 ConversationMessage / AgentRun / ContextPack。")
-            V1SectionState.Empty -> Text(text = "本轮没有生成 Draft Review。", style = MaterialTheme.typography.bodyMedium)
+            V1SectionState.Empty -> Text(text = "本轮未返回 assistant message。", style = MaterialTheme.typography.bodyMedium)
             is V1SectionState.Failed -> {
                 Text(text = chatFirstTurnState.error.title, style = MaterialTheme.typography.titleSmall)
                 Text(text = chatFirstTurnState.error.detail, style = MaterialTheme.typography.bodyMedium)
@@ -207,9 +219,20 @@ private fun ChatMessageTypeButton(
 
 @Composable
 private fun ChatFirstTurnDetails(response: SalesWorkspaceChatTurnResponseDto) {
+    val assistantType = response.assistantMessage.messageType
+    val title = when (assistantType) {
+        "clarifying_question" -> "Sales Agent 追问"
+        "workspace_question" -> "解释型回答"
+        "draft_summary" -> "可审阅 Draft Review"
+        "out_of_scope_v2_2" -> "超出 V2.1 范围"
+        else -> "Assistant"
+    }
     Text(text = "Message：${response.conversationMessage.id}", style = MaterialTheme.typography.bodyMedium)
     Text(text = "AgentRun：${response.agentRun.id} · ${response.agentRun.status}", style = MaterialTheme.typography.bodyMedium)
-    Text(text = "Assistant：${response.assistantMessage.content}", style = MaterialTheme.typography.bodyMedium)
+    Text(
+        text = "$title：${response.assistantMessage.content}",
+        style = MaterialTheme.typography.bodyMedium,
+    )
     response.draftReview?.let { review ->
         Text(
             text = "Draft Review：${review.id} · ${review.status}",
@@ -221,7 +244,7 @@ private fun ChatFirstTurnDetails(response: SalesWorkspaceChatTurnResponseDto) {
             style = MaterialTheme.typography.bodyMedium,
         )
     } ?: Text(
-        text = "本轮没有 patch draft；workspace 未写入。",
+        text = "本轮没有 patch draft；不会启用审阅或应用，workspace 未写入。",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

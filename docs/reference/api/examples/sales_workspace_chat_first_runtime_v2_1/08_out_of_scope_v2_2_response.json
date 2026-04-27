@@ -1,0 +1,50 @@
+{
+  "conversation_message": {
+    "id": "msg_user_search_001",
+    "workspace_id": "ws_demo",
+    "role": "user",
+    "message_type": "out_of_scope_v2_2",
+    "content": "现在直接帮我联网搜索 20 个公司和联系人。",
+    "linked_object_refs": [],
+    "created_by_agent_run_id": null,
+    "created_at": "2026-04-27T00:15:00Z"
+  },
+  "agent_run": {
+    "id": "run_sales_turn_search_blocked_001",
+    "workspace_id": "ws_demo",
+    "run_type": "sales_agent_turn",
+    "status": "succeeded",
+    "input_refs": [
+      "ConversationMessage:msg_user_search_001",
+      "SalesWorkspace:ws_demo",
+      "ContextPack:ctx_sales_turn_search_blocked_001"
+    ],
+    "output_refs": [
+      "ConversationMessage:msg_assistant_search_blocked_001"
+    ],
+    "runtime_metadata": {
+      "provider": "deterministic_chat_first_runtime",
+      "mode": "no_llm_no_langgraph",
+      "intent": "out_of_scope_v2_2",
+      "blocked_capabilities": [
+        "search",
+        "ContactPoint",
+        "CRM"
+      ]
+    },
+    "error": null
+  },
+  "assistant_message": {
+    "id": "msg_assistant_search_blocked_001",
+    "workspace_id": "ws_demo",
+    "role": "assistant",
+    "message_type": "out_of_scope_v2_2",
+    "content": "V2.1 先完成产品理解和获客方向的 chat-first 工作区闭环。联网搜索、联系人和 CRM 属于 V2.2，当前不会生成 formal lead research result。",
+    "linked_object_refs": [],
+    "created_by_agent_run_id": "run_sales_turn_search_blocked_001",
+    "created_at": "2026-04-27T00:15:02Z"
+  },
+  "patch_draft": null,
+  "draft_review": null,
+  "workspace_mutated": false
+}

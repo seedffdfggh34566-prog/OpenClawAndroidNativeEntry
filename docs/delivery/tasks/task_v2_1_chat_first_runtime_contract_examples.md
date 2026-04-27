@@ -1,6 +1,6 @@
 # Task: V2.1 Chat-first Runtime Contract Examples
 
-状态：planned / ready after PR #26 merge
+状态：done
 
 更新时间：2026-04-27
 
@@ -43,3 +43,19 @@
 完成后进入：
 
 - `task_v2_1_chat_first_runtime_trace_persistence_schema_design.md`
+
+## Outcome
+
+- 新增 `docs/reference/api/sales-workspace-chat-first-runtime-examples.md`。
+- 新增 `docs/reference/api/examples/sales_workspace_chat_first_runtime_v2_1/` JSON examples。
+- examples 覆盖产品理解、获客方向、mixed update、Draft Review accept/apply、rejected draft 和 V2.2 out-of-scope response。
+- 本任务未实现 backend route、DB migration、Android UI、LangGraph、真实 LLM、search、ContactPoint 或 CRM。
+
+## Validation
+
+```bash
+find docs/reference/api/examples/sales_workspace_chat_first_runtime_v2_1 -name "*.json" -print0 | xargs -0 -n1 python3 -m json.tool >/dev/null
+rg "sales-workspace-chat-first-runtime-examples.md|sales_workspace_chat_first_runtime_v2_1" docs/reference docs/delivery docs/README.md
+rg "ConversationMessage|AgentRun|ContextPack|WorkspacePatchDraft|draft_review_sales_turn" docs/reference/api/sales-workspace-chat-first-runtime-examples.md docs/reference/api/examples/sales_workspace_chat_first_runtime_v2_1
+git diff --check
+```

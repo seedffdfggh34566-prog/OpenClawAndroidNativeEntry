@@ -1,0 +1,12 @@
+{
+  "id": "msg_user_direction_001",
+  "workspace_id": "ws_demo",
+  "role": "user",
+  "message_type": "lead_direction_update",
+  "content": "先找华东地区 100 到 500 人、有 ERP 但排产和库存协同弱的制造企业。教育和超大型集团先排除。",
+  "linked_object_refs": [
+    "ProductProfileRevision:ppr_chat_001"
+  ],
+  "created_by_agent_run_id": null,
+  "created_at": "2026-04-27T00:05:00Z"
+}

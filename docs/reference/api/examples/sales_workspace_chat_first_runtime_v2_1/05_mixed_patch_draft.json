@@ -1,0 +1,79 @@
+{
+  "id": "draft_sales_turn_mixed_001",
+  "workspace_id": "ws_demo",
+  "base_workspace_version": 2,
+  "author": "sales_agent_turn_runtime",
+  "instruction": "update product profile and lead direction from one mixed chat message",
+  "runtime_metadata": {
+    "agent_run_id": "run_sales_turn_mixed_001",
+    "context_pack_id": "ctx_sales_turn_mixed_001",
+    "intent": "mixed_product_and_direction_update",
+    "source_message_ids": [
+      "msg_user_mixed_001"
+    ]
+  },
+  "operations": [
+    {
+      "type": "upsert_product_profile_revision",
+      "payload": {
+        "id": "ppr_chat_002",
+        "version": 2,
+        "product_name": "FactoryOps AI",
+        "one_liner": "AI workspace for manufacturing scheduling and inventory coordination.",
+        "target_customers": [
+          "mid-market manufacturing operations teams"
+        ],
+        "target_industries": [
+          "discrete manufacturing"
+        ],
+        "pain_points": [
+          "planning changes are not synchronized across scheduling, inventory, and ERP"
+        ],
+        "value_props": [
+          "make operational changes traceable",
+          "reduce manual coordination between production and warehouse teams"
+        ],
+        "constraints": [
+          "must integrate with existing ERP workflow"
+        ]
+      }
+    },
+    {
+      "type": "upsert_lead_direction_version",
+      "payload": {
+        "id": "dir_chat_002",
+        "version": 2,
+        "priority_industries": [
+          "discrete manufacturing"
+        ],
+        "target_customer_types": [
+          "operations teams with frequent production plan changes"
+        ],
+        "regions": [
+          "East China",
+          "South China"
+        ],
+        "company_sizes": [
+          "100-500 employees"
+        ],
+        "priority_constraints": [
+          "ERP exists",
+          "warehouse and planning teams coordinate manually"
+        ],
+        "excluded_industries": [
+          "education"
+        ],
+        "excluded_customer_types": [
+          "large conglomerates"
+        ],
+        "change_reason": "User refined product and ICP in one mixed chat turn."
+      }
+    },
+    {
+      "type": "set_active_lead_direction",
+      "payload": {
+        "lead_direction_version_id": "dir_chat_002"
+      }
+    }
+  ]
+}

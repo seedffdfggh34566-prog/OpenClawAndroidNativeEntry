@@ -21,13 +21,13 @@
 
 当前正式主线为：
 
-> **AI 销售助手 App：V1 已冻结为 demo-ready baseline，当前进入 V2 workspace-native sales agent planning baseline。**
+> **AI 销售助手 App：V1 已冻结为 demo-ready baseline，当前进入 V2 workspace-native sales agent / Sales Workspace Kernel prototype 阶段。**
 
 当前 V2 的核心架构方向是：
 
 > **Sales Workspace Kernel：结构化 workspace 状态机 + WorkspacePatch 写回门禁 + 候选排序 + Markdown projection + ContextPack Compiler。**
 
-Sales Workspace Kernel backend-only v0 已完成。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、FastAPI route、Android UI 或 Runtime / LangGraph 集成阶段。
+Sales Workspace Kernel backend-only v0 已完成，no-DB FastAPI prototype v0 已完成。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、Android UI 或 Runtime / LangGraph 集成阶段。
 
 ---
 
@@ -217,9 +217,10 @@ docs/
 当前结论：
 
 - 不进入 SQLite / Alembic。
-- 不开放 backend API implementation。
+- no-DB FastAPI prototype v0 已完成。
+- 不开放 persistence-backed backend API implementation。
 - `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑，不是正式 persistence baseline。
-- contract fixture examples / state transition examples 已补齐；当前仍不开放 backend API implementation。
+- contract fixture examples / state transition examples 已补齐。
 
 Sales Workspace Kernel backend-only v0 已完成：
 
@@ -229,19 +230,20 @@ Sales Workspace Kernel backend-only v0 已完成：
 - deterministic candidate ranking
 - Markdown projection
 - ContextPack compiler
+- FastAPI prototype endpoints
 - pytest
 
 当前 V2.1 后续顺序冻结为：
 
 1. Sales Workspace Kernel backend API contract。
 2. Persistence decision。
-3. Backend API implementation。
+3. Backend API prototype。
 4. Android read-only workspace view。
 5. Runtime / LangGraph WorkspacePatchDraft integration。
 
 当前仍不应自动实现：
 
-- FastAPI endpoint
+- 新增或扩展 Sales Workspace FastAPI endpoint
 - SQLAlchemy ORM / Alembic migration / SQLite schema change
 - Android UI
 - LangGraph graph
@@ -256,4 +258,4 @@ Sales Workspace Kernel backend-only v0 已完成：
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2 workspace-native sales agent planning baseline：Sales Workspace Kernel backend-only v0 已完成，下一步先冻结 backend API contract 与 persistence decision，再决定 API、Android、runtime 和搜索接入。**
+> **AI 销售助手 V2 workspace-native sales agent：Sales Workspace Kernel backend-only v0 与 no-DB FastAPI prototype v0 已完成；下一步由规划层决定 Android read-only、正式 persistence 或 Runtime patch draft 谁先进入任务队列。**

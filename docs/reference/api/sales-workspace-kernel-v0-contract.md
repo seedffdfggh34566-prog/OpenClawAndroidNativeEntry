@@ -8,6 +8,12 @@
 
 本 contract 服务于后续 FastAPI implementation、Android read-only workspace view、Runtime / LangGraph integration 的边界对齐。
 
+当前实现状态：
+
+- no-DB FastAPI prototype v0 已实现：`backend/api/sales_workspace.py`。
+- prototype 使用 app-local `InMemoryWorkspaceStore`，不是正式 persistence baseline。
+- DB-backed API、Android read-only view、Runtime / LangGraph integration 仍未开放。
+
 本文档不是：
 
 - FastAPI route implementation
@@ -104,6 +110,7 @@ API v0 不提供按对象直接写入 ranking board、Markdown projection、Cont
 |---:|---|---|
 | 400 | `unsupported_workspace_operation` | `WorkspaceOperation.type` 不在 v0 支持列表 |
 | 404 | `not_found` | workspace 或必要引用对象不存在 |
+| 409 | `workspace_already_exists` | 创建 workspace 时 `workspace_id` 已存在于 prototype store |
 | 409 | `workspace_version_conflict` | `base_workspace_version` 与当前 `workspace_version` 不匹配 |
 | 422 | `validation_error` | 请求体结构、字段类型、枚举值或引用关系校验失败 |
 
@@ -269,7 +276,8 @@ task_type = research_round
 ### Notes
 
 - v0 不定义 auth / tenant resolution。
-- `workspace_id` 可以由客户端传入或由后续 implementation 生成；implementation 必须在 API 文档中固定其选择。
+- prototype v0 要求客户端传入 `workspace_id`。
+- duplicate workspace create 返回 `409 workspace_already_exists`。
 
 ---
 
@@ -463,11 +471,16 @@ task_type = research_round
 
 ## 6. Implementation Gates
 
-Before implementing backend API v0:
+no-DB FastAPI prototype v0 已完成：
 
-1. Complete `task_v2_sales_workspace_persistence_decision.md`.
-2. Decide whether API v0 uses in-memory / JSON fixture or SQLite / Alembic.
-3. Keep `backend/sales_workspace` as the object and validation source.
-4. Add route tests for success, validation error, not found, unsupported operation and version conflict.
+- `backend/api/sales_workspace.py`
+- `backend/tests/test_sales_workspace_api.py`
 
-Do not implement Android read-only view or Runtime / LangGraph integration before backend API v0 is available.
+正式 persistence-backed backend API 仍需满足：
+
+1. 决定正式 persistence baseline。
+2. 若进入 DB，创建 SQLAlchemy / Alembic 专项任务。
+3. 保持 `backend/sales_workspace` 作为 object 与 validation source。
+4. 继续保留 route tests for success、validation error、not found、unsupported operation 和 version conflict。
+
+Do not implement Android read-only view or Runtime / LangGraph integration before planning layer creates a dedicated task.

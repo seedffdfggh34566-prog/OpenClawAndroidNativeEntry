@@ -19,12 +19,13 @@
 - V2 workspace-native sales agent 产品北极星更新。
 - V2 Sales Workspace object model 草案。
 - V2 Sales Workspace Kernel backend-only v0 设计与实现。
+- V2 Sales Workspace no-DB FastAPI prototype v0。
 
 当前项目处于：
 
-> **V2 workspace-native sales agent planning baseline / post-kernel-v0 contract planning 阶段**
+> **V2 workspace-native sales agent / Sales Workspace Kernel prototype 阶段**
 
-当前阶段重点是先冻结 Sales Workspace Kernel backend API contract 和 persistence decision，不自动进入数据库 migration、FastAPI route、Android、LangGraph、LLM 或搜索实现。
+当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples 和 no-DB FastAPI prototype。当前不自动进入数据库 migration、Android、LangGraph、LLM 或搜索实现。
 
 ---
 
@@ -34,7 +35,7 @@
 
 当前入口：
 
-- Current task：`task_v2_sales_workspace_persistence_decision.md`
+- Current task：暂无自动排定
 - Next queued task：暂无 implementation task 自动开放
 
 Sales Workspace Kernel backend-only v0 已完成：
@@ -46,6 +47,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 - Markdown projection
 - ContextPack compiler
 - pytest
+- no-DB FastAPI prototype endpoints
 
 ---
 
@@ -58,8 +60,10 @@ Sales Workspace Kernel backend-only v0 已完成：
 | `task_v2_sales_workspace_kernel_backend_only_v0.md` | 实现 Sales Workspace Kernel backend-only v0 | `done` |
 | `task_v2_sales_workspace_post_v0_entry_sync.md` | 同步 post-v0 入口与任务队列 | `done` |
 | `task_v2_sales_workspace_api_contract_v0.md` | 定义 Sales Workspace Kernel backend API contract v0 | `done` |
-| `task_v2_sales_workspace_persistence_decision.md` | 决策 v0.1 persistence 路线 | `current` |
-| `task_v2_sales_workspace_backend_api_v0.md` | 实现 backend API v0 | `planned / blocked by contract and persistence decision` |
+| `task_v2_sales_workspace_persistence_decision.md` | 决策 v0.1 persistence 路线 | `done` |
+| `task_v2_sales_workspace_contract_fixture_examples.md` | 补齐 API contract examples / state transitions | `done` |
+| `task_v2_sales_workspace_backend_api_prototype_v0.md` | 实现 no-DB backend API prototype v0 | `done` |
+| `task_v2_sales_workspace_backend_api_v0.md` | 实现 persistence-backed backend API v0 | `planned / blocked by persistence decision` |
 | `task_v2_android_workspace_readonly_view.md` | Android read-only workspace view | `planned / blocked by backend API` |
 | `task_v2_sales_workspace_runtime_patchdraft_integration.md` | Runtime / LangGraph WorkspacePatchDraft integration | `planned / blocked by API and persistence` |
 | `task_v2_conversational_sales_agent_definition_update.md` | 2026-04-25 旧 V2 定义更新 | `done / superseded by workspace-native direction` |
@@ -110,4 +114,5 @@ Sales Workspace Kernel backend-only v0 已完成：
 - Backend services / workspace kernel 负责正式对象写回裁决。
 - Runtime / Product Sales Agent execution layer 后续只产出 draft payload、工具结果和中间推理。
 - 若对象模型、页面结构与代码现实冲突，先更新 task / spec，再动实现。
-- V2.1 后续顺序为 API contract -> persistence decision -> backend API -> Android read-only -> Runtime integration。
+- V2.1 已完成 API contract -> persistence decision -> contract examples -> no-DB backend API prototype。
+- 后续 Android read-only、persistence-backed API、Runtime integration 必须单独创建 task 后再推进。

@@ -12,7 +12,7 @@
 
 当前 V2 planning baseline 决策入口：
 
-- `ADR-007-v2-sales-workspace-persistence-decision.md`：当前 persistence decision。结论是不进入 SQLite / Alembic，不开放 backend API implementation；先补 contract fixture examples / state transition examples。
+- `ADR-007-v2-sales-workspace-persistence-decision.md`：当前 persistence decision。JSON file store 仍是 prototype continuity，不是正式 baseline；下一项只开放 persistence baseline design，优先评估 Postgres / Alembic，不直接实现 DB migration 或 persistence-backed API。
 - `ADR-006-v2-conversational-sales-agent-baseline.md`：当前 V2 workspace-native sales agent baseline。文件名保留 historical slug，但正文已升级为 Sales Workspace / Sales Workspace Kernel 方向。
 - `ADR-005-v2-lead-research-scope-and-search-boundary.md`：V2.2 search、source evidence、contact boundary guardrail。其搜索和联系方式边界继续有效，但具体对象应后续对齐 `ResearchRound`、`CompanyCandidate`、`CandidateRankingBoard`。
 

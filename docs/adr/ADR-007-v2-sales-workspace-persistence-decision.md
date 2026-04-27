@@ -247,3 +247,54 @@ Draft review contract 已完成后，用户明确开放一个单独的 prototype
 - 不开放正式 LangGraph graph。
 - 不接真实 LLM、search、contact 或 CRM。
 - 不新增 Android UI 或 Android workspace write path。
+
+---
+
+## 11. 2026-04-27 Addendum：Post Review-ID Flow persistence decision refresh
+
+Android Draft Review ID flow prototype 已完成后，V2 prototype 已打通当前核心人工审阅写回闭环：
+
+```text
+Android 人工审阅入口
+-> backend-managed WorkspacePatchDraftReview
+-> explicit accept / reject
+-> apply by draft_review_id
+-> Sales Workspace Kernel formal writeback
+-> ranking / projection / ContextPack refresh
+```
+
+因此本 ADR 需要刷新后续 persistence 判断。
+
+当前结论：
+
+- JSON file store 继续定位为 prototype continuity，不升级为正式 persistence baseline。
+- SQLite / Alembic 可作为本地过渡方案继续保留讨论，但不作为下一阶段推荐默认。
+- 如果 V2 继续向 MVP 推进，下一步应进入正式 persistence baseline design，并优先评估 Postgres / Alembic。
+- 当前仍不开放 DB migration、SQLAlchemy model、backend route 变更、Android UI 扩展、正式 LangGraph、真实 LLM、search、contact 或 CRM。
+
+方案比较：
+
+- JSON file store：
+  - 优点是最快、已可支撑本地 demo 复现和 backend 重启 continuity。
+  - 缺点是不能可靠支撑并发、审阅历史、数据一致性、多用户、权限或长期业务数据。
+  - 结论是继续作为 prototype store，不作为 MVP persistence baseline。
+- SQLite / Alembic：
+  - 优点是本地简单，且与 V1 当前 SQLite baseline 接近。
+  - 缺点是如果 V2 目标是服务化、多用户和长期 workspace 记录，SQLite 可能只是短期过渡并带来二次迁移成本。
+  - 结论是可以作为备选，但不推荐作为默认下一步。
+- Postgres / Alembic：
+  - 优点是更接近正式服务端 persistence baseline，适合 workspace、draft review lifecycle、audit trail、未来多用户和后续 runtime integration。
+  - 缺点是引入环境、部署、测试和 migration discipline 成本。
+  - 结论是下一阶段 design task 的优先评估方向。
+
+下一步只开放：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`
+
+继续 blocked / planned：
+
+- Draft Review persistence schema implementation。
+- backend DB migration。
+- persistence-backed Sales Workspace API。
+- formal Runtime / LangGraph integration。
+- Android review history / broader UX expansion。

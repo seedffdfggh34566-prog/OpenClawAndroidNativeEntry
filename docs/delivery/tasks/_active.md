@@ -17,11 +17,11 @@
 
 ### Current task
 
-暂无自动排定。
+`docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`
 
 ### Next queued task
 
-暂无自动排定。
+暂无 implementation task 自动开放。
 
 ### Recently completed
 
@@ -44,8 +44,9 @@
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`（done）
 - `docs/delivery/tasks/task_v2_android_draft_review_id_flow_prototype.md`（done）
+- `docs/delivery/tasks/task_v2_post_review_id_flow_persistence_decision_refresh.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成。
 
 ---
 
@@ -67,12 +68,14 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 12. Draft review contract。
 13. Draft review routes prototype。
 14. Android Draft Review ID flow prototype。
+15. Post Review-ID Flow persistence decision refresh。
 
 当前结论：
 
-- 不进入 SQLite / Alembic。
+- 不直接进入 SQLite / Alembic migration。
 - 不开放 persistence-backed backend API implementation。
-- `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑，不是正式 persistence baseline。
+- `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
+- 如果 V2 继续向 MVP 推进，下一步只开放正式 persistence baseline design，优先评估 Postgres / Alembic。
 - 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
 - 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
 - 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
@@ -84,6 +87,8 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - Draft review contract 已完成：`docs/reference/api/sales-workspace-draft-review-contract.md`。
 - Draft review routes prototype 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`。
 - Android Draft Review ID flow prototype 已完成：`docs/delivery/tasks/task_v2_android_draft_review_id_flow_prototype.md`。
+- Post Review-ID Flow persistence decision refresh 已完成：`docs/delivery/tasks/task_v2_post_review_id_flow_persistence_decision_refresh.md`。
+- 当前唯一开放任务是 persistence baseline design：`docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`。
 - backend API 的 DB-backed / production persistence 版本继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -208,6 +213,20 @@ Android Draft Review ID flow prototype 已完成：
 
 - `docs/delivery/tasks/task_v2_android_draft_review_id_flow_prototype.md`
 
+Post Review-ID Flow persistence decision refresh 已完成：
+
+- `docs/delivery/tasks/task_v2_post_review_id_flow_persistence_decision_refresh.md`
+
+当前唯一开放的设计任务：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`
+
+后续 planned / blocked：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_schema.md`
+- `docs/delivery/tasks/task_v2_runtime_langgraph_design.md`
+- `docs/delivery/tasks/task_v2_android_review_history_view.md`
+
 ---
 
 ## 6. 当前执行入口
@@ -238,15 +257,17 @@ Android Draft Review ID flow prototype 已完成：
 22. `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`
 23. `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
 24. `docs/delivery/tasks/task_v2_android_draft_review_id_flow_prototype.md`
-25. 本文件
+25. `docs/delivery/tasks/task_v2_post_review_id_flow_persistence_decision_refresh.md`
+26. `docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`
+27. 本文件
 
 ---
 
 ## 7. Auto-continue allowed when
 
-当前没有 next queued task，因此执行 agent 不应自动继续实现。
+当前只有 persistence baseline design task 被开放；执行 agent 不应自动继续实现 DB / API / Android / Runtime。
 
-Android Draft Review ID flow prototype 已完成。下一步需要人工选择是否进入 persistence decision refresh、正式 Runtime / LangGraph integration design，或 Android review UX expansion。
+Post Review-ID Flow persistence decision refresh 已完成。下一步应执行 `task_v2_sales_workspace_persistence_baseline_design.md`，只做 persistence baseline design，不写 migration。
 
 ---
 

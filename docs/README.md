@@ -27,7 +27,7 @@
 
 > **Sales Workspace Kernel：结构化 workspace 状态机 + WorkspacePatch 写回门禁 + 候选排序 + Markdown projection + ContextPack Compiler。**
 
-Sales Workspace Kernel backend-only v0 已完成，no-DB FastAPI prototype v0 已完成。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、Android UI 或 Runtime / LangGraph 集成阶段。
+Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo 已完成。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、Android write path 或 Runtime / LangGraph 集成阶段。
 
 ---
 
@@ -218,6 +218,7 @@ docs/
 
 - 不进入 SQLite / Alembic。
 - no-DB FastAPI prototype v0 已完成。
+- Android read-only workspace demo 已完成。
 - 不开放 persistence-backed backend API implementation。
 - `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑，不是正式 persistence baseline。
 - contract fixture examples / state transition examples 已补齐。
@@ -231,6 +232,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 - Markdown projection
 - ContextPack compiler
 - FastAPI prototype endpoints
+- Android read-only workspace demo
 - pytest
 
 当前 V2.1 后续顺序冻结为：
@@ -245,7 +247,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 
 - 新增或扩展 Sales Workspace FastAPI endpoint
 - SQLAlchemy ORM / Alembic migration / SQLite schema change
-- Android UI
+- Android write path 或复杂 workspace 交互
 - LangGraph graph
 - 真实 LLM
 - 联网搜索 / search provider
@@ -258,4 +260,4 @@ Sales Workspace Kernel backend-only v0 已完成：
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2 workspace-native sales agent：Sales Workspace Kernel backend-only v0 与 no-DB FastAPI prototype v0 已完成；下一步由规划层决定 Android read-only、正式 persistence 或 Runtime patch draft 谁先进入任务队列。**
+> **AI 销售助手 V2 workspace-native sales agent：Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0 与 Android read-only workspace demo 已完成；下一步由规划层决定 Android 体验增强、正式 persistence 或 Runtime patch draft 谁先进入任务队列。**

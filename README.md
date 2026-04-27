@@ -22,7 +22,7 @@
 
 当前正式主线为：
 
-> **V2.1 workspace/kernel engineering baseline completed：Sales Workspace Kernel、FastAPI prototype、Android workspace / Draft Review ID demo、Postgres / Alembic persistence baseline、Sales Workspace Postgres store、Draft Review audit persistence、deterministic chat-first backend prototype 与 Android chat-first workspace UI skeleton 均已完成。V2.1 conversational product experience remains incomplete，需先完成 PRD acceptance gap review。**
+> **V2.1 workspace/kernel engineering baseline completed：Sales Workspace Kernel、FastAPI prototype、Android workspace / Draft Review ID demo、Postgres / Alembic persistence baseline、Sales Workspace Postgres store、Draft Review audit persistence、deterministic chat-first backend prototype 与 Android chat-first workspace UI skeleton 均已完成。V2.1 conversational product experience remains incomplete；下一步是 clarifying questions backend prototype。**
 
 V1 已作为 demo-ready release candidate / learning milestone 收口，不再是默认开发方向。
 
@@ -32,7 +32,7 @@ V1 已作为 demo-ready release candidate / learning milestone 收口，不再�
 
 当前 active task：
 
-- `docs/delivery/tasks/task_v2_1_prd_acceptance_gap_review.md`
+- `docs/delivery/tasks/task_v2_1_clarifying_questions_backend_prototype.md`
 
 Next queued task：
 
@@ -70,7 +70,7 @@ Sales Workspace Kernel prototype 已完成：
 
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
 
-V2.1 chat-first deterministic demo flow 已完成，但这不等于 PRD-level conversational product experience 完成。下一步先执行 PRD acceptance gap review；真正 V2.2 evidence / search / ContactPoint、正式 LangGraph、Android review history view 或 DB hardening 仍不自动开放。
+V2.1 PRD acceptance gap review、conversational completion scope、5 个中文验收样例和 implementation queue 已补齐。下一步先做 clarifying questions backend prototype；真正 V2.2 evidence / search / ContactPoint、正式 LangGraph、Android review history view 或 DB hardening 仍不自动开放。
 
 当前不应自动实现：
 

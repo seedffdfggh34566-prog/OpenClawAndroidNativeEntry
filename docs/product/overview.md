@@ -232,7 +232,7 @@ V2 继续实现前，应先确保当前 task 已在 `_active.md` 中开放。当
 当前推荐顺序：
 
 1. 承认 V2.1 workspace/kernel engineering baseline completed。
-2. 承认 V2.1 conversational product experience remains incomplete，并先执行 PRD acceptance gap review。
+2. 承认 V2.1 conversational product experience remains incomplete；PRD acceptance gap review 已完成，当前先执行 clarifying questions backend prototype。
 3. V2.2 implementation 前，不直接接真实 LLM、联网搜索、ContactPoint 或 CRM/contact。
 4. Android review history、正式 LangGraph 和 DB hardening 也应通过独立 task 开放。
 
@@ -244,4 +244,4 @@ V2 继续实现前，应先确保当前 task 已在 `_active.md` 中开放。当
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2.1 workspace/kernel engineering baseline completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain 和 Draft Review audit persistence 已完成；V2.1 conversational product experience remains incomplete，下一步先做 PRD acceptance gap review，不直接进入真实搜索或 LLM implementation。**
+> **AI 销售助手 V2.1 workspace/kernel engineering baseline completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain 和 Draft Review audit persistence 已完成；V2.1 conversational product experience remains incomplete，下一步先做 clarifying questions backend prototype，不直接进入真实搜索或 LLM implementation。**

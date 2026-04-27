@@ -131,7 +131,7 @@ V2.1 workspace/kernel engineering baseline completed；V2.1 conversational produ
 - SQLite 不作为 V2 Sales Workspace runtime fallback。
 - 不开放 production hardening 或新增 API surface。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
-- 当前没有自动开放任务，不自动进入正式 LangGraph implementation、真实 LLM/search 或 V2.2 implementation。
+- 当前只自动开放 `task_v2_1_clarifying_questions_backend_prototype.md`。不自动进入正式 LangGraph implementation、真实 LLM/search 或 V2.2 implementation。
 - 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
 - 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
 - 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
@@ -392,9 +392,9 @@ V2.1 engineering baseline closeout 已完成：
 
 ## 7. Auto-continue allowed when
 
-当前没有自动开放任务。
+当前只允许自动继续 `task_v2_1_clarifying_questions_backend_prototype.md`。
 
-执行 agent 不应自动继续 V2.2 Runtime / LangGraph、Android review history、search evidence、DB hardening 或真实 LLM/search/contact implementation。下一步需要先由规划层明确是否开放 V2.2 docs-level planning。
+执行 agent 不应自动继续 V2.2 Runtime / LangGraph、Android review history、search evidence、DB hardening 或真实 LLM/search/contact implementation。后续 V2.2 docs-level planning 也必须等待当前 V2.1 conversational completion 队列重新收口后再评估。
 
 ---
 

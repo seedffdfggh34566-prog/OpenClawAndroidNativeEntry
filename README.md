@@ -31,7 +31,7 @@ V1 已作为 demo-ready release candidate / learning milestone 收口，不再�
 
 当前 active task：
 
-- 暂无自动排定。
+- `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`
 
 Next queued task：
 
@@ -50,13 +50,14 @@ Sales Workspace Kernel prototype 已完成：
 - optional JSON file store prototype
 - deterministic Runtime PatchDraft prototype
 - PatchDraft review gate prototype
+- Android PatchDraft review UI prototype（进行中）
 - pytest coverage
 
 当前不应自动实现：
 
 - persistence-backed API / production DB baseline
 - SQLAlchemy ORM / Alembic migration / SQLite schema change
-- Android write path
+- 本 task 之外的 Android write path
 - 正式 LangGraph graph
 - 真实 LLM / search provider
 - CRM pipeline / ContactPoint / 自动触达
@@ -69,7 +70,7 @@ Sales Workspace Kernel prototype 已完成：
   - 当前正式业务后端与 V2 kernel prototype 位置
   - V2 backend-only v0 已在 `backend/sales_workspace/` 落地
 - `app/`
-  - Android 控制入口；当前已有 V2 workspace read-only demo
+  - Android 控制入口；当前已有 V2 workspace read-only demo，正在补 PatchDraft review UI prototype
 - `docs/`
   - 产品方向、架构、任务、handoff 与 runbook 的正式入口
 - `backend/runtime/`

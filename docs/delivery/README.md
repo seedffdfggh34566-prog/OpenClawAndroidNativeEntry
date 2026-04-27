@@ -24,12 +24,13 @@
 - V2 Sales Workspace JSON file store prototype。
 - V2 Runtime PatchDraft prototype。
 - V2 PatchDraft review gate prototype。
+- V2 Android PatchDraft review UI prototype 正在执行。
 
 当前项目处于：
 
 > **V2 workspace-native sales agent / Sales Workspace Kernel prototype 阶段**
 
-当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype 和 PatchDraft review gate prototype。当前不自动进入数据库 migration、Android write path、正式 LangGraph、真实 LLM 或搜索实现。
+当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype 和 PatchDraft review gate prototype。当前只开放 Android PatchDraft review UI prototype，不自动进入数据库 migration、本 task 之外的 Android write path、正式 LangGraph、真实 LLM 或搜索实现。
 
 ---
 
@@ -39,7 +40,7 @@
 
 当前入口：
 
-- Current task：暂无自动排定
+- Current task：`task_v2_android_patchdraft_review_ui_prototype.md`
 - Next queued task：暂无 implementation task 自动开放
 
 Sales Workspace Kernel backend-only v0 已完成：
@@ -56,6 +57,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 - optional JSON file store prototype
 - deterministic Runtime PatchDraft prototype
 - PatchDraft review gate prototype
+- Android PatchDraft review UI prototype（进行中）
 
 ---
 
@@ -76,6 +78,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 | `task_v2_sales_workspace_json_store_prototype.md` | 可选 JSON file store prototype | `done` |
 | `task_v2_sales_workspace_runtime_patchdraft_prototype.md` | deterministic Runtime PatchDraft prototype | `done` |
 | `task_v2_sales_workspace_patchdraft_review_gate_prototype.md` | PatchDraft preview / explicit apply review gate | `done` |
+| `task_v2_android_patchdraft_review_ui_prototype.md` | Android 人工审阅并显式 apply PatchDraft | `in_progress` |
 | `task_v2_sales_workspace_runtime_patchdraft_integration.md` | Runtime / LangGraph WorkspacePatchDraft integration | `planned / blocked by API and persistence` |
 | `task_v2_conversational_sales_agent_definition_update.md` | 2026-04-25 旧 V2 定义更新 | `done / superseded by workspace-native direction` |
 | `task_v2_planning_baseline_update.md` | 将仓库入口、ADR、roadmap 和 active task 状态对齐到 V2 planning baseline | `done` |
@@ -126,4 +129,4 @@ Sales Workspace Kernel backend-only v0 已完成：
 - Runtime / Product Sales Agent execution layer 后续只产出 draft payload、工具结果和中间推理。
 - 若对象模型、页面结构与代码现实冲突，先更新 task / spec，再动实现。
 - V2.1 已完成 API contract -> persistence decision -> contract examples -> no-DB backend API prototype -> Android read-only demo -> JSON file store prototype -> Runtime PatchDraft prototype -> PatchDraft review gate prototype。
-- 后续 Android 体验增强、persistence-backed API、正式 Runtime / LangGraph integration 必须单独创建 task 后再推进。
+- 当前仅开放 Android PatchDraft review UI prototype；后续 Android 体验增强、persistence-backed API、正式 Runtime / LangGraph integration 必须单独创建 task 后再推进。

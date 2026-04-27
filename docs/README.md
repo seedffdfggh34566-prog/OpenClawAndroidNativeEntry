@@ -27,7 +27,7 @@
 
 > **Sales Workspace Kernel：结构化 workspace 状态机 + WorkspacePatch 写回门禁 + 候选排序 + Markdown projection + ContextPack Compiler。**
 
-Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype 和 Draft review contract 已完成。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、扩展 Android write path 或正式 Runtime / LangGraph 集成阶段。
+Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、Draft review contract 和 Draft review routes prototype 已完成。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、扩展 Android write path 或正式 Runtime / LangGraph 集成阶段。
 
 当前 V2 prototype demo runbook 已补齐：
 
@@ -130,6 +130,8 @@ V1 细节可继续参考：
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_post_demo_next_phase_decision.md`
 - `docs/reference/api/sales-workspace-draft-review-contract.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_draft_review_contract.md`
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
+- `docs/delivery/handoffs/handoff_2026_04_27_v2_draft_review_routes_prototype.md`
 
 ### 5.4 V1 baseline 与参考
 
@@ -235,6 +237,10 @@ docs/
 
 - `docs/reference/api/sales-workspace-draft-review-contract.md`
 
+当前 Draft review routes prototype 为：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
+
 当前 demo 复现入口为：
 
 - `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`
@@ -257,6 +263,7 @@ docs/
 - V2 Sales Workspace prototype demo runbook 已完成。
 - clean demo verification 已完成。
 - Draft review contract 已完成。
+- Draft review routes prototype 已完成。
 - 不开放 persistence-backed backend API implementation。
 - `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑，不是正式 persistence baseline。
 - contract fixture examples / state transition examples 已补齐。
@@ -278,6 +285,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 - prototype demo runbook
 - clean demo verification
 - Draft review contract
+- Draft review routes prototype
 - pytest
 
 当前 V2.1 后续顺序冻结为：
@@ -293,6 +301,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 9. Prototype demo runbook。
 10. Post-demo next phase decision。
 11. Draft review contract。
+12. Draft review routes prototype。
 
 当前仍不应自动实现：
 
@@ -311,4 +320,4 @@ Sales Workspace Kernel backend-only v0 已完成：
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2 workspace-native sales agent：Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、JSON file store prototype、Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook 与 Draft review contract 已完成；下一步需要人工选择 persistence decision refresh、draft review route prototype、正式 Runtime / LangGraph integration design 或 Android review UX expansion。**
+> **AI 销售助手 V2 workspace-native sales agent：Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、JSON file store prototype、Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook、Draft review contract 与 Draft review routes prototype 已完成；下一步需要人工选择 Android draft review id flow、persistence decision refresh、正式 Runtime / LangGraph integration design 或 Android review UX expansion。**

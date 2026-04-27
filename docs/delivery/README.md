@@ -28,12 +28,13 @@
 - V2 Sales Workspace prototype demo runbook。
 - V2 post-demo next phase decision。
 - V2 Draft review contract。
+- V2 Draft review routes prototype。
 
 当前项目处于：
 
 > **V2 workspace-native sales agent / Sales Workspace Kernel prototype 阶段**
 
-当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook、post-demo next phase decision 和 Draft review contract。当前不自动进入数据库 migration、扩展 Android write path、正式 LangGraph、真实 LLM 或搜索实现。
+当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook、post-demo next phase decision、Draft review contract 和 Draft review routes prototype。当前不自动进入数据库 migration、扩展 Android write path、正式 LangGraph、真实 LLM 或搜索实现。
 
 ---
 
@@ -64,6 +65,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 - prototype demo runbook
 - post-demo next phase decision
 - Draft review contract
+- Draft review routes prototype
 
 ---
 
@@ -88,6 +90,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 | `task_v2_sales_workspace_prototype_demo_runbook.md` | 固化 V2 prototype demo 复现流程 | `done` |
 | `task_v2_post_demo_next_phase_decision.md` | 决定 post-demo 下一阶段方向 | `done` |
 | `task_v2_sales_workspace_draft_review_contract.md` | 定义 Draft persistence / review history contract | `done` |
+| `task_v2_sales_workspace_draft_review_routes_prototype.md` | 实现 backend-managed Draft review routes prototype | `done` |
 | `task_v2_sales_workspace_runtime_patchdraft_integration.md` | Runtime / LangGraph WorkspacePatchDraft integration | `planned / blocked by API and persistence` |
 | `task_v2_conversational_sales_agent_definition_update.md` | 2026-04-25 旧 V2 定义更新 | `done / superseded by workspace-native direction` |
 | `task_v2_planning_baseline_update.md` | 将仓库入口、ADR、roadmap 和 active task 状态对齐到 V2 planning baseline | `done` |
@@ -140,4 +143,5 @@ Sales Workspace Kernel backend-only v0 已完成：
 - V2.1 已完成 API contract -> persistence decision -> contract examples -> no-DB backend API prototype -> Android read-only demo -> JSON file store prototype -> Runtime PatchDraft prototype -> PatchDraft review gate prototype -> Android PatchDraft review UI prototype -> prototype demo runbook。
 - 当前 demo 复现入口为 `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`。
 - Draft review contract 已完成：`docs/reference/api/sales-workspace-draft-review-contract.md`。
-- 后续 persistence decision refresh、draft review route prototype、Android 体验增强、persistence-backed API、正式 Runtime / LangGraph integration 必须单独创建 task 后再推进。
+- Draft review routes prototype 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`。
+- 后续 Android draft review id flow、persistence decision refresh、Android 体验增强、persistence-backed API、正式 Runtime / LangGraph integration 必须单独创建 task 后再推进。

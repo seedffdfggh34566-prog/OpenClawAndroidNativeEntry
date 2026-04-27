@@ -22,7 +22,7 @@
 
 当前正式主线为：
 
-> **Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype、Android read-only demo、JSON file store prototype、Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype 与 prototype demo runbook 已完成。**
+> **Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype、Android read-only demo、JSON file store prototype、Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook 与 Draft Review routes prototype 已完成。**
 
 V1 已作为 demo-ready release candidate / learning milestone 收口，不再是默认开发方向。
 
@@ -55,13 +55,18 @@ Sales Workspace Kernel prototype 已完成：
 - V2 prototype demo runbook
 - clean demo verification
 - Draft review contract
+- Draft review routes prototype
 - pytest coverage
 
 当前 Draft review contract：
 
 - `docs/reference/api/sales-workspace-draft-review-contract.md`
 
-后续需要人工选择是否进入 persistence decision refresh、draft review route prototype、正式 Runtime / LangGraph integration design 或 Android review UX expansion。
+当前 Draft review routes prototype：
+
+- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
+
+后续需要人工选择是否进入 Android draft review id flow、persistence decision refresh、正式 Runtime / LangGraph integration design 或 Android review UX expansion。
 
 当前不应自动实现：
 
@@ -162,6 +167,12 @@ Sales Workspace API / Runtime prototype 固定验证：
 
 ```bash
 backend/.venv/bin/python -m pytest backend/tests/sales_workspace backend/tests/test_sales_workspace_api.py -q
+```
+
+Sales Workspace Draft Review routes prototype 固定验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_draft_reviews_api.py -q
 ```
 
 V2 Sales Workspace prototype demo：

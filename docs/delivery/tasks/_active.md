@@ -34,8 +34,9 @@
 - `docs/delivery/tasks/task_v2_sales_workspace_contract_fixture_examples.md`（done）
 - `docs/reference/api/sales-workspace-kernel-v0-examples.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`（done）
+- `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成。
 
 ---
 
@@ -47,6 +48,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 2. Persistence decision。
 3. Contract fixture examples / state transition examples。
 4. Sales Workspace Backend API prototype v0。
+5. Android read-only workspace demo。
 
 当前结论：
 
@@ -54,6 +56,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - 不开放 persistence-backed backend API implementation。
 - `in-memory / JSON fixture` 仅作为 prototype / contract validation 支撑，不是正式 persistence baseline。
 - 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
+- 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
 - backend API 的 DB-backed / production persistence 版本继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -68,7 +71,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - Alembic migration
 - SQLite schema change
 - Postgres / pgvector
-- Android UI
+- 新增或扩展 Android workspace 写入 UI
 - LangGraph graph
 - 真实 LLM
 - 联网搜索
@@ -129,6 +132,12 @@ Sales Workspace Backend API prototype v0 已完成：
 - `backend/tests/test_sales_workspace_api.py`
 - `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`
 
+Android read-only workspace demo 已完成：
+
+- `scripts/seed_sales_workspace_demo.py`
+- Android top-level `Workspace` 页面
+- `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`
+
 ---
 
 ## 6. 当前执行入口
@@ -148,7 +157,8 @@ Sales Workspace Backend API prototype v0 已完成：
 11. `docs/reference/api/sales-workspace-kernel-v0-examples.md`
 12. `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
 13. `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`
-14. 本文件
+14. `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`
+15. 本文件
 
 ---
 
@@ -165,7 +175,7 @@ Sales Workspace Backend API prototype v0 已完成：
 - 需要改变 V2 产品方向。
 - 需要实现 DB migration。
 - 需要新增或扩展 API route。
-- 需要接 Android。
+- 需要新增 Android write path 或复杂交互。
 - 需要接 LangGraph / LLM / search。
 - 需要引入新外部依赖。
 - 需要开放 persistence-backed backend API implementation。

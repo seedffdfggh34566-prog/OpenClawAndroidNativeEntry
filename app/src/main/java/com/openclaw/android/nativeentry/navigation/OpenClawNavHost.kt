@@ -14,24 +14,29 @@ import com.openclaw.android.nativeentry.ui.home.OpenClawLaunchSnapshot
 import com.openclaw.android.nativeentry.ui.logs.LogsScreen
 import com.openclaw.android.nativeentry.ui.ops.OpsScreen
 import com.openclaw.android.nativeentry.ui.settings.SettingsScreen
+import com.openclaw.android.nativeentry.ui.workspace.SalesWorkspaceScreen
 import com.openclaw.android.nativeentry.ui.shell.AnalysisReportScreen
 import com.openclaw.android.nativeentry.ui.shell.AnalysisResultScreen
 import com.openclaw.android.nativeentry.ui.shell.HistoryScreen
 import com.openclaw.android.nativeentry.ui.shell.ProductLearningScreen
 import com.openclaw.android.nativeentry.ui.shell.ProductProfileScreen
 import com.openclaw.android.nativeentry.ui.shell.V1BackendUiState
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
 import com.openclaw.android.nativeentry.ui.shell.V1ShellPlaceholderState
+import com.openclaw.android.nativeentry.ui.shell.V1SectionState
 
 @Composable
 fun OpenClawNavHost(
     navController: NavHostController,
     backendState: V1BackendUiState,
+    workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
     placeholderState: V1ShellPlaceholderState,
     gatewaySnapshot: GatewayCheckSnapshot,
     launchSnapshot: OpenClawLaunchSnapshot,
     chatEntryState: OpenClawChatEntryState,
     onRefreshGatewayStatus: () -> Unit,
     onRefreshBackend: () -> Unit,
+    onRefreshWorkspace: () -> Unit,
     onUseDebugFallback: () -> Unit,
     onLoadLatestProductProfile: () -> Unit,
     onLoadLatestReport: () -> Unit,
@@ -83,6 +88,12 @@ fun OpenClawNavHost(
                 onOpenAnalysisReportClick = { navController.navigate(OpenClawDestination.AnalysisReport.route) },
                 onRefreshBackendClick = onRefreshBackend,
                 onUseDebugFallbackClick = onUseDebugFallback,
+            )
+        }
+        composable(OpenClawDestination.Workspace.route) {
+            SalesWorkspaceScreen(
+                workspaceState = workspaceState,
+                onRefreshClick = onRefreshWorkspace,
             )
         }
         composable(OpenClawDestination.Ops.route) {

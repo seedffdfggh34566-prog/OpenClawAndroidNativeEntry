@@ -37,6 +37,9 @@ import com.openclaw.android.nativeentry.data.backend.HistoryResponseDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileCreateRequestDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichRequestDto
 import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceBackendClient
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDemoWorkspaceId
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
 import com.openclaw.android.nativeentry.data.backend.V1BackendClient
 import com.openclaw.android.nativeentry.navigation.OpenClawDestination
 import com.openclaw.android.nativeentry.navigation.OpenClawNavHost
@@ -80,7 +83,11 @@ fun OpenClawApp() {
     val currentScreen = OpenClawDestination.fromRoute(currentDestination?.route) ?: OpenClawDestination.Home
     val isTopLevelScreen = OpenClawDestination.topLevelDestinations.any { it.route == currentScreen.route }
     val placeholderState = remember { sampleV1ShellPlaceholderState() }
+    val workspaceClient = remember { SalesWorkspaceBackendClient() }
     var backendState by remember { mutableStateOf(V1BackendUiState()) }
+    var workspaceState by remember {
+        mutableStateOf<V1SectionState<SalesWorkspaceReadOnlySnapshot>>(V1SectionState.Idle)
+    }
     var productName by remember { mutableStateOf("") }
     var productDescription by remember { mutableStateOf("") }
     var sourceNotes by remember { mutableStateOf("") }
@@ -92,6 +99,7 @@ fun OpenClawApp() {
     var latestRefreshToken by remember { mutableIntStateOf(0) }
     var refreshJob by remember { mutableStateOf<Job?>(null) }
     var backendRefreshJob by remember { mutableStateOf<Job?>(null) }
+    var workspaceLoadJob by remember { mutableStateOf<Job?>(null) }
     var productProfileLoadJob by remember { mutableStateOf<Job?>(null) }
     var productProfileCreateJob by remember { mutableStateOf<Job?>(null) }
     var productProfileEnrichJob by remember { mutableStateOf<Job?>(null) }
@@ -159,6 +167,17 @@ fun OpenClawApp() {
                         },
                     )
                 }
+            }
+        }
+    }
+
+    fun refreshSalesWorkspace() {
+        workspaceLoadJob?.cancel()
+        workspaceState = V1SectionState.Loading
+        workspaceLoadJob = scope.launch {
+            workspaceState = when (val result = workspaceClient.getReadOnlySnapshot(SalesWorkspaceDemoWorkspaceId)) {
+                is BackendReadResult.Failure -> V1SectionState.Failed(result.error)
+                is BackendReadResult.Success -> V1SectionState.Loaded(result.value)
             }
         }
     }
@@ -1029,6 +1048,12 @@ fun OpenClawApp() {
         }
     }
 
+    LaunchedEffect(currentScreen) {
+        if (currentScreen == OpenClawDestination.Workspace && workspaceState !is V1SectionState.Loading) {
+            refreshSalesWorkspace()
+        }
+    }
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -1081,12 +1106,14 @@ fun OpenClawApp() {
         OpenClawNavHost(
             navController = navController,
             backendState = backendState,
+            workspaceState = workspaceState,
             placeholderState = placeholderState,
             gatewaySnapshot = gatewaySnapshot,
             launchSnapshot = launchSnapshot,
             chatEntryState = chatEntryState,
             onRefreshGatewayStatus = ::refreshGatewayStatus,
             onRefreshBackend = ::refreshV1History,
+            onRefreshWorkspace = ::refreshSalesWorkspace,
             onUseDebugFallback = ::useDebugFallback,
             onLoadLatestProductProfile = ::loadLatestProductProfile,
             onLoadLatestReport = ::loadLatestReport,

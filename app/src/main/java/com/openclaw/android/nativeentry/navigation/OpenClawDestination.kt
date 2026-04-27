@@ -38,6 +38,13 @@ sealed class OpenClawDestination(
         iconVector = Icons.Outlined.History,
     )
 
+    data object Workspace : OpenClawDestination(
+        route = "workspace",
+        title = "Sales Workspace",
+        label = "Workspace",
+        iconVector = Icons.AutoMirrored.Outlined.ListAlt,
+    )
+
     data object Ops : OpenClawDestination(
         route = "ops",
         title = "运维与诊断",
@@ -95,7 +102,7 @@ sealed class OpenClawDestination(
     )
 
     companion object {
-        val topLevelDestinations = listOf(Home, History, Ops, Settings)
+        val topLevelDestinations = listOf(Home, Workspace, History, Ops, Settings)
         private val allDestinations = topLevelDestinations + listOf(
             ProductLearning,
             ProductProfile,

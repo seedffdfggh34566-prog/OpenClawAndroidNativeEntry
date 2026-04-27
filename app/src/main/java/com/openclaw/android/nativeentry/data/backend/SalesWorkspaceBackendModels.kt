@@ -9,6 +9,42 @@ data class SalesWorkspaceReadOnlySnapshot(
     val contextPack: SalesWorkspaceContextPackDto?,
 )
 
+data class SalesWorkspacePatchDraftPreviewDto(
+    val patchDraft: SalesWorkspacePatchDraftDto,
+    val patch: SalesWorkspacePatchSummaryDto,
+    val previewWorkspaceVersion: Int,
+    val previewRankingBoard: SalesWorkspaceRankingBoardDto?,
+    val wouldMutate: Boolean,
+) {
+    val previewTopCandidate: SalesWorkspaceRankingItemDto?
+        get() = previewRankingBoard?.rankedItems?.firstOrNull()
+}
+
+data class SalesWorkspacePatchDraftApplyResponseDto(
+    val patchDraft: SalesWorkspacePatchDraftDto,
+    val patch: SalesWorkspacePatchSummaryDto,
+    val workspace: SalesWorkspaceDto,
+    val rankingBoard: SalesWorkspaceRankingBoardDto?,
+) {
+    val topCandidate: SalesWorkspaceRankingItemDto?
+        get() = rankingBoard?.rankedItems?.firstOrNull()
+}
+
+data class SalesWorkspacePatchDraftDto(
+    val id: String,
+    val workspaceId: String,
+    val baseWorkspaceVersion: Int,
+    val operationCount: Int,
+    val rawJson: String,
+)
+
+data class SalesWorkspacePatchSummaryDto(
+    val id: String,
+    val workspaceId: String,
+    val baseWorkspaceVersion: Int,
+    val operationCount: Int,
+)
+
 data class SalesWorkspaceResponseDto(
     val workspace: SalesWorkspaceDto,
 )

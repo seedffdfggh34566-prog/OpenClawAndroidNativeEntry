@@ -27,7 +27,7 @@
 
 > **Sales Workspace Kernel：结构化 workspace 状态机 + WorkspacePatch 写回门禁 + 候选排序 + Markdown projection + ContextPack Compiler。**
 
-Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype 和 PatchDraft review gate prototype 已完成。当前正在执行 Android PatchDraft review UI prototype。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、本 task 之外的 Android write path 或正式 Runtime / LangGraph 集成阶段。
+Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype 和 Android PatchDraft review UI prototype 已完成。当前不是 V1 继续开发阶段，也不是 V2 MVP、数据库 migration、扩展 Android write path 或正式 Runtime / LangGraph 集成阶段。
 
 ---
 
@@ -114,6 +114,7 @@ V1 细节可继续参考：
 - `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`
 - `docs/delivery/handoffs/handoff_2026_04_27_v2_patchdraft_review_gate_prototype.md`
 - `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`
+- `docs/delivery/handoffs/handoff_2026_04_27_v2_android_patchdraft_review_ui_prototype.md`
 
 ### 5.4 V1 baseline 与参考
 
@@ -212,7 +213,7 @@ docs/
 
 当前正式执行入口为：
 
-- `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`
+- 暂无自动排定 implementation task。
 
 最近完成的 contract / persistence decision 文档为：
 

@@ -1,6 +1,6 @@
 # V2 Android PatchDraft Review UI Prototype
 
-状态：in_progress
+状态：done
 
 更新时间：2026-04-27
 
@@ -57,3 +57,22 @@
 - 若设备可用，Android Workspace 页面可以完成 preview / apply demo。
 - 若设备不可用，handoff 明确记录未做 device-level 验证。
 
+## 6. Actual Validation
+
+- `PYTHONPATH=$PWD /home/yulin/projects/OpenClawAndroidNativeEntry/backend/.venv/bin/python -m pytest backend/tests/sales_workspace backend/tests/test_sales_workspace_api.py -q`
+- `PYTHONPATH=$PWD /home/yulin/projects/OpenClawAndroidNativeEntry/backend/.venv/bin/python -m pytest backend/tests -q`
+- `./gradlew :app:assembleDebug`
+- `./gradlew :app:lintDebug`
+- Backend smoke with JSON store on `127.0.0.1:8013`:
+  - seed `ws_demo` to version 3
+  - preview returned `cand_runtime_001` as preview rank #1
+  - preview did not mutate workspace; workspace stayed version 3
+  - apply changed workspace to version 4
+  - ranking board and ContextPack returned `cand_runtime_001` first
+- Device smoke:
+  - `adb devices` detected `f3b59f04`
+  - `adb reverse tcp:8013 tcp:8013`
+  - installed and launched `app-debug.apk`
+  - Workspace page showed version 3 before apply
+  - preview UI showed `draft_runtime_v4`, `patch_runtime_v4`, `would_mutate=false`, and `Runtime Draft Co`
+  - apply refreshed Workspace page to version 4 and showed `Runtime Draft Co` ranked first

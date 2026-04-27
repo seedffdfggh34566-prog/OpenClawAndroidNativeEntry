@@ -47,6 +47,34 @@ class SalesWorkspaceBackendClient(
         )
     }
 
+    suspend fun previewRuntimePatchDraft(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+        baseWorkspaceVersion: Int,
+        instruction: String = "add one deterministic runtime candidate",
+    ): BackendReadResult<SalesWorkspacePatchDraftPreviewDto> =
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/runtime/patch-drafts/prototype/preview",
+            body = JSONObject()
+                .put("base_workspace_version", baseWorkspaceVersion)
+                .put("instruction", instruction)
+                .toString(),
+            parser = ::parseSalesWorkspacePatchDraftPreviewResponse,
+        )
+
+    suspend fun applyReviewedRuntimePatchDraft(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+        patchDraft: SalesWorkspacePatchDraftDto,
+    ): BackendReadResult<SalesWorkspacePatchDraftApplyResponseDto> =
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/runtime/patch-drafts/prototype/apply",
+            body = JSONObject()
+                .put("patch_draft", JSONObject(patchDraft.rawJson))
+                .toString(),
+            parser = ::parseSalesWorkspacePatchDraftApplyResponse,
+        )
+
     private suspend fun getWorkspace(workspaceId: String): BackendReadResult<SalesWorkspaceResponseDto> =
         requestJson(
             method = "GET",

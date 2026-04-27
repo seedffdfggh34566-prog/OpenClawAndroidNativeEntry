@@ -4,7 +4,10 @@
 
 ## 1. Conclusion
 
-当前不能按 PRD success criteria 宣称完整 V2.1 completed。
+本文件记录 gap review 当时的判断。后续 Android polish 和真机验收已经完成，最终结论以
+`docs/product/research/v2_1_prd_acceptance_final_review_2026_04_27.md` 为准。
+
+当时不能按 PRD success criteria 宣称完整 V2.1 completed。
 
 当前可宣称：
 

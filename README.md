@@ -1,6 +1,6 @@
 # OpenClawAndroidNativeEntry
 
-> 仓库名保留历史来源；当前正式主线已切换为 **AI Sales Assistant V2 workspace-native Sales Workspace Kernel prototype**。
+> 仓库名保留历史来源；当前正式主线已完成 **AI Sales Assistant V2.1 workspace-native Sales Workspace Kernel baseline**。
 
 当前建议先阅读：
 
@@ -22,7 +22,7 @@
 
 当前正式主线为：
 
-> **Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype、Android read-only demo、JSON file store prototype、Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook 与 Draft Review routes prototype 已完成。**
+> **V2.1 已完成：Sales Workspace Kernel、FastAPI prototype、Android workspace / Draft Review ID demo、Postgres / Alembic persistence baseline、Sales Workspace Postgres store 与 Draft Review audit persistence 均已进入 main。**
 
 V1 已作为 demo-ready release candidate / learning milestone 收口，不再是默认开发方向。
 
@@ -56,6 +56,10 @@ Sales Workspace Kernel prototype 已完成：
 - clean demo verification
 - Draft review contract
 - Draft review routes prototype
+- Android Draft Review ID flow prototype
+- Postgres / Alembic persistence baseline
+- Sales Workspace persistence migration / repository / API Postgres store
+- Draft Review Postgres persistence and lifecycle events
 - pytest coverage
 
 当前 Draft review contract：
@@ -66,11 +70,11 @@ Sales Workspace Kernel prototype 已完成：
 
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
 
-后续需要人工选择是否进入 Android draft review id flow、persistence decision refresh、正式 Runtime / LangGraph integration design 或 Android review UX expansion。
+后续需要人工选择是否进入正式 Runtime / LangGraph design、Android review history view、search evidence boundary design 或 DB hardening。
 
 当前不应自动实现：
 
-- persistence-backed API / production DB baseline
+- production hardening / 新增 API surface
 - SQLAlchemy ORM / Alembic migration / SQLite schema change
 - 新增或扩展 Android write path
 - 正式 LangGraph graph
@@ -83,7 +87,7 @@ Sales Workspace Kernel prototype 已完成：
 
 - `backend/`
   - 当前正式业务后端与 V2 kernel prototype 位置
-  - V2 backend-only v0 已在 `backend/sales_workspace/` 落地
+  - V2.1 Sales Workspace Kernel 与 Postgres persistence baseline 已落地
 - `app/`
   - Android 控制入口；当前已有 V2 workspace read-only demo 和 PatchDraft review UI prototype
 - `docs/`
@@ -169,7 +173,7 @@ Sales Workspace API / Runtime prototype 固定验证：
 backend/.venv/bin/python -m pytest backend/tests/sales_workspace backend/tests/test_sales_workspace_api.py -q
 ```
 
-Sales Workspace Draft Review routes prototype 固定验证：
+Sales Workspace Draft Review routes 固定验证：
 
 ```bash
 backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_draft_reviews_api.py -q
@@ -179,6 +183,15 @@ V2 Sales Workspace prototype demo：
 
 ```bash
 docs/how-to/operate/sales-workspace-prototype-demo-runbook.md
+```
+
+Postgres-backed Sales Workspace verification：
+
+```bash
+docker compose -f compose.postgres.yml up -d
+OPENCLAW_BACKEND_DATABASE_URL=postgresql+psycopg://openclaw:openclaw_dev_password@127.0.0.1:55432/openclaw_dev backend/.venv/bin/alembic -c alembic.ini upgrade head
+OPENCLAW_BACKEND_POSTGRES_VERIFY_URL=postgresql+psycopg://openclaw:openclaw_dev_password@127.0.0.1:55432/openclaw_dev backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_repository.py backend/tests/test_sales_workspace_api_postgres_store.py backend/tests/test_sales_workspace_draft_reviews_postgres_store.py -q
+docker compose -f compose.postgres.yml down
 ```
 
 ---

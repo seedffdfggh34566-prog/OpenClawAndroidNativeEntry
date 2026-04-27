@@ -6,7 +6,7 @@
 
 当前路线已从 V1 implementation 切换为：
 
-> **V2 planning baseline：workspace-native sales agent**
+> **V2.1 completed baseline：workspace-native sales agent / Sales Workspace Kernel**
 
 V1 已冻结为 demo-ready release candidate / learning milestone，不继续追加 V1 功能，不包装为 MVP。
 
@@ -26,7 +26,7 @@ V2 的核心产品形态为：
 
 - 目标用户：中小企业老板 / 销售负责人 / 商务负责人。
 - 前端方向：Android 控制入口，不做 Web 前端。
-- V2.1：Sales Workspace Kernel prototype 已完成 backend-only v0；下一步进入 API contract 与 persistence decision。
+- V2.1：Sales Workspace Kernel、Draft Review ID flow、Postgres / Alembic persistence chain、Draft Review audit persistence 已完成。
 - V2.2：Evidence-based Research Round，确认方向后进入联网 / 中文公开网页搜索，生成候选客户、来源证据、候选观察事实、评分快照和 ranking delta。
 - V2.3：Persistent Sales Workspace MVP gate，验证长期记忆、历史研究复用、候选状态管理、用户反馈闭环和是否进入 MVP。
 - 输出形态：会话消息、产品画像版本、获客方向版本、研究轮次、候选客户、来源证据、候选排序榜、报告 / 验证建议。
@@ -36,14 +36,11 @@ V2 的核心产品形态为：
 
 ## 近期推荐顺序
 
-1. 完成 post-v0 文档入口同步。
-2. 冻结 Sales Workspace Kernel backend API contract v0。
-3. 决策 persistence baseline：继续 in-memory / JSON fixture、进入 SQLite / Alembic，或延后 DB。
-4. contract 与 persistence 决策完成后，再实现 backend API v0。
-5. backend API 可用后，再实现 Android read-only workspace view。
-6. API、写回边界和 persistence 稳定后，再接 Runtime / LangGraph WorkspacePatchDraft。
-7. V2.2 再恢复 lead research provider、来源证据、候选评分和联系方式实现讨论。
-8. V2.2 用 5 到 10 个真实中文业务样例评估候选质量、来源质量、排序解释、成本和耗时。
+1. V2.1 completion closeout 已完成，当前不自动开放 implementation task。
+2. 下一步优先做 V2.2 Runtime / LangGraph WorkspacePatchDraft design。
+3. Runtime design 完成前，不直接接真实 LLM、联网搜索或 Android 扩展。
+4. Runtime design 完成后，再决定是否进入 search evidence boundary、Android review history 或 DB hardening。
+5. V2.2 用 5 到 10 个真实中文业务样例评估候选质量、来源质量、排序解释、成本和耗时。
 
 ---
 
@@ -58,7 +55,7 @@ V2 的核心产品形态为：
 - 正式云端 SaaS 部署
 - 多用户 / 租户 / 权限实现
 - Android 大规模聊天 UI 改造
-- 未冻结 API contract / persistence decision 前直接做 V2 schema / migration
+- 未冻结 Runtime / LangGraph design 前直接接真实 LLM
 - 未定义来源证据和候选评分前直接做候选客户库
 
 上述内容只有在 V2 PRD、ADR 和 task queue 明确后才能重新进入讨论。
@@ -67,7 +64,7 @@ V2 的核心产品形态为：
 
 ## Phase Exit Criteria
 
-V2 planning baseline 退出条件：
+V2.1 baseline 退出条件：
 
 - V2 PRD v0.3 明确 workspace-native sales agent 北极星。
 - ADR-006 更新为 workspace-native sales agent baseline。
@@ -77,4 +74,4 @@ V2 planning baseline 退出条件：
 - `docs/architecture/workspace/context-pack-compiler.md` 明确 context pack 编译策略和 token budget 原则。
 - `_active.md` 明确 post-v0 task queue：API contract -> persistence decision -> backend API -> Android read-only -> Runtime integration。
 
-在 API contract 与 persistence decision 完成前，不应自动开始后端 route、DB migration、Android 或 Runtime integration。
+V2.1 已完成。V2.2 启动前应先明确 Runtime / LangGraph WorkspacePatchDraft design，不应直接接真实 LLM、search provider、Android 扩展或 CRM/contact。

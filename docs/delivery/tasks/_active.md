@@ -53,8 +53,9 @@
 - `docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`（done）
+- `docs/delivery/tasks/task_v2_1_completion_closeout.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成，V2.1 completion closeout 已完成。
 
 ---
 
@@ -84,6 +85,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 20. Sales Workspace repository layer v0。
 21. Sales Workspace API Postgres store v0。
 22. Sales Workspace Draft Review persistence v0。
+23. V2.1 completion closeout。
 
 当前结论：
 
@@ -111,6 +113,7 @@ Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，p
 - Sales Workspace repository layer v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`。
 - Sales Workspace API Postgres store v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`。
 - Sales Workspace Draft Review persistence v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`。
+- V2.1 completion closeout 已完成：`docs/delivery/tasks/task_v2_1_completion_closeout.md`。
 - production hardening、history read API 和 DB reconstruction hardening 继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -265,12 +268,19 @@ Sales Workspace Draft Review persistence v0 已完成：
 
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`
 
+V2.1 completion closeout 已完成：
+
+- `docs/delivery/tasks/task_v2_1_completion_closeout.md`
+
 当前自动排定任务：
 
 - 暂无。
 
 后续 planned / blocked：
 
+- `docs/delivery/tasks/task_v2_2_runtime_langgraph_design.md`
+- `docs/delivery/tasks/task_v2_2_android_review_history_planning.md`
+- `docs/delivery/tasks/task_v2_2_search_evidence_boundary_design.md`
 - `docs/delivery/tasks/task_v2_runtime_langgraph_design.md`
 - `docs/delivery/tasks/task_v2_android_review_history_view.md`
 

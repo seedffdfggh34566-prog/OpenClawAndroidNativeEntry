@@ -18,6 +18,22 @@ import org.json.JSONObject
 class SalesWorkspaceBackendClient(
     private val baseUrl: String = V1BackendBaseUrl,
 ) {
+    suspend fun createWorkspace(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+        name: String = "FactoryOps AI Workspace",
+        goal: String = "Build chat-first V2.1 product experience.",
+    ): BackendReadResult<SalesWorkspaceResponseDto> =
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces",
+            body = JSONObject()
+                .put("workspace_id", workspaceId)
+                .put("name", name)
+                .put("goal", goal)
+                .toString(),
+            parser = ::parseSalesWorkspaceResponse,
+        )
+
     suspend fun getReadOnlySnapshot(
         workspaceId: String = SalesWorkspaceDemoWorkspaceId,
     ): BackendReadResult<SalesWorkspaceReadOnlySnapshot> = withContext(Dispatchers.IO) {

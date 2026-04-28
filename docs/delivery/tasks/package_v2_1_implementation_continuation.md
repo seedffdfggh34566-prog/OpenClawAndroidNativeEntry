@@ -29,7 +29,7 @@
 
 1. P0：收束当前 V2.1 状态修正文档为基线。（done，commit `69dd004`）
 2. P1：`task_v2_1_demo_reproducibility_hardening.md`。（done）
-3. P2：`task_v2_1_android_workspace_onboarding.md`。
+3. P2：`task_v2_1_android_workspace_onboarding.md`。（done）
 4. P3：`task_v2_1_trace_message_history_visibility.md`。
 5. P4：`task_v2_1_llm_prompt_quality_followup.md`。
 6. P5：`task_v2_1_postgres_verification_hardening.md`。
@@ -81,4 +81,3 @@
 5. Postgres targeted verification 已实际运行，或记录明确环境阻断。
 6. `_active.md` 恢复为暂无自动开放 implementation task。
 7. V2.2 implementation 仍 blocked。
-

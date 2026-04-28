@@ -25,17 +25,20 @@ import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceChatTurnRespo
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewApplyResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceResponseDto
 import com.openclaw.android.nativeentry.ui.shell.V1SectionState
 
 @Composable
 fun SalesWorkspaceScreen(
     workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
+    workspaceCreateState: V1SectionState<SalesWorkspaceResponseDto>,
     draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
     patchDraftApplyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
     chatFirstTurnState: V1SectionState<SalesWorkspaceChatTurnResponseDto>,
     chatInput: String,
     chatMessageType: String,
     onRefreshClick: () -> Unit,
+    onCreateWorkspaceClick: () -> Unit,
     onCreateDraftReviewClick: () -> Unit,
     onChatInputChange: (String) -> Unit,
     onChatMessageTypeChange: (String) -> Unit,
@@ -104,11 +107,60 @@ fun SalesWorkspaceScreen(
                 }
             }
 
+            WorkspaceOnboarding(
+                workspaceState = workspaceState,
+                createState = workspaceCreateState,
+                onCreateWorkspaceClick = onCreateWorkspaceClick,
+            )
+
             Button(
                 onClick = onRefreshClick,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(text = "刷新工作区")
+            }
+        }
+    }
+}
+
+@Composable
+private fun WorkspaceOnboarding(
+    workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
+    createState: V1SectionState<SalesWorkspaceResponseDto>,
+    onCreateWorkspaceClick: () -> Unit,
+) {
+    val isLoaded = workspaceState is V1SectionState.Loaded
+    val isCreating = createState is V1SectionState.Loading
+    WorkspaceCard(title = "Workspace Onboarding") {
+        Text(
+            text = "默认创建 ws_demo 空工作区，用于 V2.1 chat-first 演示。",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Button(
+            onClick = onCreateWorkspaceClick,
+            enabled = !isLoaded && !isCreating,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(text = if (isCreating) "正在创建 ws_demo" else "创建默认 workspace")
+        }
+        when (createState) {
+            V1SectionState.Idle -> Text(
+                text = if (isLoaded) "当前 workspace 已加载，无需创建。" else "后端没有 ws_demo 时可先创建空工作区。",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            V1SectionState.Loading -> Text(text = "backend 正在创建 Sales Workspace。")
+            V1SectionState.Empty -> Text(text = "尚未创建 workspace。", style = MaterialTheme.typography.bodyMedium)
+            is V1SectionState.Failed -> {
+                Text(text = createState.error.title, style = MaterialTheme.typography.titleSmall)
+                Text(text = createState.error.detail, style = MaterialTheme.typography.bodyMedium)
+            }
+            is V1SectionState.Loaded -> {
+                val workspace = createState.value.workspace
+                Text(
+                    text = "已创建 ${workspace.id}，version ${workspace.workspaceVersion}。",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         }
     }

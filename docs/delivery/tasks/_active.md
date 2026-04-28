@@ -48,9 +48,9 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_v2_1_android_workspace_onboarding.md`
+`docs/delivery/tasks/task_v2_1_trace_message_history_visibility.md`
 
-- Task：V2.1 Android Workspace Onboarding
+- Task：V2.1 Trace Message History Visibility
 - Status：`planned`
 - Auto-continue：`yes`
 
@@ -66,6 +66,7 @@
 
 ### Recently completed
 
+- `docs/delivery/tasks/task_v2_1_android_workspace_onboarding.md`（done）
 - `docs/delivery/tasks/task_v2_1_demo_reproducibility_hardening.md`（done）
 - `docs/delivery/tasks/package_v2_1_implementation_rebaseline.md`（done）
 - `docs/delivery/tasks/task_v2_1_implementation_rebaseline_and_gap_closure.md`（done）

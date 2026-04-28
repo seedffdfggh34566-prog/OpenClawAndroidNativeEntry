@@ -25,6 +25,7 @@ import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewAp
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceChatTurnResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceResponseDto
 import com.openclaw.android.nativeentry.ui.shell.V1ShellPlaceholderState
 import com.openclaw.android.nativeentry.ui.shell.V1SectionState
 
@@ -33,6 +34,7 @@ fun OpenClawNavHost(
     navController: NavHostController,
     backendState: V1BackendUiState,
     workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
+    workspaceCreateState: V1SectionState<SalesWorkspaceResponseDto>,
     draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
     patchDraftApplyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
     chatFirstTurnState: V1SectionState<SalesWorkspaceChatTurnResponseDto>,
@@ -43,6 +45,7 @@ fun OpenClawNavHost(
     onRefreshGatewayStatus: () -> Unit,
     onRefreshBackend: () -> Unit,
     onRefreshWorkspace: () -> Unit,
+    onCreateWorkspace: () -> Unit,
     onCreateDraftReview: () -> Unit,
     workspaceChatInput: String,
     workspaceChatMessageType: String,
@@ -108,12 +111,14 @@ fun OpenClawNavHost(
         composable(OpenClawDestination.Workspace.route) {
             SalesWorkspaceScreen(
                 workspaceState = workspaceState,
+                workspaceCreateState = workspaceCreateState,
                 draftReviewState = draftReviewState,
                 patchDraftApplyState = patchDraftApplyState,
                 chatFirstTurnState = chatFirstTurnState,
                 chatInput = workspaceChatInput,
                 chatMessageType = workspaceChatMessageType,
                 onRefreshClick = onRefreshWorkspace,
+                onCreateWorkspaceClick = onCreateWorkspace,
                 onCreateDraftReviewClick = onCreateDraftReview,
                 onChatInputChange = onWorkspaceChatInputChange,
                 onChatMessageTypeChange = onWorkspaceChatMessageTypeChange,

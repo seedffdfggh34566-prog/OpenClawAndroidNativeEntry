@@ -61,6 +61,11 @@ fun parseSalesWorkspaceChatTurnResponse(rawJson: String): SalesWorkspaceChatTurn
     )
 }
 
+fun parseSalesWorkspaceConversationMessagesResponse(rawJson: String): SalesWorkspaceConversationMessagesResponseDto =
+    SalesWorkspaceConversationMessagesResponseDto(
+        messages = JSONObject(rawJson).optJSONArray("messages").toConversationMessages(),
+    )
+
 private fun JSONObject.toSalesWorkspaceConversationMessageDto(): SalesWorkspaceConversationMessageDto =
     SalesWorkspaceConversationMessageDto(
         id = getString("id"),
@@ -68,6 +73,14 @@ private fun JSONObject.toSalesWorkspaceConversationMessageDto(): SalesWorkspaceC
         messageType = getString("message_type"),
         content = getString("content"),
     )
+
+private fun JSONArray?.toConversationMessages(): List<SalesWorkspaceConversationMessageDto> =
+    buildList {
+        val array = this@toConversationMessages ?: return@buildList
+        for (index in 0 until array.length()) {
+            add(array.getJSONObject(index).toSalesWorkspaceConversationMessageDto())
+        }
+    }
 
 private fun JSONObject.toSalesWorkspaceAgentRunDto(): SalesWorkspaceAgentRunDto =
     SalesWorkspaceAgentRunDto(

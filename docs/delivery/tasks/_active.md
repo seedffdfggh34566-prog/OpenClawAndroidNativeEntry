@@ -48,17 +48,15 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_v2_1_trace_message_history_visibility.md`
+`docs/delivery/tasks/task_v2_1_llm_prompt_quality_followup.md`
 
-- Task：V2.1 Trace Message History Visibility
+- Task：V2.1 LLM Prompt Quality Follow-up
 - Status：`planned`
 - Auto-continue：`yes`
 
 ### Next queued task
 
-1. `docs/delivery/tasks/task_v2_1_trace_message_history_visibility.md`
-2. `docs/delivery/tasks/task_v2_1_llm_prompt_quality_followup.md`
-3. `docs/delivery/tasks/task_v2_1_postgres_verification_hardening.md`
+1. `docs/delivery/tasks/task_v2_1_postgres_verification_hardening.md`
 
 ### Auto-continue
 
@@ -66,6 +64,7 @@
 
 ### Recently completed
 
+- `docs/delivery/tasks/task_v2_1_trace_message_history_visibility.md`（done）
 - `docs/delivery/tasks/task_v2_1_android_workspace_onboarding.md`（done）
 - `docs/delivery/tasks/task_v2_1_demo_reproducibility_hardening.md`（done）
 - `docs/delivery/tasks/package_v2_1_implementation_rebaseline.md`（done）

@@ -173,6 +173,15 @@ class SalesWorkspaceBackendClient(
         )
     }
 
+    suspend fun listConversationMessages(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+    ): BackendReadResult<SalesWorkspaceConversationMessagesResponseDto> =
+        requestJson(
+            method = "GET",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/messages",
+            parser = ::parseSalesWorkspaceConversationMessagesResponse,
+        )
+
     private suspend fun createConversationMessage(
         workspaceId: String,
         messageType: String,

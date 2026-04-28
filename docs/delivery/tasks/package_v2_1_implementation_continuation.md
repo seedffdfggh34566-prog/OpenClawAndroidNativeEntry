@@ -30,7 +30,7 @@
 1. P0：收束当前 V2.1 状态修正文档为基线。（done，commit `69dd004`）
 2. P1：`task_v2_1_demo_reproducibility_hardening.md`。（done）
 3. P2：`task_v2_1_android_workspace_onboarding.md`。（done）
-4. P3：`task_v2_1_trace_message_history_visibility.md`。
+4. P3：`task_v2_1_trace_message_history_visibility.md`。（done）
 5. P4：`task_v2_1_llm_prompt_quality_followup.md`。
 6. P5：`task_v2_1_postgres_verification_hardening.md`。
 

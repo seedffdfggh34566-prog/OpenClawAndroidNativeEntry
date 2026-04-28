@@ -25,6 +25,7 @@ import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewAp
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceChatTurnResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationMessagesResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceResponseDto
 import com.openclaw.android.nativeentry.ui.shell.V1ShellPlaceholderState
 import com.openclaw.android.nativeentry.ui.shell.V1SectionState
@@ -35,6 +36,7 @@ fun OpenClawNavHost(
     backendState: V1BackendUiState,
     workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
     workspaceCreateState: V1SectionState<SalesWorkspaceResponseDto>,
+    workspaceMessageHistoryState: V1SectionState<SalesWorkspaceConversationMessagesResponseDto>,
     draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
     patchDraftApplyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
     chatFirstTurnState: V1SectionState<SalesWorkspaceChatTurnResponseDto>,
@@ -112,6 +114,7 @@ fun OpenClawNavHost(
             SalesWorkspaceScreen(
                 workspaceState = workspaceState,
                 workspaceCreateState = workspaceCreateState,
+                workspaceMessageHistoryState = workspaceMessageHistoryState,
                 draftReviewState = draftReviewState,
                 patchDraftApplyState = patchDraftApplyState,
                 chatFirstTurnState = chatFirstTurnState,

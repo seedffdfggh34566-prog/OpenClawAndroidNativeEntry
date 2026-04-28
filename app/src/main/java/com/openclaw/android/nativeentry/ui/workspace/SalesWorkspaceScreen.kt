@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceChatTurnResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationMessagesResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewApplyResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
@@ -32,6 +33,7 @@ import com.openclaw.android.nativeentry.ui.shell.V1SectionState
 fun SalesWorkspaceScreen(
     workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
     workspaceCreateState: V1SectionState<SalesWorkspaceResponseDto>,
+    workspaceMessageHistoryState: V1SectionState<SalesWorkspaceConversationMessagesResponseDto>,
     draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
     patchDraftApplyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
     chatFirstTurnState: V1SectionState<SalesWorkspaceChatTurnResponseDto>,
@@ -95,6 +97,7 @@ fun SalesWorkspaceScreen(
                         onChatMessageTypeChange = onChatMessageTypeChange,
                         onSubmitChatTurnClick = onSubmitChatTurnClick,
                     )
+                    WorkspaceMessageHistory(workspaceMessageHistoryState)
                     PatchDraftReviewGate(
                         workspaceVersion = workspaceState.value.workspace.workspaceVersion,
                         draftReviewState = draftReviewState,
@@ -118,6 +121,33 @@ fun SalesWorkspaceScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(text = "刷新工作区")
+            }
+        }
+    }
+}
+
+@Composable
+private fun WorkspaceMessageHistory(
+    historyState: V1SectionState<SalesWorkspaceConversationMessagesResponseDto>,
+) {
+    WorkspaceCard(title = "Conversation History") {
+        when (historyState) {
+            V1SectionState.Idle -> Text(text = "尚未读取对话历史。", style = MaterialTheme.typography.bodyMedium)
+            V1SectionState.Loading -> Text(text = "正在读取 ConversationMessage。")
+            V1SectionState.Empty -> Text(text = "当前 workspace 暂无对话消息。", style = MaterialTheme.typography.bodyMedium)
+            is V1SectionState.Failed -> {
+                Text(text = historyState.error.title, style = MaterialTheme.typography.titleSmall)
+                Text(text = historyState.error.detail, style = MaterialTheme.typography.bodyMedium)
+            }
+            is V1SectionState.Loaded -> {
+                historyState.value.messages.takeLast(8).forEach { message ->
+                    Text(
+                        text = "${message.role} · ${message.messageType} · ${message.id}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(text = message.content, style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
     }

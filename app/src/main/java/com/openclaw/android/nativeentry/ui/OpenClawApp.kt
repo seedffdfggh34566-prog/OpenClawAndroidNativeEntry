@@ -39,6 +39,7 @@ import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichRequest
 import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceBackendClient
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceChatTurnResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationMessagesResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDemoWorkspaceId
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewApplyResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
@@ -103,6 +104,9 @@ fun OpenClawApp() {
     }
     var chatFirstTurnState by remember {
         mutableStateOf<V1SectionState<SalesWorkspaceChatTurnResponseDto>>(V1SectionState.Idle)
+    }
+    var workspaceMessageHistoryState by remember {
+        mutableStateOf<V1SectionState<SalesWorkspaceConversationMessagesResponseDto>>(V1SectionState.Idle)
     }
     var workspaceChatInput by remember { mutableStateOf("") }
     var workspaceChatMessageType by remember { mutableStateOf("product_profile_update") }
@@ -196,10 +200,27 @@ fun OpenClawApp() {
     fun refreshSalesWorkspace() {
         workspaceLoadJob?.cancel()
         workspaceState = V1SectionState.Loading
+        workspaceMessageHistoryState = V1SectionState.Loading
         workspaceLoadJob = scope.launch {
-            workspaceState = when (val result = workspaceClient.getReadOnlySnapshot(SalesWorkspaceDemoWorkspaceId)) {
-                is BackendReadResult.Failure -> V1SectionState.Failed(result.error)
-                is BackendReadResult.Success -> V1SectionState.Loaded(result.value)
+            when (val result = workspaceClient.getReadOnlySnapshot(SalesWorkspaceDemoWorkspaceId)) {
+                is BackendReadResult.Failure -> {
+                    workspaceState = V1SectionState.Failed(result.error)
+                    workspaceMessageHistoryState = V1SectionState.Failed(result.error)
+                }
+
+                is BackendReadResult.Success -> {
+                    workspaceState = V1SectionState.Loaded(result.value)
+                    workspaceMessageHistoryState = when (
+                        val messages = workspaceClient.listConversationMessages(result.value.workspace.id)
+                    ) {
+                        is BackendReadResult.Failure -> V1SectionState.Failed(messages.error)
+                        is BackendReadResult.Success -> if (messages.value.messages.isEmpty()) {
+                            V1SectionState.Empty
+                        } else {
+                            V1SectionState.Loaded(messages.value)
+                        }
+                    }
+                }
             }
         }
     }
@@ -221,6 +242,16 @@ fun OpenClawApp() {
                     ) {
                         is BackendReadResult.Failure -> V1SectionState.Failed(snapshot.error)
                         is BackendReadResult.Success -> V1SectionState.Loaded(snapshot.value)
+                    }
+                    workspaceMessageHistoryState = when (
+                        val messages = workspaceClient.listConversationMessages(result.value.workspace.id)
+                    ) {
+                        is BackendReadResult.Failure -> V1SectionState.Failed(messages.error)
+                        is BackendReadResult.Success -> if (messages.value.messages.isEmpty()) {
+                            V1SectionState.Empty
+                        } else {
+                            V1SectionState.Loaded(messages.value)
+                        }
                     }
                 }
             }
@@ -299,6 +330,12 @@ fun OpenClawApp() {
                     chatFirstTurnState = V1SectionState.Loaded(result.value)
                     draftReviewState = result.value.draftReview?.let { V1SectionState.Loaded(it) } ?: V1SectionState.Empty
                     workspaceChatInput = ""
+                    workspaceMessageHistoryState = when (
+                        val messages = workspaceClient.listConversationMessages(loadedWorkspace.id)
+                    ) {
+                        is BackendReadResult.Failure -> V1SectionState.Failed(messages.error)
+                        is BackendReadResult.Success -> V1SectionState.Loaded(messages.value)
+                    }
                 }
             }
         }
@@ -398,6 +435,16 @@ fun OpenClawApp() {
                     ) {
                         is BackendReadResult.Failure -> V1SectionState.Failed(snapshot.error)
                         is BackendReadResult.Success -> V1SectionState.Loaded(snapshot.value)
+                    }
+                    workspaceMessageHistoryState = when (
+                        val messages = workspaceClient.listConversationMessages(result.value.workspace.id)
+                    ) {
+                        is BackendReadResult.Failure -> V1SectionState.Failed(messages.error)
+                        is BackendReadResult.Success -> if (messages.value.messages.isEmpty()) {
+                            V1SectionState.Empty
+                        } else {
+                            V1SectionState.Loaded(messages.value)
+                        }
                     }
                 }
             }
@@ -1330,6 +1377,7 @@ fun OpenClawApp() {
             backendState = backendState,
             workspaceState = workspaceState,
             workspaceCreateState = workspaceCreateState,
+            workspaceMessageHistoryState = workspaceMessageHistoryState,
             draftReviewState = draftReviewState,
             patchDraftApplyState = patchDraftApplyState,
             chatFirstTurnState = chatFirstTurnState,

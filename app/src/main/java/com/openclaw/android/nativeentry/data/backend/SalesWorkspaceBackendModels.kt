@@ -84,6 +84,10 @@ data class SalesWorkspaceConversationMessageDto(
     val content: String,
 )
 
+data class SalesWorkspaceConversationMessagesResponseDto(
+    val messages: List<SalesWorkspaceConversationMessageDto>,
+)
+
 data class SalesWorkspaceAgentRunDto(
     val id: String,
     val status: String,

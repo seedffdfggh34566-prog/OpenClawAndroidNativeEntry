@@ -6,7 +6,7 @@
 
 - Package 名称：V2.1 Implementation Continuation
 - 建议路径：`docs/delivery/tasks/package_v2_1_implementation_continuation.md`
-- 当前状态：`in_progress`
+- 当前状态：`done`
 - 优先级：P0
 - Package 类型：`delivery`
 - 是否允许执行 agent 自主推进：`yes`
@@ -32,7 +32,7 @@
 3. P2：`task_v2_1_android_workspace_onboarding.md`。（done）
 4. P3：`task_v2_1_trace_message_history_visibility.md`。（done）
 5. P4：`task_v2_1_llm_prompt_quality_followup.md`。（done）
-6. P5：`task_v2_1_postgres_verification_hardening.md`。
+6. P5：`task_v2_1_postgres_verification_hardening.md`。（done）
 
 每个任务必须单独 closeout、记录验证、创建 handoff，并保持原子提交。
 
@@ -81,3 +81,27 @@
 5. Postgres targeted verification 已实际运行，或记录明确环境阻断。
 6. `_active.md` 恢复为暂无自动开放 implementation task。
 7. V2.2 implementation 仍 blocked。
+
+---
+
+## 7. Package Closeout
+
+状态：`done`
+
+实际完成：
+
+1. P0 baseline commit：`69dd004 docs: establish v2.1 continuation baseline`。
+2. P1 demo reproducibility hardening：`fe95400 docs: harden v2.1 demo reproducibility`。
+3. P2 Android workspace onboarding：`1b1abaf feat: add v2.1 workspace onboarding`。
+4. P3 message history visibility：`b89356e feat: show v2.1 workspace message history`。
+5. P4 LLM runtime quality coverage：`94e0aa6 test: expand v2.1 llm runtime quality coverage`。
+6. P5 Postgres verification hardening：completed in this closeout commit。
+
+Validation summary：
+
+- Android `:app:assembleDebug` passed for P2 and P3.
+- LLM runtime fake-client tests：`10 passed`.
+- Postgres targeted tests：`30 passed in 11.97s`.
+- Final closeout still requires `git diff --check`.
+
+本 package 不关闭 V2.1 product milestone；milestone closeout 需要单独 PRD Acceptance Traceability review。

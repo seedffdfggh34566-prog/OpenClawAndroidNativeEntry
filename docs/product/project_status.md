@@ -50,7 +50,7 @@
 | Backend 5-sample conversational acceptance | `done` | V2.1 conversation acceptance e2e task 与 tests。 | 样例库可扩展，但不阻断 validated prototype path。 |
 | Android workspace demo path | `partial` | Android chat-first UI、Draft Review apply、device acceptance evidence。 | 自动创建 workspace / onboarding、完整 history / trace view 仍未完成。 |
 | Tencent TokenHub LLM runtime prototype | `partial` | explicit dev flag、fake-client tests、live smoke / eval。 | prompt quality、稳定性、真实环境验收仍需 follow-up；不等于 production-ready Product Sales Agent。 |
-| Postgres environment verification | `partial` | 现有 opt-in tests；部分验证依赖 `OPENCLAW_BACKEND_POSTGRES_VERIFY_URL`。 | 可单独开放真实 Postgres verification package。 |
+| Postgres environment verification | `done` | 2026-04-28 P5 verification：compose Postgres、Alembic head、Sales Workspace / Draft Review / chat-first trace Postgres tests `30 passed`。 | production-grade backup / migration hardening 不在当前范围。 |
 | V2.2 evidence/search/contact | `blocked` | ADR-005 与 V2 PRD 将其放入后续阶段。 | 先做 docs-level planning，不直接实现 provider / ContactPoint。 |
 
 ---
@@ -85,7 +85,7 @@
 3. **V2.1 LLM prompt quality follow-up**
    - 目标：扩大 fake / live eval，改进 prompt quality 和可解释性。
 4. **V2.1 trace / history visibility**
-   - 目标：让 ConversationMessage、AgentRun、DraftReview、WorkspaceCommit trace 更容易复看。
+   - 目标：继续补 AgentRun、DraftReview、WorkspaceCommit trace 复看；ConversationMessage history 已在 Android 展示。
 5. **V2.2 evidence/search/contact docs-level planning**
    - 目标：先定义 source evidence、CompanyCandidate、ContactPoint 边界和人工验证规则，不直接实现 provider。
 

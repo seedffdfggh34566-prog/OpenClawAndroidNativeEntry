@@ -39,31 +39,24 @@
 
 ### Current delivery package
 
-`docs/delivery/tasks/package_v2_1_implementation_continuation.md`
-
-- Package：V2.1 Implementation Continuation
-- Status：`in_progress`
-- Auto-continue：`yes`
-- Boundary：只允许 P0-P5 内部任务连续执行；不得进入 V2.2 implementation。
+暂无自动开放 delivery package。
 
 ### Current task
 
-`docs/delivery/tasks/task_v2_1_postgres_verification_hardening.md`
-
-- Task：V2.1 Postgres Verification Hardening
-- Status：`planned`
-- Auto-continue：`yes`
+暂无自动排定任务。
 
 ### Next queued task
 
-暂无 implementation task 自动开放。当前 package 仅剩 P5。
+暂无 implementation task 自动开放。
 
 ### Auto-continue
 
-`yes`，仅限 `V2.1 Implementation Continuation` package 内 P0-P5 任务。
+`no`。当前没有开放可自动推进的 delivery package 或 task。
 
 ### Recently completed
 
+- `docs/delivery/tasks/package_v2_1_implementation_continuation.md`（done）
+- `docs/delivery/tasks/task_v2_1_postgres_verification_hardening.md`（done）
 - `docs/delivery/tasks/task_v2_1_llm_prompt_quality_followup.md`（done）
 - `docs/delivery/tasks/task_v2_1_trace_message_history_visibility.md`（done）
 - `docs/delivery/tasks/task_v2_1_android_workspace_onboarding.md`（done）

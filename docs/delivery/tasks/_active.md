@@ -48,15 +48,15 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_v2_1_llm_prompt_quality_followup.md`
+`docs/delivery/tasks/task_v2_1_postgres_verification_hardening.md`
 
-- Task：V2.1 LLM Prompt Quality Follow-up
+- Task：V2.1 Postgres Verification Hardening
 - Status：`planned`
 - Auto-continue：`yes`
 
 ### Next queued task
 
-1. `docs/delivery/tasks/task_v2_1_postgres_verification_hardening.md`
+暂无 implementation task 自动开放。当前 package 仅剩 P5。
 
 ### Auto-continue
 
@@ -64,6 +64,7 @@
 
 ### Recently completed
 
+- `docs/delivery/tasks/task_v2_1_llm_prompt_quality_followup.md`（done）
 - `docs/delivery/tasks/task_v2_1_trace_message_history_visibility.md`（done）
 - `docs/delivery/tasks/task_v2_1_android_workspace_onboarding.md`（done）
 - `docs/delivery/tasks/task_v2_1_demo_reproducibility_hardening.md`（done）

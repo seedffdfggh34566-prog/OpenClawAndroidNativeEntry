@@ -31,7 +31,7 @@
 2. P1：`task_v2_1_demo_reproducibility_hardening.md`。（done）
 3. P2：`task_v2_1_android_workspace_onboarding.md`。（done）
 4. P3：`task_v2_1_trace_message_history_visibility.md`。（done）
-5. P4：`task_v2_1_llm_prompt_quality_followup.md`。
+5. P4：`task_v2_1_llm_prompt_quality_followup.md`。（done）
 6. P5：`task_v2_1_postgres_verification_hardening.md`。
 
 每个任务必须单独 closeout、记录验证、创建 handoff，并保持原子提交。

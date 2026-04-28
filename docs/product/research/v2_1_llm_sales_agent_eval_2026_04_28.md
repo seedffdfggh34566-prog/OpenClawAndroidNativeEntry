@@ -51,3 +51,24 @@ OPENCLAW_BACKEND_RUN_LIVE_LLM_SMOKE=1 PYTHONPATH=$PWD backend/.venv/bin/python -
 结果：`6 passed in 97.19s`。
 
 若 live smoke 通过，可认为 V2.1 backend-level LLM runtime prototype 已具备基础可用性；仍不代表正式 LangGraph、V2.2 search/contact 或 production-ready LLM agent 完成。
+
+## Fake-client quality regression coverage
+
+P4 follow-up 扩充 fake-client tests，覆盖：
+
+- mixed product + lead direction structured output。
+- clarifying questions without Draft Review。
+- workspace explanation without mutation。
+- invalid schema output。
+- invalid non-JSON output。
+- unsupported operation blocked by Sales Workspace Kernel gate。
+- TokenHub client failure recorded as failed AgentRun。
+- workspace version conflict without mutation。
+
+验证命令：
+
+```bash
+backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_chat_first_llm_runtime.py -q
+```
+
+结果：`10 passed`。

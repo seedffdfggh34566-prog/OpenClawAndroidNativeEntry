@@ -7,6 +7,7 @@
 优先阅读：
 
 - `overview.md`
+- `project_status.md`
 - `prd/ai_sales_assistant_v2_prd.md`
 - `roadmap.md`
 - `research/`
@@ -15,11 +16,13 @@
 
 - V2 北极星：workspace-native sales agent / 中小企业专属销售工作区 Agent
 - 产品主形态：Sales Workspace + chat-first agent + structured cards + evidence-based candidate ranking
-- 当前技术主线：Sales Workspace Kernel backend-only v0
+- 当前状态：V2.1 validated prototype path completed；V2.1 product milestone remains open under planning control
+- 当前技术主线：Sales Workspace Kernel / chat-first Sales Workspace prototype
 
 当前 V2 规划入口：
 
 - `overview.md`
+- `project_status.md`
 - `prd/ai_sales_assistant_v2_prd.md`
 - `roadmap.md`
 - `../adr/ADR-006-v2-conversational-sales-agent-baseline.md`

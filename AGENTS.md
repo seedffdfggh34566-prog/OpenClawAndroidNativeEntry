@@ -221,6 +221,21 @@ If a task closeout, handoff, README, or `_active.md` status conflicts with PRD,
 roadmap, ADR, or architecture baseline success criteria, the Dev Agent must stop,
 surface the mismatch, and avoid upgrading the result into version completion.
 
+### Milestone Completion Claims
+
+Ordinary task files and handoffs must not declare a product version, milestone,
+product experience, or phase complete.
+
+They may only state that the task is done, that a validation path passed, or that
+the result provides evidence toward a milestone.
+
+Milestone completion claims require an explicit milestone closeout or acceptance
+review, must reference PRD / roadmap / ADR / architecture baseline sources, and
+must include PRD Acceptance Traceability.
+
+Prototype, demo, smoke, or backend acceptance evidence must be labeled as such
+and must not be broadened into product-stage completion.
+
 ---
 
 ## 6. Scope Discipline
@@ -433,6 +448,18 @@ In addition, the current delivery entrypoint should preferably record:
 
 This is the minimum structure that allows an execution agent to continue safely
 without per-task manual scheduling.
+
+### Task Granularity
+
+Task files should usually represent reviewable delivery units, not every small
+execution step. Small execution steps may stay inside one task when they share
+the same objective, scope boundary, validation path, and handoff.
+
+Split work into separate tasks when combining it would blur ownership, review,
+validation, product intent, or stop conditions.
+
+Keep detailed task-type and auto-continuation guidance in
+`docs/delivery/tasks/_template.md` and the developer workflow playbook.
 
 ---
 

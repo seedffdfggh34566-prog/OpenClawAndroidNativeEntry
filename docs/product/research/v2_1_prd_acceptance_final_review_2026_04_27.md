@@ -2,6 +2,8 @@
 
 日期：2026-04-27
 
+> Current interpretation note（2026-04-28）：本文仍作为 V2.1 prototype-path acceptance evidence 保留，但不得被解读为完整 V2.1 product milestone 已关闭。当前阶段状态以 `docs/product/project_status.md` 和 `docs/product/research/v2_1_completion_semantics_correction_2026_04_28.md` 为准。
+
 ## 1. Conclusion
 
 当前可按 PRD acceptance traceability 宣称：

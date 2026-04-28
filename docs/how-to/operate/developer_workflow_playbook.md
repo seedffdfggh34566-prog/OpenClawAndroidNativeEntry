@@ -133,10 +133,55 @@
 - out of scope
 - 涉及文件
 - 验收标准
+- 任务类型与自动继续边界
 
 重要原则：
 
 > **没有 task，就不要直接让执行 agent 做正式开发任务。**
+
+### 5.2.1 Task 粒度与自动继续
+
+task 文件优先代表一个可 review、可验证、可交接的 delivery unit，而不是每一个几分钟级执行 step。
+
+推荐使用以下任务类型：
+
+- `delivery`：执行 agent 可以作为一个完整交付单元完成的任务。
+- `planning`：用于澄清方向、队列、边界或验收标准。
+- `guardrail`：用于记录 scope、安全、API/schema、search/contact 等边界。
+- `closeout`：用于验收、冻结和同步 milestone 或 package 结果。
+- `step`：delivery task 内部的小步骤；除非存在独立风险边界，否则不建议单独建文件。
+
+一个 delivery task 可以包含多个内部 steps。只要这些 steps 共享同一目标、范围边界、验证路径和 handoff，执行 agent 可以在 task 内连续推进。
+
+应拆成独立 task 或停下确认的情况包括：
+
+- 合并后会模糊 owner、review 范围或验证标准。
+- 合并后会改变产品意图、PRD / ADR 口径或已写明的 stop condition。
+- 需要新的外部依赖、密钥、部署假设、migration、public API / schema contract 或高风险 Android 入口改动。
+- 涉及 search、ContactPoint、personal data 或其他已被当前阶段明确 blocked 的边界。
+
+对于 delivery package，允许按 package 写一个 handoff。微小 step 不要求单独 handoff，但必须在 task outcome 或 package handoff 中记录实际结果和验证。
+
+### 5.2.2 阶段完成判断规则
+
+task / handoff 只记录具体任务或 package 的完成情况，以及它们为 milestone 提供的证据。普通 task / handoff 不应自行判断产品阶段、版本、product experience 或 milestone 已完成。
+
+允许写：
+
+- 本 task 已完成。
+- 本 package 已完成。
+- 本次验证通过 V2.1 backend acceptance path。
+- 本 handoff 为 V2.1 prototype acceptance 提供证据。
+- V2.1 validated prototype path 已验证。
+
+不允许在普通 task / handoff 中写：
+
+- V2.1 已完成。
+- V2.1 final closeout。
+- V2.1 product experience completed。
+- 下一步只能进入 V2.2。
+
+如果确实需要判断某个产品阶段是否完成，必须通过明确的 milestone acceptance review 或 `docs/product/project_status.md` 维护，并引用 PRD / roadmap / ADR / architecture baseline，包含 PRD Acceptance Traceability。
 
 ### 5.3 细节修订：默认按 follow-up task 管
 
@@ -144,7 +189,7 @@
 
 建议分情况处理：
 
-- 小修订：可以新建一个很小的 follow-up task
+- 小修订：如果仍属于当前 delivery task，可以作为内部 step；否则新建 follow-up task
 - 中等修订：新建独立 task，不污染已完成任务
 - 影响方向或边界的修订：退回方向层文档处理
 

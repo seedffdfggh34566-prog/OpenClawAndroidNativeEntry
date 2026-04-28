@@ -1,19 +1,45 @@
 # 当前活跃任务
 
-更新时间：2026-04-27
+更新时间：2026-04-28
 
 ## 1. 使用说明
 
 本文件用于告诉开发者和 Dev Agent：
 
 - 当前优先推进哪个正式任务
+- 当前是否开放 delivery package
 - 哪个任务只是背景材料
 - 当前是否允许自动继续执行下一项任务
 - 哪些内容仍禁止自动实现
 
 ---
 
+## 1.1 自动执行队列协议
+
+本文件是 Dev Agent 自动执行授权入口。
+
+项目阶段状态的权威入口是 `docs/product/project_status.md`。本文件只维护当前执行授权，不自行判断产品阶段是否完成。
+
+后续优先开放 `delivery package` 或 `delivery task`，而不是几分钟级 `step`。小步骤应优先写入 task 内部 checklist 或自动化契约。
+
+当 `Current delivery package` 或 `Current task` 标记为 `auto-continue: yes` 时，执行 agent 可在明确边界内连续完成内部 steps。
+
+自动继续不得越过：
+
+- 本文件 Current status / blocked 列出的边界
+- 当前 task 的 stop conditions
+- PRD / ADR / architecture baseline 的产品或架构边界
+- 需要 human decision 的范围变化
+
+当本文件写明“暂无自动排定任务”时，执行 agent 不得自行从历史 task 或 planned / blocked task 中挑选任务执行。
+
+---
+
 ## 2. 当前状态
+
+### Current delivery package
+
+暂无自动开放 delivery package。
 
 ### Current task
 
@@ -23,8 +49,20 @@
 
 暂无 implementation task 自动开放。
 
+### Planned candidate package
+
+- `V2.1 implementation continuation package`（planned / not open）
+  - 候选方向：demo reproducibility、Android onboarding / workspace creation、LLM prompt quality、trace / history visibility、Postgres verification。
+  - 仅为规划候选，尚未授权执行。
+
+### Auto-continue
+
+`no`。当前没有开放可自动推进的 delivery package 或 task。
+
 ### Recently completed
 
+- `docs/delivery/tasks/package_v2_1_implementation_rebaseline.md`（done）
+- `docs/delivery/tasks/task_v2_1_implementation_rebaseline_and_gap_closure.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_kernel_backend_only_v0.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_post_v0_entry_sync.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md`（done）
@@ -84,9 +122,9 @@
 - `docs/delivery/tasks/task_v2_1_llm_runtime_docs_sync.md`（done）
 - `docs/delivery/tasks/task_v2_1_llm_runtime_closeout.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成，V2.1 engineering baseline closeout 已完成，V2.1 conversational backend acceptance 已完成，V2.1 Android polish / device acceptance 已完成，PRD Acceptance final review 已完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成，V2.1 engineering baseline closeout 已完成，V2.1 conversational backend acceptance 已完成，V2.1 Android polish / device acceptance 已完成，PRD Acceptance final review 已完成。这些内容证明 V2.1 validated prototype path，不等于完整 V2.1 product milestone 已关闭。
 
-V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed；V2.1 conversational product experience prototype completed；V2.1 Tencent TokenHub LLM runtime prototype available behind explicit dev flag。V2.2 evidence / search / ContactPoint implementation 仍 blocked。
+V2.1 validated prototype path completed；V2.1 product milestone remains open under planning control。V2.2 evidence / search / ContactPoint implementation 仍 blocked。
 
 ---
 
@@ -185,7 +223,7 @@ V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backe
 - Sales Workspace Draft Review persistence v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`。
 - V2.1 engineering baseline closeout 已完成：`docs/delivery/tasks/task_v2_1_completion_closeout.md`。
 - V2.1 chat-first Runtime design 已完成：`docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`。
-- V2.1 product experience early closeout 仅证明 deterministic chat-first demo flow；最终 closeout 以 `task_v2_1_product_experience_final_closeout.md` 和 PRD Acceptance final review 为准。
+- V2.1 product experience early closeout 仅证明 deterministic chat-first demo flow；历史 final closeout 作为 prototype-path evidence 保留，当前 V2.1 milestone 状态以 `docs/product/project_status.md` 为准。
 - V2.1 PRD acceptance gap review 已完成：`docs/delivery/tasks/task_v2_1_prd_acceptance_gap_review.md`。
 - V2.1 conversational completion scope 已完成：`docs/delivery/tasks/task_v2_1_conversational_completion_scope.md`。
 - V2.1 conversation acceptance examples 已完成：`docs/delivery/tasks/task_v2_1_conversation_acceptance_examples.md`。
@@ -198,7 +236,7 @@ V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backe
 - V2.1 Android conversation polish 已完成：`docs/delivery/tasks/task_v2_1_android_conversation_polish.md`。
 - V2.1 product experience device acceptance 已完成：`docs/delivery/tasks/task_v2_1_product_experience_device_acceptance.md`。
 - V2.1 PRD Acceptance final review 已完成：`docs/delivery/tasks/task_v2_1_prd_acceptance_final_review.md`。
-- V2.1 product experience final closeout 已完成：`docs/delivery/tasks/task_v2_1_product_experience_final_closeout.md`。
+- V2.1 product experience final closeout 已完成，作为 prototype-path evidence 保留：`docs/delivery/tasks/task_v2_1_product_experience_final_closeout.md`。
 - production hardening、history read API 和 DB reconstruction hardening 继续 blocked。
 - 当前没有 next queued implementation task。
 
@@ -434,7 +472,18 @@ V2.1 engineering baseline closeout 已完成：
 
 当前没有自动开放任务。
 
-执行 agent 不应自动继续 Android polish、V2.2 Runtime / LangGraph、Android review history、search evidence、DB hardening 或未经 task 开放的真实 LLM/search/contact implementation。后续任务必须由规划层明确开放。
+后续若开放 delivery package，应同时写明：
+
+- package 名称
+- task 类型
+- 允许连续完成的内部 steps
+- 可编辑范围
+- 禁止编辑范围
+- 自动继续条件
+- stop conditions
+- package handoff 要求
+
+执行 agent 不应自动继续 V2.2 Runtime / LangGraph、Android review history、search evidence、ContactPoint、CRM、DB hardening 或未经 task 开放的真实 LLM/search/contact implementation。后续任务必须由规划层明确开放。
 
 ---
 

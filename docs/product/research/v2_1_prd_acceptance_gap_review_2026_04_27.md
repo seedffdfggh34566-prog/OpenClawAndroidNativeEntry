@@ -2,6 +2,8 @@
 
 日期：2026-04-27
 
+> Current interpretation note（2026-04-28）：本文记录当时的 gap review，不定义当前 V2.1 milestone 状态。当前阶段状态以 `docs/product/project_status.md` 和 `docs/product/research/v2_1_completion_semantics_correction_2026_04_28.md` 为准。
+
 ## 1. Conclusion
 
 本文件记录 gap review 当时的判断。后续 Android polish 和真机验收已经完成，最终结论以

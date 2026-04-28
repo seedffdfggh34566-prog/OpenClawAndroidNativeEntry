@@ -1,6 +1,6 @@
 # 任务目录说明
 
-更新时间：2026-04-27
+更新时间：2026-04-28
 
 ## 1. 目录定位
 
@@ -37,9 +37,9 @@
 
 当前项目处于：
 
-> **V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed；V2.1 conversational product experience prototype completed；Tencent TokenHub LLM runtime prototype available behind explicit dev flag 阶段**
+> **V2.1 validated prototype path completed；V2.1 product milestone remains open under planning control。**
 
-当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook、post-demo next phase decision、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline、persistence schema design、persistence migration v0、repository layer v0、API Postgres store v0、Draft Review persistence v0 和 V2.1 engineering baseline closeout。V2.1 chat-first Runtime design、contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook、PRD Acceptance Traceability、backend-level 5-sample conversational acceptance 和 Tencent TokenHub LLM runtime prototype 已完成；V2.1 product experience prototype 已通过 Android polish 与真机验收。不自动进入扩展 Android write path、正式 LangGraph、V2.2 搜索或 ContactPoint 实现。
+当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook、post-demo next phase decision、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline、persistence schema design、persistence migration v0、repository layer v0、API Postgres store v0、Draft Review persistence v0 和 V2.1 engineering baseline closeout。V2.1 chat-first Runtime design、contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook、PRD Acceptance Traceability、backend-level 5-sample conversational acceptance 和 Tencent TokenHub LLM runtime prototype 已形成 validated prototype path。当前状态以 `docs/product/project_status.md` 为准；task / handoff 不自行定义产品阶段完成。不自动进入扩展 Android write path、正式 LangGraph、V2.2 搜索或 ContactPoint 实现。
 
 ---
 
@@ -49,6 +49,7 @@
 
 当前入口：
 
+- Current delivery package：暂无自动开放 delivery package
 - Current task：暂无自动排定任务
 - Next queued task：暂无 implementation task 自动开放
 
@@ -83,6 +84,8 @@ Sales Workspace Kernel backend-only v0 已完成：
 
 | 任务 | 目标 | 当前状态 |
 |---|---|---|
+| `package_v2_1_implementation_rebaseline.md` | 复核 V2.1 实现状态并收敛阻断复现缺口 | `done` |
+| `task_v2_1_implementation_rebaseline_and_gap_closure.md` | 执行 V2.1 implementation rebaseline、最小验证和阻断 bug 修复 | `done` |
 | `task_v2_sales_workspace_direction_update.md` | 将 V2 北极星升级为 workspace-native sales agent | `done` |
 | `task_v2_workspace_object_model.md` | 定义 Sales Workspace 核心对象模型 | `done` |
 | `task_v2_sales_workspace_kernel_backend_only_v0.md` | 实现 Sales Workspace Kernel backend-only v0 | `done` |
@@ -132,7 +135,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 | `task_v2_1_android_conversation_sample_smoke.md` | Android 代表性 conversation sample smoke | `done` |
 | `task_v2_1_product_experience_device_acceptance.md` | 真机端到端验收 V2.1 product experience | `done` |
 | `task_v2_1_prd_acceptance_final_review.md` | V2.1 PRD Acceptance final review | `done` |
-| `task_v2_1_product_experience_final_closeout.md` | V2.1 product experience final closeout | `done` |
+| `task_v2_1_product_experience_final_closeout.md` | 历史 prototype-path closeout evidence；当前 V2.1 milestone 状态以 `docs/product/project_status.md` 为准 | `done` |
 | `task_v2_1_llm_runtime_boundary_design.md` | 定义 V2.1 Tencent TokenHub LLM runtime 边界 | `done` |
 | `task_v2_1_llm_provider_dev_baseline.md` | 复用 Tencent TokenHub provider 并增加 runtime mode 配置 | `done` |
 | `task_v2_1_sales_agent_structured_output_contract.md` | 定义 Sales Agent LLM structured output contract | `done` |
@@ -210,7 +213,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 - 若对象模型、页面结构与代码现实冲突，先更新 task / spec，再动实现。
 - V2.1 engineering baseline 已完成 API contract -> persistence decision -> contract examples -> no-DB backend API prototype -> Android read-only demo -> JSON file store prototype -> Runtime PatchDraft prototype -> PatchDraft review gate prototype -> Android PatchDraft review UI prototype -> prototype demo runbook -> Draft review contract -> Draft review routes prototype -> Android Draft Review ID flow prototype -> post-review-id-flow persistence decision refresh -> persistence baseline design -> Postgres dev environment -> persistence schema -> migration -> repository -> API Postgres store -> Draft Review persistence -> V2.1 engineering baseline closeout。
 - V2.1 chat-first Runtime design 已完成。
-- V2.1 chat-first deterministic demo flow、backend-level 5-sample conversational acceptance、Android polish、真机端到端验收、PRD Acceptance final review 和 Tencent TokenHub LLM runtime prototype 已完成；V2.1 conversational product experience prototype completed。V2.2 evidence / search / ContactPoint implementation 继续 blocked。
+- V2.1 chat-first deterministic demo flow、backend-level 5-sample conversational acceptance、Android polish、真机端到端验收、PRD Acceptance final review 和 Tencent TokenHub LLM runtime prototype 已形成 validated prototype path；V2.1 product milestone 仍开放于规划控制下。V2.2 evidence / search / ContactPoint implementation 继续 blocked。
 - 当前 demo 复现入口为 `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`。
 - Draft review contract 已完成：`docs/reference/api/sales-workspace-draft-review-contract.md`。
 - Draft review routes prototype 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`。

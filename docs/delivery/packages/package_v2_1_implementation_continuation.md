@@ -5,7 +5,7 @@
 ## 1. Package 定位
 
 - Package 名称：V2.1 Implementation Continuation
-- 建议路径：`docs/delivery/tasks/package_v2_1_implementation_continuation.md`
+- 建议路径：`docs/delivery/packages/package_v2_1_implementation_continuation.md`
 - 当前状态：`done`
 - 优先级：P0
 - Package 类型：`delivery`

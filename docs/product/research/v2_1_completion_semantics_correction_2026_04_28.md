@@ -34,7 +34,7 @@
 
 - `docs/product/research/v2_1_prd_acceptance_final_review_2026_04_27.md`
 - `docs/delivery/tasks/task_v2_1_product_experience_final_closeout.md`
-- `docs/delivery/tasks/package_v2_1_implementation_rebaseline.md`
+- `docs/delivery/packages/package_v2_1_implementation_rebaseline.md`
 - `docs/delivery/handoffs/handoff_2026_04_28_v2_1_implementation_rebaseline.md`
 
 这些文件中的 `completed`、`closeout` 或 `final` 结论应理解为：

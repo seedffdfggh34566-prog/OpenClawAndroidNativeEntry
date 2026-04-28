@@ -39,29 +39,31 @@
 
 ### Current delivery package
 
-暂无自动开放 delivery package。
+`docs/delivery/packages/package_v2_1_milestone_acceptance_and_gap_closure.md`
 
 ### Current task
 
-暂无自动排定任务。
+`docs/delivery/tasks/task_v2_1_chat_first_workspace_start_gap_closure.md`
 
 ### Next queued task
 
-暂无 implementation task 自动开放。
+暂无下游 implementation task 自动开放。当前 task 完成后需先回到 milestone review addendum / project status refresh。
 
 ### Auto-continue
 
-`no`。当前没有开放可自动推进的 delivery package 或 task。
+`yes`，仅限当前 V2.1 milestone acceptance and product entry polish package。
 
 ### Recently completed
 
-- `docs/delivery/tasks/package_v2_1_implementation_continuation.md`（done）
+- `docs/delivery/tasks/task_v2_1_milestone_acceptance_review.md`（done）
+- `docs/product/research/v2_1_milestone_acceptance_review_2026_04_28.md`（done）
+- `docs/delivery/packages/package_v2_1_implementation_continuation.md`（done）
 - `docs/delivery/tasks/task_v2_1_postgres_verification_hardening.md`（done）
 - `docs/delivery/tasks/task_v2_1_llm_prompt_quality_followup.md`（done）
 - `docs/delivery/tasks/task_v2_1_trace_message_history_visibility.md`（done）
 - `docs/delivery/tasks/task_v2_1_android_workspace_onboarding.md`（done）
 - `docs/delivery/tasks/task_v2_1_demo_reproducibility_hardening.md`（done）
-- `docs/delivery/tasks/package_v2_1_implementation_rebaseline.md`（done）
+- `docs/delivery/packages/package_v2_1_implementation_rebaseline.md`（done）
 - `docs/delivery/tasks/task_v2_1_implementation_rebaseline_and_gap_closure.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_kernel_backend_only_v0.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_post_v0_entry_sync.md`（done）
@@ -124,7 +126,7 @@
 
 Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成，V2.1 engineering baseline closeout 已完成，V2.1 conversational backend acceptance 已完成，V2.1 Android polish / device acceptance 已完成，PRD Acceptance final review 已完成。这些内容证明 V2.1 validated prototype path，不等于完整 V2.1 product milestone 已关闭。
 
-V2.1 validated prototype path completed；V2.1 product milestone remains open under planning control。V2.2 evidence / search / ContactPoint implementation 仍 blocked。
+V2.1 milestone acceptance review 已完成。2026-04-28 产品决策将“一句话启动 SalesWorkspace”弱化为轻量按钮“开始销售工作区”，因此该项不再作为 implementation blocker。当前开放的唯一 task 是 `task_v2_1_chat_first_workspace_start_gap_closure.md`，其 scope 已调整为 V2.1 product entry polish。V2.2 evidence / search / ContactPoint implementation 仍 blocked。
 
 ---
 
@@ -188,7 +190,9 @@ V2.1 validated prototype path completed；V2.1 product milestone remains open un
 51. V2.1 LLM runtime docs sync。
 52. V2.1 LLM runtime closeout。
 
-当前没有自动开放 implementation task。
+当前开放一个 V2.1 product entry polish task：
+
+53. V2.1 lightweight workspace start entry polish。
 
 后续 planned / blocked：
 
@@ -201,7 +205,7 @@ V2.1 validated prototype path completed；V2.1 product milestone remains open un
 - SQLite 不作为 V2 Sales Workspace runtime fallback。
 - 不开放 production hardening 或新增 API surface。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
-- 当前没有自动开放 implementation task。不自动进入正式 LangGraph implementation、未经 task 开放的真实 LLM 扩展 / search 或 V2.2 implementation。
+- 当前只开放 `task_v2_1_chat_first_workspace_start_gap_closure.md`，用于将 V2.1 首次入口产品化为“开始销售工作区”轻量按钮。不自动进入正式 LangGraph implementation、未经 task 开放的真实 LLM 扩展 / search 或 V2.2 implementation。
 - 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
 - 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
 - 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
@@ -470,9 +474,14 @@ V2.1 engineering baseline closeout 已完成：
 
 ## 7. Auto-continue allowed when
 
-当前没有自动开放任务。
+当前允许在 `docs/delivery/packages/package_v2_1_milestone_acceptance_and_gap_closure.md` 内自动继续。
 
-后续若开放 delivery package，应同时写明：
+当前自动继续仅允许：
+
+- 执行 `docs/delivery/tasks/task_v2_1_chat_first_workspace_start_gap_closure.md` 的 lightweight start button polish scope。
+- 完成后更新 task、handoff、milestone review addendum 和 `docs/product/project_status.md`。
+
+后续若开放其他 delivery package，应同时写明：
 
 - package 名称
 - task 类型
@@ -493,7 +502,7 @@ V2.1 engineering baseline closeout 已完成：
 
 - 需要改变 V2 产品方向。
 - 需要新增或扩展 API route。
-- 需要新增 Android write path 或复杂交互。
+- 除当前 task 明确允许的 Android lightweight start button entry polish 外，需要新增 Android write path 或复杂交互。
 - 需要接正式 LangGraph / search，或扩展未经 task 开放的 LLM capability。
 - 需要引入新外部依赖。
 - 需要开放 production hardening 或新增 API surface。

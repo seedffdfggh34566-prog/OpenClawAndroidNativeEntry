@@ -28,7 +28,7 @@
 
 | PRD success criterion | Status | Current evidence | Gap |
 |---|---|---|---|
-| 用户能通过一句自然语言启动一个 `SalesWorkspace` | partial | `POST /sales-workspaces` 可创建 workspace；Android 可加载固定 `ws_demo` 并提交 chat-first turn。 | Android 仍依赖已存在 workspace；尚未定义用户一句话自动初始化 workspace lifecycle。 |
+| 用户无需理解 workspace，可通过轻量入口“开始销售工作区”进入聊天 | partial | `POST /sales-workspaces` 可创建 workspace；Android 可加载固定 `ws_demo` 并提交 chat-first turn。 | 后续产品决策已弱化原“一句话启动 SalesWorkspace”标准；当前主要缺口是入口文案和首次进入体验 polish。 |
 | Product Sales Agent 能主动提出 3 到 5 个关键追问 | partial | backend deterministic `clarifying_question` 已实现并测试；不足输入不生成 Draft Review，不 mutate workspace。 | Android polish / 真机验收尚未覆盖追问展示。 |
 | 系统能形成第一版产品理解 | partial | backend deterministic extraction 已覆盖 5 个中文业务样例；chat-first product turn 生成 `WorkspacePatchDraft`，apply 后写入 `ProductProfileRevision`。 | Android 尚未覆盖 5 个样例；仍不是真实 LLM。 |
 | 系统能形成第一版获客方向 | partial | backend deterministic lead direction draft 可生成并 apply `LeadDirectionVersion`。 | Android 尚未覆盖 5 个样例方向流。 |

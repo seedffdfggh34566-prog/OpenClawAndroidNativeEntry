@@ -25,7 +25,7 @@
 
 1. 复核了 `AGENTS.md`、`backend/AGENTS.md`、`docs/delivery/tasks/_active.md`、task template 和 delivery README 的队列规则。
 2. 确认当前工作区已有未提交文档改动，本次只在其上追加 package 入口，没有回滚既有改动。
-3. `rg "package_v2_1_implementation_rebaseline|task_v2_1_implementation_rebaseline_and_gap_closure|V2.1 Implementation Rebaseline" README.md docs/delivery/tasks/_active.md docs/delivery/README.md docs/delivery/tasks docs/delivery/handoffs`
+3. `rg "package_v2_1_implementation_rebaseline|task_v2_1_implementation_rebaseline_and_gap_closure|V2.1 Implementation Rebaseline" README.md docs/delivery/tasks/_active.md docs/delivery/README.md docs/delivery/packages docs/delivery/tasks docs/delivery/handoffs`
 4. `git diff --check`
 
 ---

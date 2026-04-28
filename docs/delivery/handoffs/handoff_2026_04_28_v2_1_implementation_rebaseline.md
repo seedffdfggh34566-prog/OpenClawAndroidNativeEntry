@@ -6,7 +6,7 @@
 
 ## 1. 本次改了什么
 
-- 执行 `package_v2_1_implementation_rebaseline.md`。
+- 执行 `docs/delivery/packages/package_v2_1_implementation_rebaseline.md`。
 - 执行并关闭 `task_v2_1_implementation_rebaseline_and_gap_closure.md`。
 - 更新 package / task 状态为 `done`。
 - 更新 `_active.md`、delivery README 和 root README，恢复为暂无自动开放 implementation task。

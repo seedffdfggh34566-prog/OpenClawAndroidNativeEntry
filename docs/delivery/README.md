@@ -4,9 +4,15 @@
 
 ## 1. 目录定位
 
-本目录用于承载当前项目的正式任务文档。
+本目录用于承载当前项目的正式交付文档。
 
-任务文档的作用不是重复 PRD 或 spec，而是把已经明确的方向拆成可以独立执行、独立验证、独立交接的小闭环。
+delivery package 文档用于记录执行授权边界和 task group；task 文档用于把已经明确的方向拆成可以独立执行、独立验证、独立交接的小闭环。
+
+当前分层：
+
+- `packages/`：delivery package，记录 authorization、scope、auto-continue、stop conditions 和 package closeout。
+- `tasks/`：具体执行 task、`_active.md` 和 task template。
+- `handoffs/`：任务 / package 结果、验证和交接记录。
 
 ---
 
@@ -37,7 +43,7 @@
 
 当前项目处于：
 
-> **V2.1 validated prototype path completed；V2.1 product milestone remains open under planning control。**
+> **V2.1 validated prototype path completed；V2.1 product milestone remains partial with lightweight product entry polish open。**
 
 当前阶段已经完成 Sales Workspace Kernel backend API contract、persistence decision、contract examples、no-DB FastAPI prototype、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、prototype demo runbook、post-demo next phase decision、Draft review contract、Draft review routes prototype、Android Draft Review ID flow prototype、post-review-id-flow persistence decision refresh、persistence baseline design、Postgres dev environment baseline、persistence schema design、persistence migration v0、repository layer v0、API Postgres store v0、Draft Review persistence v0 和 V2.1 engineering baseline closeout。V2.1 chat-first Runtime design、contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook、PRD Acceptance Traceability、backend-level 5-sample conversational acceptance 和 Tencent TokenHub LLM runtime prototype 已形成 validated prototype path。当前状态以 `docs/product/project_status.md` 为准；task / handoff 不自行定义产品阶段完成。不自动进入扩展 Android write path、正式 LangGraph、V2.2 搜索或 ContactPoint 实现。
 
@@ -49,9 +55,9 @@
 
 当前入口：
 
-- Current delivery package：暂无自动开放 delivery package
-- Current task：暂无自动排定任务
-- Next queued task：暂无 implementation task 自动开放
+- Current delivery package：`packages/package_v2_1_milestone_acceptance_and_gap_closure.md`
+- Current task：`task_v2_1_chat_first_workspace_start_gap_closure.md`
+- Next queued task：暂无下游 implementation task 自动开放
 
 Sales Workspace Kernel backend-only v0 已完成：
 
@@ -82,9 +88,13 @@ Sales Workspace Kernel backend-only v0 已完成：
 
 ## 4. 当前任务状态总览
 
-| 任务 | 目标 | 当前状态 |
+| 任务 / Package | 目标 | 当前状态 |
 |---|---|---|
-| `package_v2_1_implementation_rebaseline.md` | 复核 V2.1 实现状态并收敛阻断复现缺口 | `done` |
+| `packages/package_v2_1_milestone_acceptance_and_gap_closure.md` | 判断 V2.1 是否实现并收束当前 lightweight start button entry polish | `in_progress` |
+| `task_v2_1_milestone_acceptance_review.md` | 基于四层证据判断 V2.1 product milestone 状态 | `done` |
+| `task_v2_1_chat_first_workspace_start_gap_closure.md` | 将首次入口产品化为“开始销售工作区”轻量按钮 | `planned / current` |
+| `packages/package_v2_1_implementation_continuation.md` | V2.1 continuation package：demo reproducibility、Android onboarding、history、LLM quality、Postgres verification | `done` |
+| `packages/package_v2_1_implementation_rebaseline.md` | 复核 V2.1 实现状态并收敛阻断复现缺口 | `done` |
 | `task_v2_1_implementation_rebaseline_and_gap_closure.md` | 执行 V2.1 implementation rebaseline、最小验证和阻断 bug 修复 | `done` |
 | `task_v2_sales_workspace_direction_update.md` | 将 V2 北极星升级为 workspace-native sales agent | `done` |
 | `task_v2_workspace_object_model.md` | 定义 Sales Workspace 核心对象模型 | `done` |

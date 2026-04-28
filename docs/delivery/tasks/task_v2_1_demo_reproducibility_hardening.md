@@ -55,7 +55,7 @@ Out of Scope：
 
 ## 4. 实际产出
 
-- 新增 `package_v2_1_implementation_continuation.md`。
+- 新增 `docs/delivery/packages/package_v2_1_implementation_continuation.md`。
 - 补强 V2.1 demo runbook 的 workspace reset、health check、smoke 和 troubleshooting。
 - 新增 handoff：`docs/delivery/handoffs/handoff_2026_04_28_v2_1_demo_reproducibility_hardening.md`。
 - `_active.md` 当前任务衔接到 P2 Android onboarding。
@@ -71,4 +71,3 @@ Out of Scope：
 ## 6. 实际结果说明
 
 本任务仅修改 docs，不修改 backend / Android 代码。V2.2 implementation 继续 blocked。
-

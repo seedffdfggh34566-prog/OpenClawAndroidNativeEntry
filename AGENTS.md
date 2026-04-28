@@ -236,6 +236,22 @@ must include PRD Acceptance Traceability.
 Prototype, demo, smoke, or backend acceptance evidence must be labeled as such
 and must not be broadened into product-stage completion.
 
+### Multi-Agent Responsibility Split
+
+When multiple Dev Agent threads are used, keep responsibilities separate:
+
+- Status / Planning agents maintain project status, capability matrices, gap backlog, and package recommendations.
+- Execution agents implement only the current `_active.md` package / task.
+- Review agents inspect diffs, risks, validation, scope drift, and milestone-claim drift.
+
+Opening `_active.md` current delivery package requires an explicit authorization
+source, such as human instruction, an accepted Status / Planning Agent
+recommendation, an `_active.md` auto-continue rule, or a documented current
+package next-package rule.
+
+Execution agents must not invent new packages or upgrade task / handoff evidence
+into milestone completion.
+
 ---
 
 ## 6. Scope Discipline

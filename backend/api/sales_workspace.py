@@ -39,6 +39,11 @@ from backend.runtime.sales_workspace_patchdraft import (
     generate_deterministic_workspace_patch_draft,
     materialize_workspace_patch,
 )
+from backend.runtime.sales_workspace_chat_turn_llm import (
+    SalesAgentTurnLlmError,
+    SalesAgentTurnLlmOutput,
+    generate_sales_agent_turn_llm_result,
+)
 
 
 router = APIRouter(prefix="/sales-workspaces", tags=["sales-workspaces"])
@@ -279,6 +284,16 @@ def _patchdraft_validation_error(exc: ValidationError, *, workspace_id: str) -> 
         code="patchdraft_validation_error",
         message="runtime WorkspacePatchDraft failed validation",
         details={"workspace_id": workspace_id, "errors": jsonable_encoder(exc.errors())},
+    )
+
+
+def _llm_runtime_error_response(exc: SalesAgentTurnLlmError, *, workspace_id: str) -> JSONResponse:
+    status_code = 503 if exc.code == "llm_runtime_unavailable" else 422
+    return _error_response(
+        status_code=status_code,
+        code=exc.code,
+        message=exc.message,
+        details={"workspace_id": workspace_id},
     )
 
 
@@ -871,6 +886,40 @@ def _assistant_message_for_turn(
     )
 
 
+def _assistant_message_for_llm_output(
+    *,
+    workspace: Any,
+    workspace_id: str,
+    agent_run: SalesAgentTurnRun,
+    output: SalesAgentTurnLlmOutput,
+    draft_review: WorkspacePatchDraftReview | None,
+) -> ConversationMessage:
+    refs: list[str] = []
+    if draft_review is not None:
+        refs.append(f"WorkspacePatchDraftReview:{draft_review.id}")
+    if output.message_type == "workspace_question":
+        if workspace.current_product_profile_revision_id:
+            refs.append(f"ProductProfileRevision:{workspace.current_product_profile_revision_id}")
+        if workspace.current_lead_direction_version_id:
+            refs.append(f"LeadDirectionVersion:{workspace.current_lead_direction_version_id}")
+
+    content = output.assistant_message
+    if output.message_type == "clarifying_question" and output.clarifying_questions:
+        content = content.rstrip() + "\n" + "\n".join(
+            f"{index}. {question}" for index, question in enumerate(output.clarifying_questions, start=1)
+        )
+
+    return ConversationMessage(
+        id=f"msg_assistant_{agent_run.id}",
+        workspace_id=workspace_id,
+        role="assistant",
+        message_type=output.message_type,
+        content=content,
+        linked_object_refs=refs,
+        created_by_agent_run_id=agent_run.id,
+    )
+
+
 @router.post("")
 def create_workspace(request: Request, payload: Any = Body(...)):
     try:
@@ -989,6 +1038,149 @@ def create_sales_agent_turn(workspace_id: str, request: Request, payload: Any = 
         token_budget_chars=parsed.token_budget_chars,
     )
     trace_store.save_context_pack(context_pack)
+
+    settings = get_settings()
+    runtime_mode = settings.sales_agent_runtime_mode.strip().lower()
+    if runtime_mode == "llm":
+        llm_metadata = {
+            "provider": settings.llm_provider,
+            "model": settings.llm_model,
+            "prompt_version": settings.sales_agent_llm_prompt_version,
+            "mode": "real_llm_no_langgraph",
+            "intent": source_message.message_type,
+        }
+        trace_store.save_agent_run(agent_run.model_copy(update={"runtime_metadata": llm_metadata}))
+        try:
+            llm_result = generate_sales_agent_turn_llm_result(
+                settings=settings,
+                workspace=workspace,
+                source_message=source_message,
+                agent_run=agent_run,
+                context_pack=context_pack,
+                base_workspace_version=parsed.base_workspace_version,
+                instruction=parsed.instruction,
+            )
+        except SalesAgentTurnLlmError as exc:
+            failed = agent_run.model_copy(
+                update={
+                    "status": "failed",
+                    "runtime_metadata": llm_metadata,
+                    "error": {"code": exc.code, "message": exc.message},
+                    "finished_at": utc_now(),
+                }
+            )
+            trace_store.save_agent_run(failed)
+            return _llm_runtime_error_response(exc, workspace_id=workspace_id)
+
+        patch_draft = llm_result.patch_draft
+        draft_review: WorkspacePatchDraftReview | None = None
+        if patch_draft is not None:
+            try:
+                patch = materialize_workspace_patch(patch_draft)
+                preview_workspace = apply_workspace_patch(workspace, patch)
+            except WorkspaceVersionConflict as exc:
+                failed = agent_run.model_copy(
+                    update={
+                        "status": "failed",
+                        "runtime_metadata": llm_result.runtime_metadata,
+                        "error": {"code": "workspace_version_conflict", "message": str(exc)},
+                        "finished_at": utc_now(),
+                    }
+                )
+                trace_store.save_agent_run(failed)
+                return _workspace_version_conflict_response(
+                    exc,
+                    workspace_id=workspace_id,
+                    current_workspace_version=workspace.workspace_version,
+                    base_workspace_version=parsed.base_workspace_version,
+                )
+            except WorkspacePatchError as exc:
+                failed = agent_run.model_copy(
+                    update={
+                        "status": "failed",
+                        "runtime_metadata": llm_result.runtime_metadata,
+                        "error": {"code": "validation_error", "message": str(exc)},
+                        "finished_at": utc_now(),
+                    }
+                )
+                trace_store.save_agent_run(failed)
+                return _patch_error_response(exc, workspace_id=workspace_id)
+            except ValidationError as exc:
+                failed = agent_run.model_copy(
+                    update={
+                        "status": "failed",
+                        "runtime_metadata": llm_result.runtime_metadata,
+                        "error": {"code": "patchdraft_validation_error", "message": "invalid patch draft"},
+                        "finished_at": utc_now(),
+                    }
+                )
+                trace_store.save_agent_run(failed)
+                return _patchdraft_validation_error(exc, workspace_id=workspace_id)
+
+            draft_review = WorkspacePatchDraftReview(
+                id=draft_review_id_for_draft(patch_draft.id),
+                workspace_id=workspace_id,
+                draft=patch_draft,
+                base_workspace_version=patch_draft.base_workspace_version,
+                created_by=patch_draft.author,
+                instruction=patch_draft.instruction,
+                runtime_metadata=patch_draft.runtime_metadata,
+                preview=WorkspacePatchDraftPreview(
+                    materialized_patch=patch,
+                    preview_workspace_version=preview_workspace.workspace_version,
+                    preview_ranking_board=preview_workspace.ranking_board,
+                    would_mutate=False,
+                ),
+            )
+            review_store.save(draft_review)
+
+        assistant_message = _assistant_message_for_llm_output(
+            workspace=workspace,
+            workspace_id=workspace_id,
+            agent_run=agent_run,
+            output=llm_result.output,
+            draft_review=draft_review,
+        )
+        trace_store.save_message(assistant_message)
+        output_refs = [_message_ref(assistant_message)]
+        if draft_review is not None:
+            output_refs.insert(0, f"WorkspacePatchDraftReview:{draft_review.id}")
+        completed = agent_run.model_copy(
+            update={
+                "status": "succeeded",
+                "runtime_metadata": llm_result.runtime_metadata,
+                "output_refs": output_refs,
+                "finished_at": utc_now(),
+            }
+        )
+        trace_store.save_agent_run(completed)
+        return {
+            "conversation_message": source_message,
+            "agent_run": completed,
+            "context_pack": context_pack,
+            "assistant_message": assistant_message,
+            "patch_draft": patch_draft,
+            "draft_review": draft_review,
+        }
+
+    if runtime_mode != "deterministic":
+        failed = agent_run.model_copy(
+            update={
+                "status": "failed",
+                "error": {
+                    "code": "validation_error",
+                    "message": f"unsupported sales agent runtime mode: {runtime_mode}",
+                },
+                "finished_at": utc_now(),
+            }
+        )
+        trace_store.save_agent_run(failed)
+        return _error_response(
+            status_code=422,
+            code="validation_error",
+            message="unsupported sales agent runtime mode",
+            details={"workspace_id": workspace_id, "runtime_mode": runtime_mode},
+        )
 
     if _needs_clarifying_questions(source_message):
         assistant_message = _assistant_message_for_clarifying_questions(

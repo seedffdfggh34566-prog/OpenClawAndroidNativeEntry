@@ -329,7 +329,7 @@ docs/
 - V2.1 engineering baseline closeout 已完成。
 - V2.1 chat-first Runtime design 已完成。
 - V2.1 chat-first deterministic demo flow、backend conversational acceptance、Android polish、真机端到端验收和 PRD Acceptance final review 已完成。
-- 当前没有自动排定任务；V2.1 conversational product experience prototype completed，下一步只允许由规划层开放 V2.2 docs-level planning。
+- 当前没有自动排定任务；V2.1 conversational product experience prototype completed，Tencent TokenHub LLM runtime prototype 已通过 explicit dev flag 可用，下一步只允许由规划层开放 V2.2 docs-level planning 或 V2.1 LLM prompt quality follow-up。
 - V2 MVP persistence baseline 采用 Postgres / Alembic。
 - 当前不开放 Android 或 Runtime / LangGraph implementation。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
@@ -394,7 +394,7 @@ Sales Workspace Kernel backend-only v0 已完成：
 - SQLAlchemy ORM / Alembic migration / SQLite schema change
 - 新增或扩展 Android write path 或复杂 workspace 交互
 - 正式 LangGraph graph
-- 真实 LLM
+- 未经 task 开放的真实 LLM 扩展
 - 联网搜索 / search provider
 - ContactPoint
 - CRM / 自动触达
@@ -416,4 +416,4 @@ V2.2 planned / blocked task placeholders：
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain、Draft Review audit persistence 和 5-sample backend conversational acceptance 已完成；V2.1 conversational product experience prototype completed，不直接写 V2.2 LangGraph / LLM / search/contact 或 Android 扩展。**
+> **AI 销售助手 V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain、Draft Review audit persistence、5-sample backend conversational acceptance 和 Tencent TokenHub LLM runtime prototype 已完成；V2.1 conversational product experience prototype completed，不直接写 V2.2 LangGraph / search/contact 或 Android 扩展。**

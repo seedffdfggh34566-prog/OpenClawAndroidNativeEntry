@@ -70,7 +70,7 @@ def generate_sales_agent_turn_llm_result(
         api_key=settings.llm_api_key,
         base_url=settings.llm_base_url,
         model=settings.llm_model,
-        timeout_seconds=settings.llm_timeout_seconds,
+        timeout_seconds=max(settings.llm_timeout_seconds, 90.0),
     )
     messages = _build_sales_agent_turn_messages(
         source_message=source_message,
@@ -83,22 +83,50 @@ def generate_sales_agent_turn_llm_result(
     parsed_json: dict[str, Any] | None = None
     usage: dict[str, Any] = {}
     try:
-        completion = llm_client.complete(messages)
-        raw_content = completion.content
-        usage = completion.usage
-        parsed_json = parse_sales_agent_turn_llm_json(completion.content)
-        output = SalesAgentTurnLlmOutput.model_validate(parsed_json)
-        patch_draft = _build_patch_draft(
-            workspace=workspace,
-            source_message=source_message,
-            agent_run=agent_run,
-            context_pack=context_pack,
-            output=output,
-            base_workspace_version=base_workspace_version,
-            instruction=instruction,
-            settings=settings,
-            usage=usage,
-        )
+        last_validation_error: ValueError | ValidationError | None = None
+        output: SalesAgentTurnLlmOutput | None = None
+        patch_draft: WorkspacePatchDraft | None = None
+        for attempt in range(2):
+            completion = llm_client.complete(messages)
+            raw_content = completion.content
+            usage = completion.usage
+            try:
+                parsed_json = _normalize_raw_output(
+                    parse_sales_agent_turn_llm_json(completion.content),
+                    source_message=source_message,
+                )
+                output = SalesAgentTurnLlmOutput.model_validate(parsed_json)
+                patch_draft = _build_patch_draft(
+                    workspace=workspace,
+                    source_message=source_message,
+                    agent_run=agent_run,
+                    context_pack=context_pack,
+                    output=output,
+                    base_workspace_version=base_workspace_version,
+                    instruction=instruction,
+                    settings=settings,
+                    usage=usage,
+                )
+                break
+            except (ValueError, ValidationError) as exc:
+                last_validation_error = exc
+                if attempt == 0:
+                    messages = [
+                        *messages,
+                        {
+                            "role": "user",
+                            "content": (
+                                "上一次输出没有通过后端 JSON/schema 校验。"
+                                "请只重新输出一个完整 JSON object，必须包含 message_type、assistant_message、"
+                                "clarifying_questions、patch_operations、confidence、missing_fields、reasoning_summary。"
+                                "不要输出 markdown、注释、空对象或额外文本。"
+                            ),
+                        },
+                    ]
+                    continue
+                raise
+        if output is None:
+            raise last_validation_error or ValueError("sales_agent_turn_llm_output_missing")
     except TokenHubClientError as exc:
         _record_trace(
             settings=settings,
@@ -113,6 +141,40 @@ def generate_sales_agent_turn_llm_result(
         )
         raise SalesAgentTurnLlmError("llm_runtime_unavailable", str(exc)) from exc
     except (ValueError, ValidationError) as exc:
+        if raw_content is not None and source_message.message_type == "workspace_question":
+            output = SalesAgentTurnLlmOutput(
+                message_type="workspace_question",
+                assistant_message=_strip_thinking_and_fences(raw_content)[:2000],
+                clarifying_questions=[],
+                patch_operations=[],
+                confidence=0.5,
+                missing_fields=[],
+                reasoning_summary="LLM returned text explanation instead of structured JSON; backend kept non-mutating answer.",
+            )
+            _record_trace(
+                settings=settings,
+                agent_run=agent_run,
+                started_at=started_at,
+                started_perf=started_perf,
+                raw_content=raw_content,
+                parsed_json=output.model_dump(mode="json"),
+                usage=usage,
+                parse_status="text_fallback",
+                error=exc,
+            )
+            return SalesAgentTurnLlmResult(
+                output=output,
+                patch_draft=None,
+                runtime_metadata={
+                    "provider": settings.llm_provider,
+                    "model": settings.llm_model,
+                    "prompt_version": settings.sales_agent_llm_prompt_version,
+                    "mode": "real_llm_no_langgraph",
+                    "intent": source_message.message_type,
+                    "llm_usage": _normalize_llm_usage(usage),
+                    "structured_output_fallback": "workspace_question_text",
+                },
+            )
         _record_trace(
             settings=settings,
             agent_run=agent_run,
@@ -155,17 +217,153 @@ def generate_sales_agent_turn_llm_result(
 
 def parse_sales_agent_turn_llm_json(content: str) -> dict[str, Any]:
     text = _strip_thinking_and_fences(content)
-    start = text.find("{")
-    end = text.rfind("}")
-    if start < 0 or end < start:
-        raise ValueError("sales_agent_turn_llm_json_object_not_found")
-    try:
-        parsed = json.loads(text[start : end + 1])
-    except json.JSONDecodeError as exc:
-        raise ValueError("sales_agent_turn_llm_json_decode_failed") from exc
-    if not isinstance(parsed, dict):
-        raise ValueError("sales_agent_turn_llm_json_object_required")
-    return parsed
+    decoder = json.JSONDecoder()
+    saw_json_start = False
+    last_error: json.JSONDecodeError | None = None
+    first_object: dict[str, Any] | None = None
+    for index, char in enumerate(text):
+        if char != "{":
+            continue
+        saw_json_start = True
+        for candidate in _sales_agent_turn_json_candidates(text[index:]):
+            try:
+                parsed, _ = decoder.raw_decode(candidate)
+            except json.JSONDecodeError as exc:
+                last_error = exc
+                continue
+            if not isinstance(parsed, dict):
+                raise ValueError("sales_agent_turn_llm_json_object_required")
+            if first_object is None:
+                first_object = parsed
+            if "message_type" in parsed:
+                return parsed
+    if first_object is not None:
+        return first_object
+    if saw_json_start:
+        raise ValueError("sales_agent_turn_llm_json_decode_failed") from last_error
+    raise ValueError("sales_agent_turn_llm_json_object_not_found")
+
+
+def _sales_agent_turn_json_candidates(candidate: str) -> list[str]:
+    text = candidate.strip()
+    candidates = [text]
+
+    repaired_extra_object_brace = re.sub(r'"\}\]\}\s*$', r'"]}', text)
+    if repaired_extra_object_brace != text:
+        candidates.append(repaired_extra_object_brace)
+
+    if text.count("[") > text.count("]"):
+        repaired_missing_array_close = re.sub(r'"\}\s*$', r'"]}', text)
+        if repaired_missing_array_close != text:
+            candidates.append(repaired_missing_array_close)
+
+    return candidates
+
+
+def _normalize_raw_output(
+    parsed: dict[str, Any],
+    *,
+    source_message: ConversationMessage,
+) -> dict[str, Any]:
+    normalized = _normalize_top_level_fields(parsed)
+    operations = normalized.get("patch_operations")
+    if source_message.message_type == "workspace_question":
+        normalized["message_type"] = "workspace_question"
+        normalized["patch_operations"] = []
+        return normalized
+    if source_message.message_type == "out_of_scope_v2_2":
+        normalized["message_type"] = "out_of_scope_v2_2"
+        normalized["patch_operations"] = []
+        return normalized
+    if (
+        isinstance(operations, list)
+        and operations
+        and source_message.message_type
+        in {"product_profile_update", "lead_direction_update", "mixed_product_and_direction_update"}
+    ):
+        normalized["message_type"] = "draft_summary"
+    if normalized.get("message_type") == "draft_summary":
+        normalized["patch_operations"] = _ensure_required_operations(
+            normalized.get("patch_operations"),
+            source_message=source_message,
+        )
+    return normalized
+
+
+def _normalize_top_level_fields(parsed: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(parsed)
+    if "reasoning_summary" not in normalized and "reasoning_sumary" in normalized:
+        normalized["reasoning_summary"] = normalized["reasoning_sumary"]
+    allowed = {
+        "message_type",
+        "assistant_message",
+        "clarifying_questions",
+        "patch_operations",
+        "confidence",
+        "missing_fields",
+        "reasoning_summary",
+    }
+    return {key: value for key, value in normalized.items() if key in allowed}
+
+
+def _ensure_required_operations(
+    operations: Any,
+    *,
+    source_message: ConversationMessage,
+) -> list[dict[str, Any]]:
+    if not isinstance(operations, list):
+        operations = []
+    normalized_operations = [
+        operation
+        for operation in operations
+        if isinstance(operation, dict) and isinstance(operation.get("type"), str)
+    ]
+    operation_types = {operation["type"] for operation in normalized_operations}
+    if (
+        source_message.message_type in {"product_profile_update", "mixed_product_and_direction_update"}
+        and "upsert_product_profile_revision" not in operation_types
+    ):
+        normalized_operations.append(_fallback_product_operation(source_message))
+    if (
+        source_message.message_type in {"lead_direction_update", "mixed_product_and_direction_update"}
+        and "upsert_lead_direction_version" not in operation_types
+    ):
+        normalized_operations.append(_fallback_direction_operation(source_message))
+    return normalized_operations
+
+
+def _fallback_product_operation(source_message: ConversationMessage) -> dict[str, Any]:
+    return {
+        "type": "upsert_product_profile_revision",
+        "payload": {
+            "product_name": "待确认产品或服务",
+            "one_liner": source_message.content[:80],
+            "target_customers": ["待确认目标客户"],
+            "target_industries": ["待确认行业"],
+            "pain_points": ["待确认痛点"],
+            "value_props": ["待确认价值主张"],
+            "constraints": ["LLM output omitted product operation; backend kept a reviewable placeholder."],
+        },
+    }
+
+
+def _fallback_direction_operation(source_message: ConversationMessage) -> dict[str, Any]:
+    return {
+        "type": "upsert_lead_direction_version",
+        "payload": {
+            "priority_industries": ["待确认优先行业"],
+            "target_customer_types": ["待确认目标客户类型"],
+            "regions": ["待确认地区"],
+            "company_sizes": ["待确认规模"],
+            "priority_constraints": ["需要继续确认优先约束"],
+            "excluded_industries": [],
+            "excluded_customer_types": [],
+            "change_reason": (
+                "LLM output omitted lead direction operation; backend kept a reviewable placeholder "
+                f"from message {source_message.id}: {source_message.content[:120]}"
+            ),
+        },
+    }
 
 
 def _build_sales_agent_turn_messages(
@@ -226,6 +424,10 @@ def _build_sales_agent_turn_messages(
                 "如果用户信息不足，输出 3 到 5 个中文追问，不要生成 patch_operations。"
                 "如果用户问当前方向原因，基于 context_pack 解释，不要生成 patch_operations。"
                 "如果用户提供产品理解或获客方向，输出 patch_operations，backend 会补齐 id/version/workspace_id。"
+                "如果 user_message.message_type 是 mixed_product_and_direction_update，patch_operations 必须同时包含"
+                "一个 upsert_product_profile_revision 和一个 upsert_lead_direction_version。"
+                "不要输出空 JSON，不要省略 message_type、assistant_message、clarifying_questions、patch_operations、"
+                "confidence、missing_fields、reasoning_summary。"
                 "只输出单个 JSON object，不要输出 markdown、解释或额外文本。"
             ),
         },
@@ -275,7 +477,7 @@ def _build_patch_draft(
     direction_id: str | None = None
 
     for operation in output.patch_operations:
-        payload = dict(operation.payload)
+        payload = _sanitize_operation_payload(operation.type, operation.payload)
         if operation.type == "upsert_product_profile_revision":
             payload["id"] = payload.get("id") or f"ppr_llm_v{next_workspace_version}"
             payload["version"] = payload.get("version") or product_version
@@ -325,6 +527,41 @@ def _build_patch_draft(
         },
         operations=operations,
     )
+
+
+def _sanitize_operation_payload(operation_type: str, payload: dict[str, Any]) -> dict[str, Any]:
+    product_fields = {
+        "id",
+        "workspace_id",
+        "version",
+        "product_name",
+        "one_liner",
+        "target_customers",
+        "target_industries",
+        "pain_points",
+        "value_props",
+        "constraints",
+    }
+    direction_fields = {
+        "id",
+        "workspace_id",
+        "version",
+        "priority_industries",
+        "target_customer_types",
+        "regions",
+        "company_sizes",
+        "priority_constraints",
+        "excluded_industries",
+        "excluded_customer_types",
+        "change_reason",
+    }
+    if operation_type == "upsert_product_profile_revision":
+        allowed = product_fields
+    elif operation_type == "upsert_lead_direction_version":
+        allowed = direction_fields
+    else:
+        return dict(payload)
+    return {key: value for key, value in payload.items() if key in allowed}
 
 
 def _record_trace(

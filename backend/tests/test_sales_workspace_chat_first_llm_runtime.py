@@ -118,7 +118,15 @@ def test_llm_runtime_clarifying_question_does_not_create_draft(llm_client, monke
 
 
 def test_llm_runtime_invalid_output_fails_run_without_mutation(llm_client, monkeypatch) -> None:
-    _mock_llm(monkeypatch, {"message_type": "draft_summary", "assistant_message": "bad"})
+    _mock_llm(
+        monkeypatch,
+        {
+            "message_type": "clarifying_question",
+            "assistant_message": "bad",
+            "clarifying_questions": ["问题太少"],
+            "patch_operations": [],
+        },
+    )
     _create_workspace(llm_client, "ws_demo")
     _post_message(
         llm_client,

@@ -71,10 +71,15 @@
 - `docs/delivery/tasks/task_v2_1_product_profile_extraction_runtime.md`（done）
 - `docs/delivery/tasks/task_v2_1_lead_direction_adjustment_runtime.md`（done）
 - `docs/delivery/tasks/task_v2_1_conversation_acceptance_e2e.md`（done）
+- `docs/delivery/tasks/task_v2_1_android_conversation_polish.md`（done）
+- `docs/delivery/tasks/task_v2_1_android_conversation_sample_smoke.md`（done）
+- `docs/delivery/tasks/task_v2_1_product_experience_device_acceptance.md`（done）
+- `docs/delivery/tasks/task_v2_1_prd_acceptance_final_review.md`（done）
+- `docs/delivery/tasks/task_v2_1_product_experience_final_closeout.md`（done）
 
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成，V2.1 engineering baseline closeout 已完成。V2.1 chat-first deterministic demo flow 已完成，但不等于 PRD-level conversational product experience 完成。
+Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成，V2.1 engineering baseline closeout 已完成，V2.1 conversational backend acceptance 已完成，V2.1 Android polish / device acceptance 已完成，PRD Acceptance final review 已完成。
 
-V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed；V2.1 conversational product experience remains incomplete until Android polish / device acceptance。V2.2 evidence / search / ContactPoint implementation 仍 blocked。
+V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed；V2.1 conversational product experience prototype completed。V2.2 evidence / search / ContactPoint implementation 仍 blocked。
 
 ---
 
@@ -114,7 +119,7 @@ V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backe
 30. V2.1 product experience demo runbook。
 31. V2.1 product experience closeout。
 
-当前执行：
+继续完成：
 
 32. V2.1 PRD acceptance gap review。
 33. V2.1 conversational completion scope。
@@ -125,6 +130,11 @@ V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backe
 38. V2.1 product profile extraction runtime。
 39. V2.1 lead direction adjustment runtime。
 40. V2.1 conversation acceptance e2e。
+41. V2.1 Android conversation polish。
+42. V2.1 Android conversation sample smoke。
+43. V2.1 product experience device acceptance。
+44. V2.1 PRD acceptance final review。
+45. V2.1 product experience final closeout。
 
 当前没有自动开放 implementation task。
 
@@ -139,7 +149,7 @@ V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backe
 - SQLite 不作为 V2 Sales Workspace runtime fallback。
 - 不开放 production hardening 或新增 API surface。
 - `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
-- 当前没有自动开放 implementation task。不自动进入 Android polish、正式 LangGraph implementation、真实 LLM/search 或 V2.2 implementation。
+- 当前没有自动开放 implementation task。不自动进入正式 LangGraph implementation、真实 LLM/search 或 V2.2 implementation。
 - 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
 - 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
 - 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
@@ -161,7 +171,7 @@ V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backe
 - Sales Workspace Draft Review persistence v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`。
 - V2.1 engineering baseline closeout 已完成：`docs/delivery/tasks/task_v2_1_completion_closeout.md`。
 - V2.1 chat-first Runtime design 已完成：`docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`。
-- V2.1 product experience closeout 仅证明 deterministic chat-first demo flow，不代表 PRD-level conversational product experience 完成：`docs/delivery/tasks/task_v2_1_product_experience_closeout.md`。
+- V2.1 product experience early closeout 仅证明 deterministic chat-first demo flow；最终 closeout 以 `task_v2_1_product_experience_final_closeout.md` 和 PRD Acceptance final review 为准。
 - V2.1 PRD acceptance gap review 已完成：`docs/delivery/tasks/task_v2_1_prd_acceptance_gap_review.md`。
 - V2.1 conversational completion scope 已完成：`docs/delivery/tasks/task_v2_1_conversational_completion_scope.md`。
 - V2.1 conversation acceptance examples 已完成：`docs/delivery/tasks/task_v2_1_conversation_acceptance_examples.md`。
@@ -171,6 +181,10 @@ V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backe
 - V2.1 product profile extraction runtime 已完成：`docs/delivery/tasks/task_v2_1_product_profile_extraction_runtime.md`。
 - V2.1 lead direction adjustment runtime 已完成：`docs/delivery/tasks/task_v2_1_lead_direction_adjustment_runtime.md`。
 - V2.1 conversation acceptance e2e 已完成：`docs/delivery/tasks/task_v2_1_conversation_acceptance_e2e.md`。
+- V2.1 Android conversation polish 已完成：`docs/delivery/tasks/task_v2_1_android_conversation_polish.md`。
+- V2.1 product experience device acceptance 已完成：`docs/delivery/tasks/task_v2_1_product_experience_device_acceptance.md`。
+- V2.1 PRD Acceptance final review 已完成：`docs/delivery/tasks/task_v2_1_prd_acceptance_final_review.md`。
+- V2.1 product experience final closeout 已完成：`docs/delivery/tasks/task_v2_1_product_experience_final_closeout.md`。
 - production hardening、history read API 和 DB reconstruction hardening 继续 blocked。
 - 当前没有 next queued implementation task。
 

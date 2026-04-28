@@ -1,6 +1,6 @@
 # OpenClawAndroidNativeEntry
 
-> 仓库名保留历史来源；当前已完成 **AI Sales Assistant V2.1 workspace/kernel engineering baseline** 与 **V2.1 conversational backend acceptance**；**V2.1 conversational product experience remains incomplete**。
+> 仓库名保留历史来源；当前已完成 **AI Sales Assistant V2.1 workspace/kernel engineering baseline** 与 **V2.1 conversational backend acceptance**；**V2.1 conversational product experience prototype completed**。
 
 当前建议先阅读：
 
@@ -22,7 +22,7 @@
 
 当前正式主线为：
 
-> **V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed：Sales Workspace Kernel、FastAPI prototype、Android workspace / Draft Review ID demo、Postgres / Alembic persistence baseline、Sales Workspace Postgres store、Draft Review audit persistence、deterministic chat-first backend prototype、5-sample backend conversational acceptance 与 Android chat-first workspace UI skeleton 均已完成。V2.1 conversational product experience remains incomplete；下一步需由规划层决定是否开放 Android conversation polish / device acceptance。**
+> **V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed：Sales Workspace Kernel、FastAPI prototype、Android workspace / Draft Review ID demo、Postgres / Alembic persistence baseline、Sales Workspace Postgres store、Draft Review audit persistence、deterministic chat-first backend prototype、5-sample backend conversational acceptance 与 Android chat-first workspace UI skeleton 均已完成。V2.1 conversational product experience prototype completed；下一步只允许由规划层开放 V2.2 docs-level planning。**
 
 V1 已作为 demo-ready release candidate / learning milestone 收口，不再是默认开发方向。
 
@@ -70,7 +70,7 @@ Sales Workspace Kernel prototype 已完成：
 
 - `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
 
-V2.1 PRD acceptance gap review、conversational completion scope、5 个中文验收样例和 implementation queue 已补齐。下一步先做 clarifying questions backend prototype；真正 V2.2 evidence / search / ContactPoint、正式 LangGraph、Android review history view 或 DB hardening 仍不自动开放。
+V2.1 PRD acceptance gap review、conversational completion scope、5 个中文验收样例、backend conversational acceptance、Android polish、真机端到端验收和 PRD Acceptance final review 已完成。后续只能由规划层开放 V2.2 docs-level planning；真正 V2.2 evidence / search / ContactPoint、正式 LangGraph、Android review history view 或 DB hardening 仍不自动开放。
 
 当前不应自动实现：
 

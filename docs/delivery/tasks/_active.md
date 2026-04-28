@@ -39,28 +39,34 @@
 
 ### Current delivery package
 
-暂无自动开放 delivery package。
+`docs/delivery/tasks/package_v2_1_implementation_continuation.md`
+
+- Package：V2.1 Implementation Continuation
+- Status：`in_progress`
+- Auto-continue：`yes`
+- Boundary：只允许 P0-P5 内部任务连续执行；不得进入 V2.2 implementation。
 
 ### Current task
 
-暂无自动排定任务。
+`docs/delivery/tasks/task_v2_1_android_workspace_onboarding.md`
+
+- Task：V2.1 Android Workspace Onboarding
+- Status：`planned`
+- Auto-continue：`yes`
 
 ### Next queued task
 
-暂无 implementation task 自动开放。
-
-### Planned candidate package
-
-- `V2.1 implementation continuation package`（planned / not open）
-  - 候选方向：demo reproducibility、Android onboarding / workspace creation、LLM prompt quality、trace / history visibility、Postgres verification。
-  - 仅为规划候选，尚未授权执行。
+1. `docs/delivery/tasks/task_v2_1_trace_message_history_visibility.md`
+2. `docs/delivery/tasks/task_v2_1_llm_prompt_quality_followup.md`
+3. `docs/delivery/tasks/task_v2_1_postgres_verification_hardening.md`
 
 ### Auto-continue
 
-`no`。当前没有开放可自动推进的 delivery package 或 task。
+`yes`，仅限 `V2.1 Implementation Continuation` package 内 P0-P5 任务。
 
 ### Recently completed
 
+- `docs/delivery/tasks/task_v2_1_demo_reproducibility_hardening.md`（done）
 - `docs/delivery/tasks/package_v2_1_implementation_rebaseline.md`（done）
 - `docs/delivery/tasks/task_v2_1_implementation_rebaseline_and_gap_closure.md`（done）
 - `docs/delivery/tasks/task_v2_sales_workspace_kernel_backend_only_v0.md`（done）

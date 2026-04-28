@@ -71,6 +71,8 @@ backend/.venv/bin/python -m pytest backend/tests -q
 - `OPENCLAW_BACKEND_LLM_API_KEY`
 - `OPENCLAW_BACKEND_LLM_PROMPT_VERSION`
 - `OPENCLAW_BACKEND_LLM_TIMEOUT_SECONDS`
+- `OPENCLAW_BACKEND_SALES_AGENT_RUNTIME_MODE`
+- `OPENCLAW_BACKEND_SALES_AGENT_LLM_PROMPT_VERSION`
 - `OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_BACKEND`
 - `OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`
 
@@ -84,3 +86,12 @@ OPENCLAW_BACKEND_LLM_PROMPT_VERSION=product_learning_llm_v1
 ```
 
 `OPENCLAW_BACKEND_LLM_API_KEY` 只能通过服务端环境变量或 `backend/.env` 注入。不要提交 API key。
+
+V2.1 chat-first Sales Agent 默认仍使用 deterministic runtime。启用 Tencent TokenHub LLM prototype 时显式设置：
+
+```bash
+OPENCLAW_BACKEND_SALES_AGENT_RUNTIME_MODE=llm
+OPENCLAW_BACKEND_SALES_AGENT_LLM_PROMPT_VERSION=sales_agent_turn_llm_v1
+```
+
+LLM runtime 只产出 assistant message / `WorkspacePatchDraft`，正式写回仍经过 Draft Review 和 Sales Workspace Kernel。

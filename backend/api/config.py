@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     llm_api_key: str | None = None
     llm_prompt_version: str = "product_learning_llm_v1"
     llm_timeout_seconds: float = 30.0
+    sales_agent_runtime_mode: str = "deterministic"
+    sales_agent_llm_prompt_version: str = "sales_agent_turn_llm_v1"
     dev_llm_trace_enabled: bool = False
     dev_llm_trace_dir: str = "/tmp/openclaw_llm_traces"
     sales_workspace_store_backend: str | None = None

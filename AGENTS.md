@@ -240,6 +240,8 @@ and must not be broadened into product-stage completion.
 
 When multiple Dev Agent threads are used, keep responsibilities separate:
 
+- Status / Planning Agent, Execution Agent, and Review Agent are Dev Agent
+  workflow roles, not product agents or fixed tool identities.
 - Status / Planning agents maintain project status, capability matrices, gap backlog, and package recommendations.
 - Execution agents implement only the current `_active.md` package / task.
 - Review agents inspect diffs, risks, validation, scope drift, and milestone-claim drift.
@@ -382,6 +384,42 @@ Avoid touching these unless the task clearly requires it.
 ## 10. Documentation Update Rules
 
 When a task changes behavior, structure, or workflow, the agent must update the relevant docs.
+
+Documentation updates should be proportional to the change:
+
+- Small implementation steps inside an already-open package usually update only
+  the task outcome and handoff, unless they change public docs, contracts, or
+  project status.
+- Update `docs/product/project_status.md`, root / docs README files, or milestone
+  reviews only when the package closeout, milestone evidence, navigation, or
+  project status actually changes.
+- Update `_active.md` only when execution authorization, current package / task,
+  queue state, auto-continue, or stop conditions change.
+
+### Product-First Execution Mode
+
+When the current task is Android UI, demo path, product polish, or
+user-visible experience recovery, default to product work and device validation
+over documentation expansion.
+
+Allowed by default:
+
+- edit Android UI / state / navigation files within the current task scope
+- run build, install, launch, and device smoke checks
+- update only the current task outcome and one short handoff
+
+Do not update by default:
+
+- `docs/README.md`
+- `docs/delivery/README.md`
+- `docs/product/project_status.md`
+- milestone review documents
+- multi-agent workflow docs
+- package closeout
+
+Escalate to heavier docs only when the work changes public API / schema /
+migrations, PRD / ADR meaning, V2.2 search/contact/privacy scope, milestone
+status, release/deployment assumptions, or secrets handling.
 
 ### At minimum, update:
 - the active task file in `docs/delivery/tasks/`

@@ -6,7 +6,7 @@
 
 - Package 名称：V2.1 Milestone Acceptance And Gap Closure
 - 建议路径：`docs/delivery/packages/package_v2_1_milestone_acceptance_and_gap_closure.md`
-- 当前状态：`in_progress`
+- 当前状态：`done`
 - 优先级：P0
 - Package 类型：`closeout / delivery`
 - Authorization source：human instruction on 2026-04-28: "PLEASE IMPLEMENT THIS PLAN"
@@ -37,7 +37,7 @@
 固定顺序：
 
 1. `docs/delivery/tasks/task_v2_1_milestone_acceptance_review.md`（done）
-2. `docs/delivery/tasks/task_v2_1_chat_first_workspace_start_gap_closure.md`（planned / current，re-scoped to lightweight start button entry polish）
+2. `docs/delivery/tasks/task_v2_1_chat_first_workspace_start_gap_closure.md`（done，re-scoped to lightweight start button entry polish）
 
 如果 product entry polish 后仍发现新的 V2.1 PRD implementation gap，应在本 package 内新增具体 V2.1 task；如果 gap 需要新 API、migration、外部 provider 或产品方向变更，应停止并交回人工决策。
 
@@ -64,6 +64,8 @@
 ---
 
 ## 5. Auto-continue 条件
+
+本 package 当前已完成；以下为执行期间适用的历史条件。
 
 - 当前 task 明确列在本 package 内。
 - 变更只服务 V2.1 lightweight start button product entry polish。
@@ -99,14 +101,31 @@
 
 ## 8. Package Closeout
 
-当前 package 仍在进行中。
+当前 package 已完成当前执行范围；不声明 V2.1 product milestone 完成。
+
+Correction on 2026-04-28：
+
+- 2026-04-28 人工验收反馈指出 Android app 上没有看到聊天入口。
+- 因此本 package closeout 中关于 lightweight entry polish 已满足 product entry 的表述，只能保留为历史 delivery evidence，不能作为 V2.1 product-entry done 或 milestone completion 标准。
+- 当前 V2.1 状态以 `docs/product/project_status.md` 和 `docs/delivery/packages/package_v2_1_android_chat_entry_recovery.md` 为准。
 
 已完成：
 
 - Evidence-based V2.1 milestone acceptance review。
 - 产品决策已将 chat-first one-sentence workspace start 弱化为轻量按钮“开始销售工作区”入口 polish。
+- Android lightweight entry polish：历史代码和 build/install evidence 曾记录入口按钮文案产品化为“开始销售工作区”，点击后通过既有 `POST /sales-workspaces` 创建或进入默认 `ws_demo`；但当前人工验收未看到聊天入口，因此该项不能作为 product-entry done。
+- `workspace_already_exists` 既有 409 backend 语义已在 Android 侧作为“进入现有 workspace”处理。
+- 已补充 task outcome、handoff、milestone review addendum 和 project status refresh。
 
-待完成：
+验证：
 
-- 执行 `task_v2_1_chat_first_workspace_start_gap_closure.md` 的轻量入口 polish scope。
-- entry polish 后重新判断 V2.1 product milestone 是否仍为 `partial`。
+- `./gradlew :app:assembleDebug` 通过。
+- `adb devices` 检测到设备 `f3b59f04	device`。
+- `adb install -r app/build/outputs/apk/debug/app-debug.apk` 通过。
+- `adb shell am start -n com.openclaw.android.nativeentry/.MainActivity` 可启动应用。
+- `adb shell uiautomator dump` 可读取 app UI tree；设备恢复在历史 `分析报告` 内页，未自动完成 Workspace 页点击级 smoke。
+
+后续：
+
+- 已开放 `docs/delivery/packages/package_v2_1_android_chat_entry_recovery.md`。
+- V2.1 product milestone 当前为 `partial / android_chat_entry_missing`。

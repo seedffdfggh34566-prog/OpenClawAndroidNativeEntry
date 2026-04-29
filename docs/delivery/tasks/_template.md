@@ -11,6 +11,7 @@
 - 任务类型：`delivery / planning / guardrail / closeout / step`
 - 是否属于 delivery package：`yes / no`
 - 所属 package：`<名称或 none>`
+- 文档同步级别：`Level 0 step / Level 1 task / Level 2 package / Level 3 status`
 
 ---
 
@@ -89,6 +90,17 @@
 
 1. ...
 2. ...
+
+文档同步范围：
+
+- 默认同步：
+  - ...
+- 不默认同步：
+  - `docs/product/project_status.md`
+  - milestone review
+  - root / docs README
+- 需要更新高层文档的条件：
+  - ...
 
 ---
 

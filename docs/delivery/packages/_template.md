@@ -12,6 +12,7 @@
 - Authorization source：`human instruction / accepted Status Agent recommendation / _active.md auto-continue rule / current package next-package rule`
 - 是否允许 package 内部 tasks / steps 连续执行：`yes / no`
 - 完成后是否允许自动进入下游 package：`yes / no`
+- 文档同步级别：`Level 1 task / Level 2 package / Level 3 status`
 
 ---
 
@@ -65,7 +66,29 @@
 
 ---
 
-## 8. Package Closeout
+## 8. Documentation Sync Plan
+
+默认同步：
+
+- package closeout
+- handoff
+- `_active.md`，仅当 current package / task、queue、auto-continue 或 stop conditions 变化
+
+不默认同步：
+
+- `docs/product/project_status.md`
+- milestone review
+- root / docs README
+
+需要同步高层文档的条件：
+
+- capability status、milestone evidence、project phase 或 gap backlog 变化
+- docs navigation、目录结构或正式入口变化
+- 当前 package 明确包含 status / milestone closeout
+
+---
+
+## 9. Package Closeout
 
 任务完成后补充：
 

@@ -28,11 +28,22 @@ MessageType = Literal[
     "system_note",
 ]
 AgentRunStatus = Literal["queued", "running", "succeeded", "failed"]
+DefaultConversationThreadId = "main"
+
+
+class ConversationThread(ChatFirstModel):
+    id: str
+    workspace_id: str
+    title: str
+    status: Literal["active", "archived"] = "active"
+    created_at: Any = Field(default_factory=utc_now)
+    updated_at: Any = Field(default_factory=utc_now)
 
 
 class ConversationMessage(ChatFirstModel):
     id: str
     workspace_id: str
+    thread_id: str = DefaultConversationThreadId
     role: MessageRole
     message_type: MessageType
     content: str
@@ -44,6 +55,7 @@ class ConversationMessage(ChatFirstModel):
 class SalesAgentTurnRun(ChatFirstModel):
     id: str
     workspace_id: str
+    thread_id: str = DefaultConversationThreadId
     run_type: Literal["sales_agent_turn"] = "sales_agent_turn"
     status: AgentRunStatus = "queued"
     input_refs: list[str] = Field(default_factory=list)
@@ -58,6 +70,7 @@ class SalesAgentTurnRun(ChatFirstModel):
 class SalesAgentTurnContextPack(ChatFirstModel):
     id: str
     workspace_id: str
+    thread_id: str = DefaultConversationThreadId
     agent_run_id: str
     task_type: Literal["sales_agent_turn"] = "sales_agent_turn"
     token_budget_chars: int = 6000
@@ -85,6 +98,7 @@ sales_workspace_conversation_messages = sa.Table(
     sa.MetaData(),
     sa.Column("workspace_id", sa.Text(), primary_key=True),
     sa.Column("message_id", sa.Text(), primary_key=True),
+    sa.Column("thread_id", sa.Text(), nullable=False, server_default=DefaultConversationThreadId),
     sa.Column("role", sa.Text(), nullable=False),
     sa.Column("message_type", sa.Text(), nullable=False),
     sa.Column("content", sa.Text(), nullable=False),
@@ -99,6 +113,7 @@ sales_workspace_agent_runs = sa.Table(
     sa.MetaData(),
     sa.Column("workspace_id", sa.Text(), primary_key=True),
     sa.Column("agent_run_id", sa.Text(), primary_key=True),
+    sa.Column("thread_id", sa.Text(), nullable=False, server_default=DefaultConversationThreadId),
     sa.Column("run_type", sa.Text(), nullable=False),
     sa.Column("status", sa.Text(), nullable=False),
     sa.Column("input_refs_json", sa.JSON(), nullable=False),
@@ -116,6 +131,7 @@ sales_workspace_context_packs = sa.Table(
     sa.MetaData(),
     sa.Column("workspace_id", sa.Text(), primary_key=True),
     sa.Column("context_pack_id", sa.Text(), primary_key=True),
+    sa.Column("thread_id", sa.Text(), nullable=False, server_default=DefaultConversationThreadId),
     sa.Column("agent_run_id", sa.Text(), nullable=False),
     sa.Column("task_type", sa.Text(), nullable=False),
     sa.Column("token_budget_chars", sa.Integer(), nullable=False),
@@ -125,15 +141,57 @@ sales_workspace_context_packs = sa.Table(
     sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
 )
 
+sales_workspace_conversation_threads = sa.Table(
+    "sales_workspace_conversation_threads",
+    sa.MetaData(),
+    sa.Column("workspace_id", sa.Text(), primary_key=True),
+    sa.Column("thread_id", sa.Text(), primary_key=True),
+    sa.Column("title", sa.Text(), nullable=False),
+    sa.Column("status", sa.Text(), nullable=False),
+    sa.Column("payload_json", sa.JSON(), nullable=False),
+    sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+)
+
 
 class InMemoryChatTraceStore:
     def __init__(self) -> None:
+        self._threads: dict[tuple[str, str], ConversationThread] = {}
         self._messages: dict[tuple[str, str], ConversationMessage] = {}
         self._agent_runs: dict[tuple[str, str], SalesAgentTurnRun] = {}
         self._context_packs: dict[tuple[str, str], SalesAgentTurnContextPack] = {}
 
+    def save_thread(self, thread: ConversationThread) -> None:
+        self._threads[(thread.workspace_id, thread.id)] = thread
+
+    def get_thread(self, workspace_id: str, thread_id: str) -> ConversationThread:
+        self.ensure_thread(workspace_id, thread_id)
+        try:
+            return self._threads[(workspace_id, thread_id)]
+        except KeyError as exc:
+            raise ChatTraceNotFound(thread_id) from exc
+
+    def list_threads(self, workspace_id: str, *, ensure_default: bool = True) -> list[ConversationThread]:
+        if ensure_default:
+            self.ensure_thread(workspace_id, DefaultConversationThreadId)
+        return sorted(
+            [thread for (stored_workspace_id, _), thread in self._threads.items() if stored_workspace_id == workspace_id],
+            key=lambda thread: thread.updated_at,
+            reverse=True,
+        )
+
+    def ensure_thread(self, workspace_id: str, thread_id: str = DefaultConversationThreadId) -> None:
+        key = (workspace_id, thread_id)
+        if key not in self._threads and thread_id == DefaultConversationThreadId:
+            self._threads[key] = ConversationThread(
+                id=DefaultConversationThreadId,
+                workspace_id=workspace_id,
+                title="主对话",
+            )
+
     def save_message(self, message: ConversationMessage) -> None:
         self._messages[(message.workspace_id, message.id)] = message
+        self.ensure_thread(message.workspace_id, message.thread_id)
 
     def get_message(self, workspace_id: str, message_id: str) -> ConversationMessage:
         try:
@@ -141,9 +199,18 @@ class InMemoryChatTraceStore:
         except KeyError as exc:
             raise ChatTraceNotFound(message_id) from exc
 
-    def list_messages(self, workspace_id: str) -> list[ConversationMessage]:
+    def list_messages(
+        self,
+        workspace_id: str,
+        thread_id: str = DefaultConversationThreadId,
+    ) -> list[ConversationMessage]:
+        self.ensure_thread(workspace_id, thread_id)
         return sorted(
-            [message for (stored_workspace_id, _), message in self._messages.items() if stored_workspace_id == workspace_id],
+            [
+                message
+                for (stored_workspace_id, _), message in self._messages.items()
+                if stored_workspace_id == workspace_id and message.thread_id == thread_id
+            ],
             key=lambda message: message.created_at,
         )
 
@@ -156,6 +223,21 @@ class InMemoryChatTraceStore:
         except KeyError as exc:
             raise ChatTraceNotFound(agent_run_id) from exc
 
+    def list_agent_runs(
+        self,
+        workspace_id: str,
+        thread_id: str | None = None,
+    ) -> list[SalesAgentTurnRun]:
+        return sorted(
+            [
+                agent_run
+                for (stored_workspace_id, _), agent_run in self._agent_runs.items()
+                if stored_workspace_id == workspace_id and (thread_id is None or agent_run.thread_id == thread_id)
+            ],
+            key=lambda agent_run: agent_run.created_at,
+            reverse=True,
+        )
+
     def save_context_pack(self, context_pack: SalesAgentTurnContextPack) -> None:
         self._context_packs[(context_pack.workspace_id, context_pack.id)] = context_pack
 
@@ -165,15 +247,103 @@ class InMemoryChatTraceStore:
         except KeyError as exc:
             raise ChatTraceNotFound(context_pack_id) from exc
 
+    def list_context_packs(
+        self,
+        workspace_id: str,
+        thread_id: str | None = None,
+        agent_run_id: str | None = None,
+    ) -> list[SalesAgentTurnContextPack]:
+        return sorted(
+            [
+                context_pack
+                for (stored_workspace_id, _), context_pack in self._context_packs.items()
+                if (
+                    stored_workspace_id == workspace_id
+                    and (thread_id is None or context_pack.thread_id == thread_id)
+                    and (agent_run_id is None or context_pack.agent_run_id == agent_run_id)
+                )
+            ],
+            key=lambda context_pack: context_pack.created_at,
+            reverse=True,
+        )
+
 
 class PostgresChatTraceStore:
     def __init__(self, session_factory: sessionmaker[Session] | Callable[[], Session] | None = None) -> None:
         self._session_factory = session_factory or get_session_factory()
 
+    def save_thread(self, thread: ConversationThread) -> None:
+        values = {
+            "workspace_id": thread.workspace_id,
+            "thread_id": thread.id,
+            "title": thread.title,
+            "status": thread.status,
+            "payload_json": _json(thread),
+            "created_at": thread.created_at,
+            "updated_at": thread.updated_at,
+        }
+        with self._session_factory() as session:
+            with session.begin():
+                updated = session.execute(
+                    sales_workspace_conversation_threads.update()
+                    .where(
+                        sales_workspace_conversation_threads.c.workspace_id == thread.workspace_id,
+                        sales_workspace_conversation_threads.c.thread_id == thread.id,
+                    )
+                    .values(**values)
+                ).rowcount
+                if not updated:
+                    session.execute(sales_workspace_conversation_threads.insert().values(**values))
+
+    def get_thread(self, workspace_id: str, thread_id: str) -> ConversationThread:
+        self.ensure_thread(workspace_id, thread_id)
+        with self._session_factory() as session:
+            row = session.execute(
+                sa.select(sales_workspace_conversation_threads.c.payload_json).where(
+                    sales_workspace_conversation_threads.c.workspace_id == workspace_id,
+                    sales_workspace_conversation_threads.c.thread_id == thread_id,
+                )
+            ).first()
+            if row is None:
+                raise ChatTraceNotFound(thread_id)
+            return ConversationThread.model_validate(row.payload_json)
+
+    def list_threads(self, workspace_id: str, *, ensure_default: bool = True) -> list[ConversationThread]:
+        if ensure_default:
+            self.ensure_thread(workspace_id, DefaultConversationThreadId)
+        with self._session_factory() as session:
+            rows = session.execute(
+                sa.select(sales_workspace_conversation_threads.c.payload_json)
+                .where(sales_workspace_conversation_threads.c.workspace_id == workspace_id)
+                .order_by(sales_workspace_conversation_threads.c.updated_at.desc())
+            )
+            return [ConversationThread.model_validate(row.payload_json) for row in rows]
+
+    def ensure_thread(self, workspace_id: str, thread_id: str = DefaultConversationThreadId) -> None:
+        if thread_id != DefaultConversationThreadId:
+            return
+        with self._session_factory() as session:
+            row = session.execute(
+                sa.select(sales_workspace_conversation_threads.c.thread_id).where(
+                    sales_workspace_conversation_threads.c.workspace_id == workspace_id,
+                    sales_workspace_conversation_threads.c.thread_id == DefaultConversationThreadId,
+                )
+            ).first()
+        if row is None:
+            self.save_thread(
+                ConversationThread(
+                    id=DefaultConversationThreadId,
+                    workspace_id=workspace_id,
+                    title="主对话",
+                )
+            )
+
     def save_message(self, message: ConversationMessage) -> None:
+        self.ensure_thread(message.workspace_id, message.thread_id)
         values = {
             "workspace_id": message.workspace_id,
             "message_id": message.id,
+            "thread_id": message.thread_id,
             "role": message.role,
             "message_type": message.message_type,
             "content": message.content,
@@ -207,11 +377,19 @@ class PostgresChatTraceStore:
                 raise ChatTraceNotFound(message_id)
             return ConversationMessage.model_validate(row.payload_json)
 
-    def list_messages(self, workspace_id: str) -> list[ConversationMessage]:
+    def list_messages(
+        self,
+        workspace_id: str,
+        thread_id: str = DefaultConversationThreadId,
+    ) -> list[ConversationMessage]:
+        self.ensure_thread(workspace_id, thread_id)
         with self._session_factory() as session:
             rows = session.execute(
                 sa.select(sales_workspace_conversation_messages.c.payload_json)
-                .where(sales_workspace_conversation_messages.c.workspace_id == workspace_id)
+                .where(
+                    sales_workspace_conversation_messages.c.workspace_id == workspace_id,
+                    sales_workspace_conversation_messages.c.thread_id == thread_id,
+                )
                 .order_by(sales_workspace_conversation_messages.c.created_at)
             )
             return [ConversationMessage.model_validate(row.payload_json) for row in rows]
@@ -220,6 +398,7 @@ class PostgresChatTraceStore:
         values = {
             "workspace_id": agent_run.workspace_id,
             "agent_run_id": agent_run.id,
+            "thread_id": agent_run.thread_id,
             "run_type": agent_run.run_type,
             "status": agent_run.status,
             "input_refs_json": agent_run.input_refs,
@@ -256,10 +435,26 @@ class PostgresChatTraceStore:
                 raise ChatTraceNotFound(agent_run_id)
             return SalesAgentTurnRun.model_validate(row.payload_json)
 
+    def list_agent_runs(
+        self,
+        workspace_id: str,
+        thread_id: str | None = None,
+    ) -> list[SalesAgentTurnRun]:
+        statement = sa.select(sales_workspace_agent_runs.c.payload_json).where(
+            sales_workspace_agent_runs.c.workspace_id == workspace_id
+        )
+        if thread_id is not None:
+            statement = statement.where(sales_workspace_agent_runs.c.thread_id == thread_id)
+        statement = statement.order_by(sales_workspace_agent_runs.c.created_at.desc())
+        with self._session_factory() as session:
+            rows = session.execute(statement)
+            return [SalesAgentTurnRun.model_validate(row.payload_json) for row in rows]
+
     def save_context_pack(self, context_pack: SalesAgentTurnContextPack) -> None:
         values = {
             "workspace_id": context_pack.workspace_id,
             "context_pack_id": context_pack.id,
+            "thread_id": context_pack.thread_id,
             "agent_run_id": context_pack.agent_run_id,
             "task_type": context_pack.task_type,
             "token_budget_chars": context_pack.token_budget_chars,
@@ -293,10 +488,29 @@ class PostgresChatTraceStore:
                 raise ChatTraceNotFound(context_pack_id)
             return SalesAgentTurnContextPack.model_validate(row.payload_json)
 
+    def list_context_packs(
+        self,
+        workspace_id: str,
+        thread_id: str | None = None,
+        agent_run_id: str | None = None,
+    ) -> list[SalesAgentTurnContextPack]:
+        statement = sa.select(sales_workspace_context_packs.c.payload_json).where(
+            sales_workspace_context_packs.c.workspace_id == workspace_id
+        )
+        if thread_id is not None:
+            statement = statement.where(sales_workspace_context_packs.c.thread_id == thread_id)
+        if agent_run_id is not None:
+            statement = statement.where(sales_workspace_context_packs.c.agent_run_id == agent_run_id)
+        statement = statement.order_by(sales_workspace_context_packs.c.created_at.desc())
+        with self._session_factory() as session:
+            rows = session.execute(statement)
+            return [SalesAgentTurnContextPack.model_validate(row.payload_json) for row in rows]
+
 
 def compile_sales_agent_turn_context_pack(
     workspace: SalesWorkspace,
     *,
+    thread_id: str = DefaultConversationThreadId,
     agent_run_id: str,
     context_pack_id: str,
     recent_messages: list[ConversationMessage],
@@ -315,33 +529,25 @@ def compile_sales_agent_turn_context_pack(
     return SalesAgentTurnContextPack(
         id=context_pack_id,
         workspace_id=workspace.id,
+        thread_id=thread_id,
         agent_run_id=agent_run_id,
         token_budget_chars=token_budget_chars,
         workspace_summary=f"{workspace.name} workspace",
-        current_product_profile_revision={
-            "id": product.id,
-            "summary": product.one_liner or product.product_name,
-        }
-        if product
-        else None,
-        current_lead_direction_version={
-            "id": direction.id,
-            "summary": direction.change_reason,
-        }
-        if direction
-        else None,
+        current_product_profile_revision=product.model_dump(mode="json") if product else None,
+        current_lead_direction_version=direction.model_dump(mode="json") if direction else None,
         recent_messages=[
             {
                 "id": message.id,
                 "role": message.role,
                 "message_type": message.message_type,
-                "content_excerpt": message.content[:120],
+                "content_excerpt": message.content[:500],
             }
-            for message in recent_messages[-5:]
+            for message in recent_messages[-12:]
         ],
         input_refs=[
             f"SalesWorkspace:{workspace.id}",
-            *[f"ConversationMessage:{message.id}" for message in recent_messages[-5:]],
+            f"ConversationThread:{thread_id}",
+            *[f"ConversationMessage:{message.id}" for message in recent_messages[-12:]],
         ],
         source_versions={
             "workspace_version": workspace.workspace_version,

@@ -66,12 +66,28 @@ fun parseSalesWorkspaceConversationMessagesResponse(rawJson: String): SalesWorks
         messages = JSONObject(rawJson).optJSONArray("messages").toConversationMessages(),
     )
 
+fun parseSalesWorkspaceConversationThreadsResponse(rawJson: String): SalesWorkspaceConversationThreadsResponseDto =
+    SalesWorkspaceConversationThreadsResponseDto(
+        threads = JSONObject(rawJson).optJSONArray("threads").toConversationThreads(),
+    )
+
+fun parseSalesWorkspaceConversationThreadResponse(rawJson: String): SalesWorkspaceConversationThreadDto =
+    JSONObject(rawJson).getJSONObject("thread").toSalesWorkspaceConversationThreadDto()
+
 private fun JSONObject.toSalesWorkspaceConversationMessageDto(): SalesWorkspaceConversationMessageDto =
     SalesWorkspaceConversationMessageDto(
         id = getString("id"),
+        threadId = optString("thread_id", SalesWorkspaceDefaultThreadId),
         role = getString("role"),
         messageType = getString("message_type"),
         content = getString("content"),
+    )
+
+private fun JSONObject.toSalesWorkspaceConversationThreadDto(): SalesWorkspaceConversationThreadDto =
+    SalesWorkspaceConversationThreadDto(
+        id = getString("id"),
+        title = getString("title"),
+        status = getString("status"),
     )
 
 private fun JSONArray?.toConversationMessages(): List<SalesWorkspaceConversationMessageDto> =
@@ -79,6 +95,14 @@ private fun JSONArray?.toConversationMessages(): List<SalesWorkspaceConversation
         val array = this@toConversationMessages ?: return@buildList
         for (index in 0 until array.length()) {
             add(array.getJSONObject(index).toSalesWorkspaceConversationMessageDto())
+        }
+    }
+
+private fun JSONArray?.toConversationThreads(): List<SalesWorkspaceConversationThreadDto> =
+    buildList {
+        val array = this@toConversationThreads ?: return@buildList
+        for (index in 0 until array.length()) {
+            add(array.getJSONObject(index).toSalesWorkspaceConversationThreadDto())
         }
     }
 

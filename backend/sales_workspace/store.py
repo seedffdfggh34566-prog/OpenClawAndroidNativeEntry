@@ -45,6 +45,13 @@ class InMemoryWorkspaceStore:
         except KeyError as exc:
             raise WorkspaceNotFound(workspace_id) from exc
 
+    def list_workspaces(self) -> list[SalesWorkspace]:
+        return sorted(
+            self._workspaces.values(),
+            key=lambda workspace: workspace.updated_at,
+            reverse=True,
+        )
+
     def apply_patch(self, patch: WorkspacePatch) -> SalesWorkspace:
         workspace = self.get(patch.workspace_id)
         updated = apply_workspace_patch(workspace, patch)
@@ -72,6 +79,22 @@ class JsonFileWorkspaceStore(InMemoryWorkspaceStore):
     def save(self, workspace: SalesWorkspace) -> None:
         self._workspaces[workspace.id] = workspace
         save_workspace_json(self._workspace_path(workspace.id), workspace)
+
+    def list_workspaces(self) -> list[SalesWorkspace]:
+        file_workspaces = {}
+        for path in self.store_dir.glob("*.json"):
+            if not path.is_file():
+                continue
+            workspace = load_workspace_json(path)
+            file_workspaces[workspace.id] = workspace
+
+        merged = {**file_workspaces, **self._workspaces}
+        self._workspaces.update(merged)
+        return sorted(
+            merged.values(),
+            key=lambda workspace: workspace.updated_at,
+            reverse=True,
+        )
 
     def _workspace_path(self, workspace_id: str) -> Path:
         filename = f"{quote(workspace_id, safe='')}.json"

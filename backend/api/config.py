@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     sales_agent_llm_prompt_version: str = "sales_agent_turn_llm_v1"
     dev_llm_trace_enabled: bool = False
     dev_llm_trace_dir: str = "/tmp/openclaw_llm_traces"
+    dev_sales_workspace_diagnostics_enabled: bool = False
     sales_workspace_store_backend: str | None = None
     sales_workspace_store_dir: str | None = None
 

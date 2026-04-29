@@ -6,7 +6,7 @@
 
 - 任务名称：V2.1 Lightweight Workspace Start Entry Polish
 - 建议路径：`docs/delivery/tasks/task_v2_1_chat_first_workspace_start_gap_closure.md`
-- 当前状态：`planned`
+- 当前状态：`done`
 - 优先级：P0
 - 任务类型：`delivery / polish`
 - 是否属于 delivery package：`yes`
@@ -170,22 +170,62 @@ Milestone acceptance review 初版将“一句话启动 SalesWorkspace”判为 
 
 ## 11. 实际产出
 
-任务执行完成后补充。
+- Android Workspace 入口文案已从技术化 `workspace` 创建口径调整为产品口径：
+  - 入口卡片标题：`销售工作区入口`
+  - 主按钮：`开始销售工作区`
+  - loading 文案：`正在进入销售工作区`
+- Android `createDefaultSalesWorkspace()` 保持使用既有 `POST /sales-workspaces` endpoint。
+- 当 `POST /sales-workspaces` 返回既有 backend 语义 `409 workspace_already_exists` 时，Android 不再停留在失败态，而是刷新并进入默认 `ws_demo` workspace。
+- 创建或进入默认 workspace 后继续加载 snapshot 和 ConversationMessage history；只要 workspace 加载成功，原有 chat-first 输入区继续展示。
+- 未新增 backend API、migration、schema、V2.2 search / ContactPoint、formal LangGraph、auth、tenant 或 multi-workspace lifecycle。
 
 ---
 
 ## 12. 本次定稿边界
 
-任务执行完成后补充。
+- 本任务只关闭 lightweight product entry polish，不声明 V2.1 product milestone 完成。
+- `SalesWorkspace` 仍是 backend formal truth object；Android 仅作为控制入口创建或进入默认 `ws_demo`。
+- 本任务不实现首句自然语言自动创建 workspace，也不在入口点击时自动触发 `ConversationMessage` / `AgentRun`。
+- 完成后不自动开放下游 implementation task；后续 milestone 判断需由 planning/status flow 继续。
 
 ---
 
 ## 13. 已做验证
 
-任务执行完成后补充。
+- `./gradlew :app:assembleDebug`
+  - 结果：通过。
+  - 备注：保留既有 AGP/compileSdk warning 和 `LocalLifecycleOwner` deprecation warning。
+- `adb devices`
+  - 结果：检测到设备 `f3b59f04	device`。
+- `adb install -r app/build/outputs/apk/debug/app-debug.apk`
+  - 结果：通过。
+- `adb shell am start -n com.openclaw.android.nativeentry/.MainActivity`
+  - 结果：应用可启动。
+- `adb shell uiautomator dump`
+  - 结果：可获取当前 app UI tree，但设备恢复在历史 `分析报告` 内页，未能用 adb 自动完成 Workspace 页点击级 smoke。
+- `git diff --check`
+  - 结果：通过。
 
 ---
 
 ## 14. 实际结果说明
 
-任务执行完成后补充。
+- 代码层已满足：未加载/未创建默认 workspace 时，用户可点击产品化按钮“开始销售工作区”；Android 复用既有创建接口，成功后展示 chat-first 输入。
+- 代码层已处理：如果默认 workspace 已存在，创建请求返回 `workspace_already_exists` 时刷新并进入现有 `ws_demo`，不新增后端语义。
+- 已加载 workspace 的 chat submit 路径未改动。
+- 真机验证覆盖安装和启动；由于设备当前恢复在历史内页，本次未自动确认 Workspace 页点击后的后端联通结果。
+
+---
+
+## 15. 2026-04-28 状态纠偏
+
+2026-04-28 人工验收反馈：
+
+> Android app 上没有看到聊天入口。
+
+因此，本 task 的 `done` 只能代表一次 lightweight entry polish 实现尝试和历史 delivery evidence，不能作为 product-entry done、V2.1 milestone done 或 Android path accepted 的标准。
+
+当前后续执行入口：
+
+- `docs/delivery/packages/package_v2_1_android_chat_entry_recovery.md`
+- `docs/delivery/tasks/task_v2_1_android_chat_entry_recovery_and_demo_path.md`

@@ -21,13 +21,13 @@
 
 当前正式主线为：
 
-> **AI 销售助手 App：V1 已冻结为 demo-ready baseline，V2.1 validated prototype path completed；V2.1 product milestone remains partial with lightweight product entry polish open。**
+> **AI 销售助手 App：V1 已冻结为 demo-ready baseline，V2.1 当前为 partial / android_chat_surface_missing；Android Sales Workspace 页面正在作为 P0 package 产品化为可用聊天界面。**
 
 当前 V2 的核心架构方向是：
 
 > **Sales Workspace Kernel：结构化 workspace 状态机 + WorkspacePatch 写回门禁 + 候选排序 + Markdown projection + ContextPack Compiler。**
 
-Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、Draft review contract、Draft review routes prototype、Android Draft Review ID flow、Postgres / Alembic persistence chain、Draft Review persistence、chat-first backend prototype、Android demo path、backend conversational acceptance、Android polish、真机端到端验收、PRD Acceptance final review 和 Tencent TokenHub LLM runtime prototype 已形成 validated prototype path。2026-04-28 产品决策将“一句话启动 SalesWorkspace”弱化为轻量按钮“开始销售工作区”；当前开放最小 V2.1 product entry polish task。当前不是 V1 继续开发阶段，也不是正式 Runtime / LangGraph implementation 或 V2.2 evidence / search implementation 阶段。
+Sales Workspace Kernel backend-only v0、no-DB FastAPI prototype v0、Android read-only workspace demo、可选 JSON file store prototype、deterministic Runtime PatchDraft prototype、PatchDraft review gate prototype、Android PatchDraft review UI prototype、Draft review contract、Draft review routes prototype、Android Draft Review ID flow、Postgres / Alembic persistence chain、Draft Review persistence、chat-first backend prototype、backend conversational acceptance、PRD Acceptance final review 和 Tencent TokenHub LLM runtime prototype 仍作为局部 evidence 保留。2026-04-28 产品决策将“一句话启动 SalesWorkspace”弱化为轻量按钮“开始销售工作区”；当前入口和 Sales Workspace 页面已出现，但页面仍过于工程化，缺少可验收的聊天上下文、明显输入框和 assistant / Draft Review 结果流。当前不是 V1 继续开发阶段，也不是正式 Runtime / LangGraph implementation 或 V2.2 evidence / search implementation 阶段。
 
 当前项目阶段状态以 `docs/product/project_status.md` 为准。task / handoff 只作为 evidence，不自行定义产品阶段完成。
 
@@ -267,7 +267,7 @@ docs/
 
 当前自动排定任务：
 
-- 当前开放：`docs/delivery/tasks/task_v2_1_chat_first_workspace_start_gap_closure.md`。
+- `docs/delivery/tasks/task_v2_1_android_chat_entry_recovery_and_demo_path.md`
 
 当前 Draft review contract 为：
 
@@ -422,4 +422,4 @@ V2.2 planned / blocked task placeholders：
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2.1 validated prototype path completed；V2.1 product milestone remains partial with lightweight product entry polish open；不直接写 V2.2 LangGraph / search/contact。**
+> **AI 销售助手 V2.1 partial / android_chat_entry_missing；当前 P0 是恢复 Android app 可见聊天入口；不直接写 V2.2 LangGraph / search/contact。**

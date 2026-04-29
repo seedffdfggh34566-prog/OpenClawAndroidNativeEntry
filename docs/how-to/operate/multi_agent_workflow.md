@@ -21,6 +21,10 @@ Package 文件默认放在 `docs/delivery/packages/`；task 文件默认放在 `
 
 ## 2. 角色职责
 
+这些角色是 Dev Agent 在不同线程中承担的 workflow responsibilities。它们不是产品内 Agent、Runtime / LangGraph Runtime，也不是固定工具身份。
+
+Codex、Claude Code 或其他开发助手线程即使被分配为 Status / Planning、Execution 或 Review role，仍然是操作本仓库的 Dev Agent，必须遵守 `AGENTS.md`、当前 docs source of truth 和 `_active.md` 执行授权边界。
+
 ### 2.1 Status / Planning Agent
 
 职责：
@@ -113,7 +117,30 @@ Milestone closeout 必须使用 `PRD Acceptance Traceability` 表，并逐项列
 
 ---
 
-## 4. Package Opening Authorization
+## 4. Documentation Sync Proportionality
+
+Execution Agent 完成任务时，文档同步必须与变更影响范围匹配，避免小实现 step 牵动全仓库入口文档。
+
+| Level | 适用情况 | 默认同步范围 |
+|---|---|---|
+| 0 | package 内部小 step、局部 polish、文案调整、无状态变化的轻量修复 | 当前 task outcome；必要时 package handoff |
+| 1 | 独立 task closeout，行为或验证需要交接 | 当前 task、handoff、直接相关 spec / runbook |
+| 2 | package closeout、执行授权变化、auto-continue 或队列状态变化 | package closeout、handoff、`_active.md` |
+| 3 | capability matrix、milestone evidence、project phase 或正式导航变化 | `project_status.md`、milestone review、必要的 root / docs README |
+
+执行规则：
+
+- 小 polish 不默认更新 `docs/README.md`、`docs/delivery/README.md`、`docs/product/project_status.md` 或 milestone review。
+- `_active.md` 只在 current package / task、queue、auto-continue、stop conditions 或执行授权变化时更新。
+- `project_status.md` 只在 capability status、gap backlog、milestone recommendation 或 project phase 变化时更新。
+- Milestone review addendum 只在 PRD evidence matrix、milestone gap 或 status recommendation 变化时更新。
+- Root / docs README 只在导航入口、目录结构或高层项目口径变化时更新。
+
+如果当前 task 明确要求更新高层文档，Execution Agent 可以更新，但必须在 handoff 中说明原因。
+
+---
+
+## 5. Package Opening Authorization
 
 开放 `_active.md` current delivery package 必须有明确 authorization source。
 
@@ -139,7 +166,7 @@ Execution Agent 不得在没有 authorization source 的情况下自行发明并
 
 ---
 
-## 5. Automation Levels
+## 6. Automation Levels
 
 当前默认建议为 **Level 1: recommend only**。
 
@@ -160,7 +187,7 @@ Execution Agent 不得在没有 authorization source 的情况下自行发明并
 
 ---
 
-## 6. 标准协作流程
+## 7. 标准协作流程
 
 1. Status / Planning Agent 读取 PRD、roadmap、ADR、architecture baseline、`project_status.md`、`_active.md` 和最近 delivery evidence。
 2. Status / Planning Agent 按 evidence model 反查相关代码、测试和运行证据。
@@ -173,12 +200,14 @@ Execution Agent 不得在没有 authorization source 的情况下自行发明并
 
 ---
 
-## 7. 启动 Prompt 模板
+## 8. 启动 Prompt 模板
 
 ### Status / Planning Agent
 
 ```text
-你是本仓库的 Status / Planning Agent。
+你是一个 Dev Agent。本线程中，你承担本仓库的 Status / Planning Agent 角色。
+
+Status / Planning Agent 是 Dev Agent workflow role，不是产品内 Product Sales Agent、Runtime / LangGraph Runtime，也不是固定工具身份。你仍必须遵守 AGENTS.md、docs source of truth 和 _active.md 的执行授权边界。
 
 职责：
 - 维护 docs/product/project_status.md
@@ -220,11 +249,14 @@ Evidence matrix 格式：
 ### Execution Agent
 
 ```text
-你是本仓库的 Execution Agent。
+你是一个 Dev Agent。本线程中，你承担本仓库的 Execution Agent 角色。
+
+Execution Agent 是 Dev Agent workflow role，不是产品内 Product Sales Agent、Runtime / LangGraph Runtime，也不是固定工具身份。你仍必须遵守 AGENTS.md、docs source of truth 和 _active.md 的执行授权边界。
 
 职责：
 - 只执行 docs/delivery/tasks/_active.md 当前开放的 delivery package / task
 - 在 scope 内实现、验证、更新 task outcome 和 handoff
+- 按 Documentation Sync Proportionality 选择最小必要文档同步范围
 - 不自行判断 V2.1 / V2.2 / milestone 是否完成
 - 不自行开放下一个 package
 
@@ -237,6 +269,7 @@ Evidence matrix 格式：
 
 完成后输出：
 - changed files
+- docs sync level and rationale
 - validation
 - known limits
 - handoff
@@ -246,7 +279,9 @@ Evidence matrix 格式：
 ### Review Agent
 
 ```text
-你是本仓库的 Review Agent。
+你是一个 Dev Agent。本线程中，你承担本仓库的 Review Agent 角色。
+
+Review Agent 是 Dev Agent workflow role，不是产品内 Product Sales Agent、Runtime / LangGraph Runtime，也不是固定工具身份。你仍必须遵守 AGENTS.md、docs source of truth 和 _active.md 的执行授权边界。
 
 职责：
 - 以 code/doc review 方式检查当前 diff

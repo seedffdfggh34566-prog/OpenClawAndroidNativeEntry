@@ -1,6 +1,7 @@
 package com.openclaw.android.nativeentry.data.backend
 
 const val SalesWorkspaceDemoWorkspaceId = "ws_demo"
+const val SalesWorkspaceDefaultThreadId = "main"
 
 data class SalesWorkspaceReadOnlySnapshot(
     val workspace: SalesWorkspaceDto,
@@ -77,8 +78,19 @@ data class SalesWorkspaceChatTurnResponseDto(
     val patchDraft: SalesWorkspacePatchDraftDto?,
 )
 
+data class SalesWorkspaceConversationThreadDto(
+    val id: String,
+    val title: String,
+    val status: String,
+)
+
+data class SalesWorkspaceConversationThreadsResponseDto(
+    val threads: List<SalesWorkspaceConversationThreadDto>,
+)
+
 data class SalesWorkspaceConversationMessageDto(
     val id: String,
+    val threadId: String,
     val role: String,
     val messageType: String,
     val content: String,

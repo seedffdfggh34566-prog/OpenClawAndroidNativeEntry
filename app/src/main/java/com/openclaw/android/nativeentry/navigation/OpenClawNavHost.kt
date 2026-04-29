@@ -25,7 +25,9 @@ import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewAp
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceChatTurnResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationMessageDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationMessagesResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationThreadsResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceResponseDto
 import com.openclaw.android.nativeentry.ui.shell.V1ShellPlaceholderState
 import com.openclaw.android.nativeentry.ui.shell.V1SectionState
@@ -36,7 +38,12 @@ fun OpenClawNavHost(
     backendState: V1BackendUiState,
     workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
     workspaceCreateState: V1SectionState<SalesWorkspaceResponseDto>,
+    workspaceThreadState: V1SectionState<SalesWorkspaceConversationThreadsResponseDto>,
+    selectedSalesWorkspaceId: String,
+    workspaceSelectorInput: String,
+    selectedWorkspaceThreadId: String,
     workspaceMessageHistoryState: V1SectionState<SalesWorkspaceConversationMessagesResponseDto>,
+    optimisticWorkspaceUserMessage: SalesWorkspaceConversationMessageDto?,
     draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
     patchDraftApplyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
     chatFirstTurnState: V1SectionState<SalesWorkspaceChatTurnResponseDto>,
@@ -48,12 +55,17 @@ fun OpenClawNavHost(
     onRefreshBackend: () -> Unit,
     onRefreshWorkspace: () -> Unit,
     onCreateWorkspace: () -> Unit,
+    onWorkspaceSelectorInputChange: (String) -> Unit,
+    onSwitchWorkspace: (String) -> Unit,
+    onCreateWorkspaceThread: (String) -> Unit,
+    onSelectWorkspaceThread: (String) -> Unit,
     onCreateDraftReview: () -> Unit,
     workspaceChatInput: String,
     workspaceChatMessageType: String,
     onWorkspaceChatInputChange: (String) -> Unit,
     onWorkspaceChatMessageTypeChange: (String) -> Unit,
     onSubmitWorkspaceChatTurn: () -> Unit,
+    onRetryWorkspaceChatTurn: () -> Unit,
     onAcceptDraftReview: () -> Unit,
     onRejectDraftReview: () -> Unit,
     onApplyDraftReview: () -> Unit,
@@ -89,6 +101,7 @@ fun OpenClawNavHost(
             HomeScreen(
                 backendState = backendState,
                 placeholderState = placeholderState,
+                onStartWorkspaceClick = { navController.navigateToTopLevel(OpenClawDestination.Workspace) },
                 onStartAnalysisClick = { navController.navigate(OpenClawDestination.ProductLearning.route) },
                 onContinueFlowClick = { navController.navigate(OpenClawDestination.ProductProfile.route) },
                 onViewHistoryClick = { navController.navigateToTopLevel(OpenClawDestination.History) },
@@ -114,7 +127,12 @@ fun OpenClawNavHost(
             SalesWorkspaceScreen(
                 workspaceState = workspaceState,
                 workspaceCreateState = workspaceCreateState,
+                workspaceThreadState = workspaceThreadState,
+                selectedWorkspaceId = selectedSalesWorkspaceId,
+                workspaceSelectorInput = workspaceSelectorInput,
+                selectedThreadId = selectedWorkspaceThreadId,
                 workspaceMessageHistoryState = workspaceMessageHistoryState,
+                optimisticUserMessage = optimisticWorkspaceUserMessage,
                 draftReviewState = draftReviewState,
                 patchDraftApplyState = patchDraftApplyState,
                 chatFirstTurnState = chatFirstTurnState,
@@ -122,10 +140,15 @@ fun OpenClawNavHost(
                 chatMessageType = workspaceChatMessageType,
                 onRefreshClick = onRefreshWorkspace,
                 onCreateWorkspaceClick = onCreateWorkspace,
+                onWorkspaceSelectorInputChange = onWorkspaceSelectorInputChange,
+                onSwitchWorkspaceClick = onSwitchWorkspace,
+                onCreateThreadClick = onCreateWorkspaceThread,
+                onThreadSelected = onSelectWorkspaceThread,
                 onCreateDraftReviewClick = onCreateDraftReview,
                 onChatInputChange = onWorkspaceChatInputChange,
                 onChatMessageTypeChange = onWorkspaceChatMessageTypeChange,
                 onSubmitChatTurnClick = onSubmitWorkspaceChatTurn,
+                onRetryChatTurnClick = onRetryWorkspaceChatTurn,
                 onAcceptDraftReviewClick = onAcceptDraftReview,
                 onRejectDraftReviewClick = onRejectDraftReview,
                 onApplyDraftReviewClick = onApplyDraftReview,

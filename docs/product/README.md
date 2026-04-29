@@ -20,7 +20,7 @@ Milestone acceptance review 应使用：
 
 - V2 北极星：workspace-native sales agent / 中小企业专属销售工作区 Agent
 - 产品主形态：Sales Workspace + chat-first agent + structured cards + evidence-based candidate ranking
-- 当前状态：V2.1 validated prototype path completed；V2.1 product milestone remains partial with lightweight product entry polish open
+- 当前状态：V2.1 partial / android_chat_entry_missing；Android app 未看到聊天入口，当前开放 V2.1 Android chat-first product entry recovery
 - 当前技术主线：Sales Workspace Kernel / chat-first Sales Workspace prototype
 
 当前 V2 规划入口：

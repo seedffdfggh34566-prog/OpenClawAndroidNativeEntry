@@ -12,6 +12,8 @@
 
 - `v2-1-chat-first-runtime-design.md`
 - `v2-1-llm-runtime-boundary.md`
+- `openclaw-context-management-reference.md`
+- `hermes-context-management-reference.md`
 - `v2-1-chat-first-trace-persistence-schema.md`
 - `langgraph-runtime-architecture.md`
 

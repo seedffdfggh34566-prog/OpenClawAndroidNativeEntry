@@ -198,6 +198,13 @@ class PostgresWorkspaceStore:
         with self._session_factory() as session:
             return self._get_workspace(session, workspace_id)
 
+    def list_workspaces(self) -> list[SalesWorkspace]:
+        with self._session_factory() as session:
+            rows = session.execute(
+                sa.select(sales_workspaces.c.payload_json).order_by(sales_workspaces.c.updated_at.desc())
+            )
+            return [SalesWorkspace.model_validate(row.payload_json) for row in rows]
+
     def save(self, workspace: SalesWorkspace) -> None:
         with self._session_factory() as session:
             with session.begin():
@@ -395,6 +402,21 @@ class PostgresDraftReviewStore:
             if row is None:
                 raise DraftReviewNotFound(draft_review_id)
             return self._review_from_row(row)
+
+    def list_draft_reviews(
+        self,
+        workspace_id: str,
+        status: str | None = None,
+    ) -> list[WorkspacePatchDraftReview]:
+        statement = sa.select(sales_workspace_draft_reviews).where(
+            sales_workspace_draft_reviews.c.workspace_id == workspace_id
+        )
+        if status is not None:
+            statement = statement.where(sales_workspace_draft_reviews.c.status == status)
+        statement = statement.order_by(sales_workspace_draft_reviews.c.updated_at.desc())
+        with self._session_factory() as session:
+            rows = session.execute(statement).mappings()
+            return [self._review_from_row(dict(row)) for row in rows]
 
     def _get_review_row(
         self,

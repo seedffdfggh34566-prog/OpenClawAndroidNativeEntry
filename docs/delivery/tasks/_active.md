@@ -39,23 +39,25 @@
 
 ### Current delivery package
 
-暂无。当前开放单个 V2.1 Sales Workspace memory merge / auto-write bugfix task。
+暂无。当前人工开放的单个 V2.1 Sales Workspace memory decision pipeline task 已完成。
 
 ### Current task
 
-`docs/delivery/tasks/task_v2_1_sales_workspace_memory_merge_and_autowrite_bugfix.md`
+`docs/delivery/tasks/task_v2_1_sales_workspace_memory_decision_pipeline.md`
 
 ### Next queued task
 
-暂无下游 implementation task 自动开放。Sales Workspace memory merge / auto-write bugfix 已完成。
+暂无下游 implementation task 自动开放。Sales Workspace memory decision pipeline 已完成。
 
 ### Auto-continue
 
-`no`。`task_v2_1_sales_workspace_memory_merge_and_autowrite_bugfix.md` 已完成；暂无下游 implementation task 自动开放。
+`no`。`task_v2_1_sales_workspace_memory_decision_pipeline.md` 已完成；暂无下游 implementation task 自动开放。
 
 ### Recently completed
 
 - `docs/delivery/tasks/task_v2_1_sales_workspace_dev_diagnostics_inspector.md`（done）
+- `docs/delivery/tasks/task_v2_1_sales_workspace_memory_decision_pipeline.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_29_v2_1_sales_workspace_memory_decision_pipeline.md`（done）
 - `docs/delivery/tasks/task_v2_1_sales_workspace_memory_merge_and_autowrite_bugfix.md`（done）
 - `docs/delivery/handoffs/handoff_2026_04_29_v2_1_sales_workspace_memory_merge_and_autowrite_bugfix.md`（done）
 - `docs/delivery/tasks/task_v2_1_sales_workspace_answer_quality_and_device_bugfix.md`（done）
@@ -494,12 +496,12 @@ V2.1 engineering baseline closeout 已完成：
 
 当前无 implementation task 自动开放。
 
-最近完成的自动继续范围仅允许：
+最近完成的人工开放任务范围仅限：
 
-- 执行 `docs/delivery/tasks/task_v2_1_sales_workspace_dev_diagnostics_inspector.md`。
-- 新增 dev-only、read-only diagnostics inspector 及最小 backend validation。
-- 查看现有 Sales Workspace、conversation、trace、draft review 和 workspace version 诊断信息。
-- 明确证明 inspector 不写入 workspace、不暴露 secrets。
+- 执行 `docs/delivery/tasks/task_v2_1_sales_workspace_memory_decision_pipeline.md`。
+- 实现 Python runtime pipeline：`Response LLM -> MemoryEvaluator LLM -> backend deterministic gate -> WorkspacePatchDraft/apply-or-review`。
+- 保持正式写入仍经过 `WorkspacePatchDraft -> DraftReview/apply record -> WorkspacePatch -> Sales Workspace Kernel`。
+- 明确证明 fallback/default/debug phrase、LLM 推断行业和 execution advice 不会直接污染 formal workspace。
 - 不跨入 Android product UI、V2.2 search / ContactPoint、CRM、formal LangGraph、auth / tenant、DB schema change、production hardening 或 milestone completion claim。
 
 后续若开放其他 delivery package，应同时写明：
@@ -522,7 +524,7 @@ V2.1 engineering baseline closeout 已完成：
 命中以下任一条件时停止并交回规划层：
 
 - 需要改变 V2 产品方向。
-- 需要新增或扩展当前 task 允许的 dev-only read-only diagnostics route 之外的 API route。
+- 需要新增或扩展当前 task 允许范围之外的 API route。
 - 需要新增 Android product UI、Android write path 或复杂交互。
 - 需要接正式 LangGraph / search，或扩展未经 task 开放的 LLM capability。
 - 需要引入新外部依赖。

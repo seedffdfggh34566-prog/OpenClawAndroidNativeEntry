@@ -78,11 +78,11 @@ def test_llm_runtime_product_turn_auto_applies_product_profile(llm_client, monke
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["agent_run"]["runtime_metadata"]["mode"] == "real_llm_no_langgraph"
+    assert payload["agent_run"]["runtime_metadata"]["mode"] == "real_llm_memory_decision_no_langgraph"
     assert payload["agent_run"]["runtime_metadata"]["provider"] == "tencent_tokenhub"
-    assert payload["patch_draft"]["author"] == "sales_agent_turn_llm_runtime"
+    assert payload["patch_draft"]["author"] == "sales_agent_turn_memory_pipeline"
     assert payload["patch_draft"]["operations"][0]["type"] == "upsert_product_profile_revision"
-    assert payload["patch_draft"]["operations"][0]["payload"]["id"] == "ppr_llm_v1"
+    assert payload["patch_draft"]["operations"][0]["payload"]["id"] == "ppr_memory_v1"
     assert payload["draft_review"]["status"] == "applied"
     assert payload["draft_review"]["apply_result"]["workspace_version"] == 1
     assert payload["assistant_message"]["message_type"] == "draft_summary"
@@ -93,8 +93,8 @@ def test_llm_runtime_product_turn_auto_applies_product_profile(llm_client, monke
     assert workspace_response.status_code == 200
     workspace = workspace_response.json()["workspace"]
     assert workspace["workspace_version"] == 1
-    assert workspace["current_product_profile_revision_id"] == "ppr_llm_v1"
-    assert workspace["product_profile_revisions"]["ppr_llm_v1"]["product_name"] == "工业设备维保软件"
+    assert workspace["current_product_profile_revision_id"] == "ppr_memory_v1"
+    assert workspace["product_profile_revisions"]["ppr_memory_v1"]["product_name"] == "工业设备维保软件"
 
 
 def test_llm_runtime_draft_summary_appends_missing_fields(llm_client, monkeypatch) -> None:
@@ -209,8 +209,8 @@ def test_llm_runtime_mixed_turn_creates_product_and_direction_review(llm_client,
     assert workspace_response.status_code == 200
     workspace = workspace_response.json()["workspace"]
     assert workspace["workspace_version"] == 1
-    assert workspace["current_product_profile_revision_id"] == "ppr_llm_v1"
-    assert workspace["current_lead_direction_version_id"] == "dir_llm_v1"
+    assert workspace["current_product_profile_revision_id"] == "ppr_memory_v1"
+    assert workspace["current_lead_direction_version_id"] == "dir_memory_v1"
 
 
 def test_llm_runtime_lead_direction_gives_customer_finding_advice_and_draft(llm_client, monkeypatch) -> None:
@@ -236,10 +236,13 @@ def test_llm_runtime_lead_direction_gives_customer_finding_advice_and_draft(llm_
     assert "1-20 人小企业老板" in content
     assert "筛选信号" in content
     assert "关键词" in content
-    assert "沉淀到工作区" in content
+    assert "写入前不会改变正式工作区" in content
     operation_types = [operation["type"] for operation in payload["patch_draft"]["operations"]]
     assert operation_types == ["upsert_lead_direction_version", "set_active_lead_direction"]
-    assert payload["draft_review"]["status"] == "applied"
+    assert payload["draft_review"]["status"] == "previewed"
+    workspace = llm_client.get("/sales-workspaces/ws_demo").json()["workspace"]
+    assert workspace["workspace_version"] == 0
+    assert workspace["current_lead_direction_version_id"] is None
 
 
 def test_llm_runtime_draft_summary_rewrites_pending_draft_language(llm_client, monkeypatch) -> None:
@@ -261,11 +264,14 @@ def test_llm_runtime_draft_summary_rewrites_pending_draft_language(llm_client, m
     assert response.status_code == 200
     payload = response.json()
     content = payload["assistant_message"]["content"]
-    assert payload["draft_review"]["status"] == "applied"
+    assert payload["draft_review"]["status"] == "previewed"
     assert "如果你确认" not in content
     assert "可以输出正式的 lead_direction_version" not in content
     assert "我已经把这版判断整理成下方可保存到工作区的更新" in content
-    assert "沉淀到工作区" in content
+    assert "写入前不会改变正式工作区" in content
+    workspace = llm_client.get("/sales-workspaces/ws_demo").json()["workspace"]
+    assert workspace["workspace_version"] == 0
+    assert workspace["current_lead_direction_version_id"] is None
 
 
 def test_llm_runtime_lead_direction_clarifying_output_still_creates_draft(llm_client, monkeypatch) -> None:
@@ -287,13 +293,8 @@ def test_llm_runtime_lead_direction_clarifying_output_still_creates_draft(llm_cl
     assert response.status_code == 200
     payload = response.json()
     assert payload["assistant_message"]["message_type"] == "draft_summary"
-    operation_types = [operation["type"] for operation in payload["patch_draft"]["operations"]]
-    assert operation_types == ["upsert_lead_direction_version", "set_active_lead_direction"]
-    assert payload["patch_draft"]["operations"][0]["payload"]["target_customer_types"] == [
-        "1-20 人小企业老板",
-        "老板亲自负责销售或获客的小团队",
-    ]
-    assert payload["draft_review"]["status"] == "applied"
+    assert payload["patch_draft"] is None
+    assert payload["draft_review"] is None
 
 
 def test_llm_runtime_lead_direction_does_not_degrade_current_product_profile(llm_client, monkeypatch) -> None:
@@ -333,11 +334,11 @@ def test_llm_runtime_lead_direction_does_not_degrade_current_product_profile(llm
     assert second_response.status_code == 200
     workspace = llm_client.get("/sales-workspaces/ws_demo").json()["workspace"]
     current_product = workspace["product_profile_revisions"][workspace["current_product_profile_revision_id"]]
-    assert workspace["workspace_version"] == 2
+    assert workspace["workspace_version"] == 1
     assert current_product["product_name"] == "工业设备维保软件"
     assert current_product["one_liner"] == "帮助工厂降低停机时间的设备维保软件。"
     assert "待确认目标客户" not in current_product["target_customers"]
-    assert workspace["current_lead_direction_version_id"] == "dir_llm_v2"
+    assert workspace["current_lead_direction_version_id"] is None
 
 
 def test_llm_runtime_product_update_merges_new_info_without_clearing_existing(llm_client, monkeypatch) -> None:
@@ -512,13 +513,13 @@ def test_llm_runtime_unsupported_operation_is_blocked_by_kernel_gate(llm_client,
         json={"message_id": "msg_user_product_001", "base_workspace_version": 0},
     )
 
-    assert response.status_code == 400
-    assert response.json()["error"]["code"] == "unsupported_workspace_operation"
+    assert response.status_code == 200
+    assert response.json()["patch_draft"] is None
     run_response = llm_client.get("/sales-workspaces/ws_demo/agent-runs/run_sales_turn_product_001")
     assert run_response.status_code == 200
     run = run_response.json()["agent_run"]
-    assert run["status"] == "failed"
-    assert run["error"]["code"] == "validation_error"
+    assert run["status"] == "succeeded"
+    assert run["runtime_metadata"]["memory_gate"]["decision"] == "reject"
     workspace_response = llm_client.get("/sales-workspaces/ws_demo")
     assert workspace_response.status_code == 200
     assert workspace_response.json()["workspace"]["workspace_version"] == 0
@@ -561,6 +562,15 @@ def test_llm_runtime_retries_transient_timeout_once(llm_client, monkeypatch) -> 
         attempts["count"] += 1
         if attempts["count"] == 1:
             raise TokenHubClientError("tokenhub_request_timeout")
+        if _is_memory_evaluator_call(messages):
+            decision = _memory_decision_for_output(
+                _product_draft_output(),
+                _user_message_from_memory_messages(messages),
+            )
+            return TokenHubCompletion(
+                content=json.dumps(decision, ensure_ascii=False),
+                usage={"prompt_tokens": 60, "completion_tokens": 40, "total_tokens": 100},
+            )
         return TokenHubCompletion(
             content=output,
             usage={"prompt_tokens": 100, "completion_tokens": 80, "total_tokens": 180},
@@ -582,7 +592,7 @@ def test_llm_runtime_retries_transient_timeout_once(llm_client, monkeypatch) -> 
     )
 
     assert response.status_code == 200
-    assert attempts["count"] == 2
+    assert attempts["count"] == 3
     payload = response.json()
     assert payload["agent_run"]["runtime_metadata"]["llm_request_attempts"] == 2
     assert payload["draft_review"]["status"] == "applied"
@@ -618,10 +628,22 @@ def _mock_llm(monkeypatch, output: dict) -> None:
 def _mock_llm_sequence(monkeypatch, outputs: list[dict]) -> None:
     serialized = [json.dumps(output, ensure_ascii=False) for output in outputs]
     attempts = {"index": 0}
+    pending_output: dict[str, object] = {}
 
     def complete(self, messages):  # noqa: ANN001, ARG001
+        if _is_memory_evaluator_call(messages):
+            output = pending_output.get("output")
+            decision = _memory_decision_for_output(
+                output if isinstance(output, dict) else {},
+                _user_message_from_memory_messages(messages),
+            )
+            return TokenHubCompletion(
+                content=json.dumps(decision, ensure_ascii=False),
+                usage={"prompt_tokens": 60, "completion_tokens": 40, "total_tokens": 100},
+            )
         index = min(attempts["index"], len(serialized) - 1)
         attempts["index"] += 1
+        pending_output["output"] = outputs[index]
         return TokenHubCompletion(
             content=serialized[index],
             usage={"prompt_tokens": 100, "completion_tokens": 80, "total_tokens": 180},
@@ -631,13 +653,123 @@ def _mock_llm_sequence(monkeypatch, outputs: list[dict]) -> None:
 
 
 def _mock_llm_content(monkeypatch, content: str) -> None:
+    output: dict[str, object] = {}
+    try:
+        parsed = json.loads(content)
+        if isinstance(parsed, dict):
+            output = parsed
+    except ValueError:
+        output = {}
+
     def complete(self, messages):  # noqa: ANN001, ARG001
+        if _is_memory_evaluator_call(messages):
+            decision = _memory_decision_for_output(
+                output,
+                _user_message_from_memory_messages(messages),
+            )
+            return TokenHubCompletion(
+                content=json.dumps(decision, ensure_ascii=False),
+                usage={"prompt_tokens": 60, "completion_tokens": 40, "total_tokens": 100},
+            )
         return TokenHubCompletion(
             content=content,
             usage={"prompt_tokens": 100, "completion_tokens": 80, "total_tokens": 180},
         )
 
     monkeypatch.setattr("backend.runtime.llm_client.TokenHubClient.complete", complete)
+
+
+def _is_memory_evaluator_call(messages: list[dict[str, str]]) -> bool:
+    if not messages:
+        return False
+    content = messages[0].get("content", "")
+    return content.startswith("你是 OpenClaw V2.1 的 MemoryEvaluator。")
+
+
+def _user_message_from_memory_messages(messages: list[dict[str, str]]) -> dict:
+    runtime_input = _runtime_input_from_memory_messages(messages)
+    user_message = runtime_input.get("user_message")
+    if isinstance(user_message, dict):
+        return user_message
+    return {}
+
+
+def _runtime_input_from_memory_messages(messages: list[dict[str, str]]) -> dict:
+    content = messages[1]["content"]
+    _, raw = content.split("runtime_input:\n", 1)
+    parsed = json.loads(raw)
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _memory_decision_for_output(output: dict, user_message: dict) -> dict:
+    user_content = user_message.get("content") if isinstance(user_message.get("content"), str) else ""
+    user_message_type = user_message.get("message_type") if isinstance(user_message.get("message_type"), str) else ""
+    user_message_id = user_message.get("id") if isinstance(user_message.get("id"), str) else ""
+    operations = output.get("patch_operations")
+    if not isinstance(operations, list) or not operations:
+        if user_message_type == "product_profile_update" and "我们做" in user_content:
+            return {
+                "decision": "auto_apply",
+                "proposals": [
+                    {
+                        "object_type": "product_profile",
+                        "intent": "enrich",
+                        "field_updates": {},
+                        "remove_or_supersede": [],
+                        "source_evidence": [{"message_id": user_message_id, "quote": user_content}],
+                        "confidence": output.get("confidence", 0.7),
+                        "risk_flags": [],
+                    }
+                ],
+                "reasoning_summary": "test memory evaluator extracted user-supported product fact",
+            }
+        return {"decision": "reject", "proposals": [], "reasoning_summary": "no memory proposal"}
+    proposals = []
+    for operation in operations:
+        if not isinstance(operation, dict):
+            continue
+        operation_type = operation.get("type")
+        payload = operation.get("payload") if isinstance(operation.get("payload"), dict) else {}
+        if operation_type == "upsert_product_profile_revision":
+            proposals.append(
+                {
+                    "object_type": "product_profile",
+                    "intent": "enrich",
+                    "field_updates": _field_updates_from_payload(payload),
+                    "remove_or_supersede": [],
+                    "source_evidence": [{"message_id": user_message_id, "quote": user_content}],
+                    "confidence": output.get("confidence", 0.7),
+                    "risk_flags": [],
+                }
+            )
+        if operation_type == "upsert_lead_direction_version":
+            proposals.append(
+                {
+                    "object_type": "lead_direction",
+                    "intent": "enrich",
+                    "field_updates": _field_updates_from_payload(payload),
+                    "remove_or_supersede": [],
+                    "source_evidence": [{"message_id": user_message_id, "quote": user_content}],
+                    "confidence": output.get("confidence", 0.7),
+                    "risk_flags": ["inferred_from_assistant_advice"] if user_message_type == "lead_direction_update" else [],
+                }
+            )
+    decision = "review_required" if user_message_type == "lead_direction_update" else "auto_apply"
+    if not proposals:
+        decision = "reject"
+    return {"decision": decision, "proposals": proposals, "reasoning_summary": "test memory evaluator"}
+
+
+def _field_updates_from_payload(payload: dict) -> dict:
+    updates = {}
+    for key, value in payload.items():
+        if key in {"id", "workspace_id", "version"}:
+            continue
+        if isinstance(value, list):
+            updates[key] = {"add": value}
+        elif isinstance(value, str) and value:
+            updates[key] = {"set": value}
+    return updates
 
 
 def _product_draft_output() -> dict:

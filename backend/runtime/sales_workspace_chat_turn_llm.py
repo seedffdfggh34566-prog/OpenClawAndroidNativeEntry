@@ -11,8 +11,15 @@ from backend.api.config import Settings
 from backend.runtime.llm_client import TokenHubClient, TokenHubClientError
 from backend.runtime.llm_trace import record_llm_trace, utc_now_iso
 from backend.runtime.sales_workspace_patchdraft import WorkspacePatchDraft, WorkspacePatchDraftOperation
+from backend.runtime.sales_workspace_memory_decision import (
+    MemoryDecision,
+    MemoryGateResult,
+    build_memory_decision_messages,
+    build_memory_patch_draft,
+    parse_memory_decision_json,
+)
 from backend.sales_workspace.chat_first import ConversationMessage, SalesAgentTurnContextPack, SalesAgentTurnRun
-from backend.sales_workspace.schemas import LeadDirectionVersion, ProductProfileRevision, SalesWorkspace
+from backend.sales_workspace.schemas import SalesWorkspace
 
 
 class SalesAgentTurnLlmError(RuntimeError):
@@ -44,15 +51,21 @@ class SalesAgentTurnLlmOutput(SalesAgentTurnLlmModel):
                 raise ValueError("clarifying_question must not include patch operations")
         if self.message_type in {"workspace_question", "out_of_scope_v2_2"} and self.patch_operations:
             raise ValueError(f"{self.message_type} must not include patch operations")
-        if self.message_type == "draft_summary" and not self.patch_operations:
-            raise ValueError("draft_summary requires patch operations")
         return self
 
 
 class SalesAgentTurnLlmResult(SalesAgentTurnLlmModel):
     output: SalesAgentTurnLlmOutput
     patch_draft: WorkspacePatchDraft | None = None
+    memory_decision: MemoryDecision | None = None
+    memory_gate: MemoryGateResult | None = None
     runtime_metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class SalesAgentTurnMemoryPipelineResult(SalesAgentTurnLlmModel):
+    patch_draft: WorkspacePatchDraft | None = None
+    memory_decision: MemoryDecision | None = None
+    memory_gate: MemoryGateResult | None = None
 
 
 def generate_sales_agent_turn_llm_result(
@@ -86,7 +99,7 @@ def generate_sales_agent_turn_llm_result(
     try:
         last_validation_error: ValueError | ValidationError | None = None
         output: SalesAgentTurnLlmOutput | None = None
-        patch_draft: WorkspacePatchDraft | None = None
+        memory_patch_result: Any | None = None
         for attempt in range(2):
             completion: Any | None = None
             for request_attempt in range(2):
@@ -108,7 +121,9 @@ def generate_sales_agent_turn_llm_result(
                     source_message=source_message,
                 )
                 output = SalesAgentTurnLlmOutput.model_validate(parsed_json)
-                patch_draft = _build_patch_draft(
+                memory_patch_result = _build_memory_patch_draft(
+                    llm_client=llm_client,
+                    settings=settings,
                     workspace=workspace,
                     source_message=source_message,
                     agent_run=agent_run,
@@ -116,7 +131,6 @@ def generate_sales_agent_turn_llm_result(
                     output=output,
                     base_workspace_version=base_workspace_version,
                     instruction=instruction,
-                    settings=settings,
                     usage=usage,
                     llm_request_attempts=llm_request_attempts,
                 )
@@ -178,6 +192,8 @@ def generate_sales_agent_turn_llm_result(
             return SalesAgentTurnLlmResult(
                 output=output,
                 patch_draft=None,
+                memory_decision=None,
+                memory_gate=None,
                 runtime_metadata={
                     "provider": settings.llm_provider,
                     "model": settings.llm_model,
@@ -215,17 +231,29 @@ def generate_sales_agent_turn_llm_result(
     )
     return SalesAgentTurnLlmResult(
         output=output,
-        patch_draft=patch_draft,
+        patch_draft=memory_patch_result.patch_draft if memory_patch_result is not None else None,
+        memory_decision=memory_patch_result.memory_decision if memory_patch_result is not None else None,
+        memory_gate=memory_patch_result.memory_gate if memory_patch_result is not None else None,
         runtime_metadata={
             "provider": settings.llm_provider,
             "model": settings.llm_model,
             "prompt_version": settings.sales_agent_llm_prompt_version,
-            "mode": "real_llm_no_langgraph",
+            "mode": "real_llm_memory_decision_no_langgraph",
             "intent": source_message.message_type,
             "llm_usage": _normalize_llm_usage(usage),
             "llm_request_attempts": llm_request_attempts,
             "confidence": output.confidence,
             "missing_fields": output.missing_fields,
+            "memory_decision": (
+                memory_patch_result.memory_decision.model_dump(mode="json")
+                if memory_patch_result is not None and memory_patch_result.memory_decision is not None
+                else None
+            ),
+            "memory_gate": (
+                memory_patch_result.memory_gate.model_dump(mode="json")
+                if memory_patch_result is not None and memory_patch_result.memory_gate is not None
+                else None
+            ),
         },
     )
 
@@ -257,6 +285,63 @@ def parse_sales_agent_turn_llm_json(content: str) -> dict[str, Any]:
     if saw_json_start:
         raise ValueError("sales_agent_turn_llm_json_decode_failed") from last_error
     raise ValueError("sales_agent_turn_llm_json_object_not_found")
+
+
+def _build_memory_patch_draft(
+    *,
+    llm_client: TokenHubClient,
+    settings: Settings,
+    workspace: SalesWorkspace,
+    source_message: ConversationMessage,
+    agent_run: SalesAgentTurnRun,
+    context_pack: SalesAgentTurnContextPack,
+    output: SalesAgentTurnLlmOutput,
+    base_workspace_version: int,
+    instruction: str,
+    usage: dict[str, Any],
+    llm_request_attempts: int,
+) -> SalesAgentTurnMemoryPipelineResult:
+    if source_message.message_type in {"workspace_question", "out_of_scope_v2_2"}:
+        return SalesAgentTurnMemoryPipelineResult()
+    if output.message_type in {"clarifying_question", "workspace_question", "out_of_scope_v2_2"}:
+        return SalesAgentTurnMemoryPipelineResult()
+
+    evaluator_messages = build_memory_decision_messages(
+        source_message=source_message,
+        assistant_output=output.model_dump(mode="json"),
+        context_pack=context_pack,
+        workspace=workspace,
+    )
+    evaluator_usage: dict[str, Any] = {}
+    try:
+        completion = llm_client.complete(evaluator_messages)
+        evaluator_usage = completion.usage
+        memory_decision = MemoryDecision.model_validate(parse_memory_decision_json(completion.content))
+    except (TokenHubClientError, ValueError, ValidationError):
+        memory_decision = MemoryDecision(
+            decision="reject",
+            proposals=[],
+            reasoning_summary="memory evaluator failed; backend kept response non-mutating",
+        )
+
+    build_result = build_memory_patch_draft(
+        workspace=workspace,
+        source_message=source_message,
+        agent_run=agent_run,
+        context_pack=context_pack,
+        memory_decision=memory_decision,
+        base_workspace_version=base_workspace_version,
+        instruction=instruction,
+        settings=settings,
+        response_usage=usage,
+        evaluator_usage=evaluator_usage,
+        llm_request_attempts=llm_request_attempts,
+    )
+    return SalesAgentTurnMemoryPipelineResult(
+        patch_draft=build_result.patch_draft,
+        memory_decision=memory_decision,
+        memory_gate=build_result.gate,
+    )
 
 
 def _is_transient_llm_request_error(exc: TokenHubClientError) -> bool:
@@ -297,17 +382,11 @@ def _normalize_raw_output(
         return normalized
     if _should_force_product_profile_draft(normalized, source_message):
         normalized["message_type"] = "draft_summary"
-        normalized["patch_operations"] = _ensure_required_operations(
-            normalized.get("patch_operations"),
-            source_message=source_message,
-        )
+        normalized["patch_operations"] = _normalize_operations(normalized.get("patch_operations"))
         return normalized
     if _should_force_lead_direction_draft(normalized, source_message):
         normalized["message_type"] = "draft_summary"
-        normalized["patch_operations"] = _ensure_required_operations(
-            normalized.get("patch_operations"),
-            source_message=source_message,
-        )
+        normalized["patch_operations"] = _normalize_operations(normalized.get("patch_operations"))
         return normalized
     if (
         isinstance(operations, list)
@@ -317,11 +396,18 @@ def _normalize_raw_output(
     ):
         normalized["message_type"] = "draft_summary"
     if normalized.get("message_type") == "draft_summary":
-        normalized["patch_operations"] = _ensure_required_operations(
-            normalized.get("patch_operations"),
-            source_message=source_message,
-        )
+        normalized["patch_operations"] = _normalize_operations(normalized.get("patch_operations"))
     return normalized
+
+
+def _normalize_operations(operations: Any) -> list[dict[str, Any]]:
+    if not isinstance(operations, list):
+        return []
+    return [
+        operation
+        for operation in operations
+        if isinstance(operation, dict) and isinstance(operation.get("type"), str)
+    ]
 
 
 def _should_force_product_profile_draft(normalized: dict[str, Any], source_message: ConversationMessage) -> bool:
@@ -385,69 +471,6 @@ def _normalize_top_level_fields(parsed: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in normalized.items() if key in allowed}
 
 
-def _ensure_required_operations(
-    operations: Any,
-    *,
-    source_message: ConversationMessage,
-) -> list[dict[str, Any]]:
-    if not isinstance(operations, list):
-        operations = []
-    normalized_operations = [
-        operation
-        for operation in operations
-        if isinstance(operation, dict) and isinstance(operation.get("type"), str)
-    ]
-    operation_types = {operation["type"] for operation in normalized_operations}
-    if (
-        source_message.message_type in {"product_profile_update", "mixed_product_and_direction_update"}
-        and "upsert_product_profile_revision" not in operation_types
-    ):
-        normalized_operations.append(_fallback_product_operation(source_message))
-    if (
-        source_message.message_type in {"lead_direction_update", "mixed_product_and_direction_update"}
-        and "upsert_lead_direction_version" not in operation_types
-    ):
-        normalized_operations.append(_fallback_direction_operation(source_message))
-    return normalized_operations
-
-
-def _fallback_product_operation(source_message: ConversationMessage) -> dict[str, Any]:
-    return {
-        "type": "upsert_product_profile_revision",
-        "payload": {
-            "product_name": "待确认产品或服务",
-            "one_liner": source_message.content[:80],
-            "target_customers": ["待确认目标客户"],
-            "target_industries": ["待确认行业"],
-            "pain_points": ["待确认痛点"],
-            "value_props": ["待确认价值主张"],
-            "constraints": ["本轮信息已足够生成最小产品档案，仍需继续确认行业、痛点和价值主张。"],
-        },
-    }
-
-
-def _fallback_direction_operation(source_message: ConversationMessage) -> dict[str, Any]:
-    return {
-        "type": "upsert_lead_direction_version",
-        "payload": {
-            "priority_industries": ["本地生活服务", "B2B 服务商", "小型制造或贸易公司"],
-            "target_customer_types": ["1-20 人小企业老板", "老板亲自负责销售或获客的小团队"],
-            "regions": ["待确认地区"],
-            "company_sizes": ["1-20 人小微企业"],
-            "priority_constraints": [
-                "优先找获客依赖老板个人、没有专职增长团队、愿意尝试 AI 降本增效的客户",
-                "需要继续确认行业、地区、客单价和触达渠道",
-            ],
-            "excluded_industries": [],
-            "excluded_customer_types": ["大型集团", "已有成熟销售自动化团队的企业"],
-            "change_reason": (
-                "LLM output omitted lead direction operation; backend kept a reviewable customer-finding draft "
-                f"from message {source_message.id}: {source_message.content[:120]}"
-            ),
-        },
-    }
-
-
 def _build_sales_agent_turn_messages(
     *,
     source_message: ConversationMessage,
@@ -458,28 +481,7 @@ def _build_sales_agent_turn_messages(
         "message_type": "clarifying_question | workspace_question | draft_summary | out_of_scope_v2_2",
         "assistant_message": "完整中文回复，必须可独立阅读；先总结已理解的信息，再说明下一步",
         "clarifying_questions": ["信息不足时输出 3 到 5 个中文追问"],
-        "patch_operations": [
-            {
-                "type": "upsert_product_profile_revision | upsert_lead_direction_version",
-                "payload": {
-                    "product_name": "产品名，仅 product profile 需要",
-                    "one_liner": "一句话产品理解",
-                    "target_customers": ["目标客户"],
-                    "target_industries": ["目标行业"],
-                    "pain_points": ["客户痛点"],
-                    "value_props": ["价值主张"],
-                    "constraints": ["限制或待确认事项"],
-                    "priority_industries": ["优先行业，仅 lead direction 需要"],
-                    "target_customer_types": ["目标客户类型"],
-                    "regions": ["地区"],
-                    "company_sizes": ["规模"],
-                    "priority_constraints": ["优先约束"],
-                    "excluded_industries": ["排除行业"],
-                    "excluded_customer_types": ["排除客户类型"],
-                    "change_reason": "方向变化原因",
-                },
-            }
-        ],
+        "patch_operations": [],
         "confidence": "0 到 1",
         "missing_fields": ["仍缺失的信息"],
         "reasoning_summary": "短摘要，不要输出 chain-of-thought",
@@ -501,34 +503,25 @@ def _build_sales_agent_turn_messages(
             "role": "system",
             "content": (
                 "你是 OpenClaw V2.1 的 Product Sales Agent Runtime。"
-                "你只能基于输入的 workspace context 回答或生成可审阅草稿。"
+                "你只能基于输入的 workspace context 回答用户。"
                 "不要联网搜索，不要生成公司名单、联系人、CRM 或自动触达内容。"
-                "assistant_message 必须是完整自然语言回答，不能只说已生成草稿。"
+                "assistant_message 必须是完整自然语言回答。"
                 "不要写“请补充以下内容/如下信息”后不列具体内容。"
                 "不要在 assistant_message 中暴露字段名、schema、runtime、workspace_goal、blocked_capabilities、"
                 "revision_id、patch_operations、ContextPack 或其他开发者术语。"
                 "context_pack.current_product_profile_revision 和 current_lead_direction_version 是已经写入"
                 "正式工作区的事实基线。你只能在此基础上补充、修正或解释。"
-                "patch_operations 必须表达增量更新意图，不得用“待确认、未知、未提供、用户未说明、空值”"
-                "覆盖已有明确字段。"
                 "如果用户信息不足，输出 3 到 5 个中文追问，不要生成 patch_operations。"
                 "但如果 user_message.message_type 是 product_profile_update，且用户已经描述了产品或服务，"
-                "必须生成一版最小 upsert_product_profile_revision 草稿；缺失信息写入 missing_fields 或 constraints，"
-                "不要只追问。"
+                "必须先用自然语言说明你理解到的产品事实；缺失信息写入 missing_fields，不要只追问。"
                 "但如果 user_message.message_type 是 lead_direction_update，主任务是给找客户执行建议："
                 "必须先回答应该找谁、为什么、怎么找；回复至少包含优先客户画像、优先行业或场景、"
                 "筛选信号、可执行渠道或关键词、暂不建议方向。"
                 "对“我的客户是什么/我该找谁/怎么找客户/第一批客户怎么找”这类输入，禁止只追问；"
-                "即使仍有缺失信息，也要给一版可保存的 upsert_lead_direction_version 草稿，"
-                "把不确定项写入 priority_constraints、change_reason 或 missing_fields。"
-                "不要写“如果你确认，我可以生成/输出草稿”；backend 会在 patch_operations 存在时自动"
-                "沉淀到正式产品理解卡或获客方向卡。"
-                "如果用户问当前方向原因，基于 context_pack 解释，不要生成 patch_operations。"
-                "如果用户提供了足够明确的产品理解或获客方向，才输出 patch_operations，backend 会补齐 id/version/workspace_id。"
-                "即使生成 patch_operations，assistant_message 也必须先解释你理解了什么，"
-                "再列出仍缺失的具体信息；patch_operations 只是下方可审阅更新的附件，不是主回复。"
-                "如果 user_message.message_type 是 mixed_product_and_direction_update，patch_operations 必须同时包含"
-                "一个 upsert_product_profile_revision 和一个 upsert_lead_direction_version。"
+                "即使仍有缺失信息，也要给一版可执行建议，把不确定项写入 missing_fields。"
+                "不要承诺已经写入或已经沉淀到工作区；后端会用单独 MemoryEvaluator 判断是否保存。"
+                "如果用户问当前方向原因，基于 context_pack 解释。"
+                "patch_operations 必须输出空数组；正式记忆沉淀不由本轮回答模型决定。"
                 "不要输出空 JSON，不要省略 message_type、assistant_message、clarifying_questions、patch_operations、"
                 "confidence、missing_fields、reasoning_summary。"
                 "只输出单个 JSON object，不要输出 markdown、解释或额外文本。"
@@ -539,258 +532,12 @@ def _build_sales_agent_turn_messages(
             "content": (
                 "请处理这轮 sales-agent-turn。\n"
                 "输出字段必须严格匹配 output_schema。\n"
-                "Allowed operations: upsert_product_profile_revision, upsert_lead_direction_version。\n"
-                "不要输出 set_active_lead_direction，backend 会在方向更新时补齐。\n\n"
+                "patch_operations 必须是空数组；正式记忆沉淀由后续 MemoryEvaluator 完成。\n\n"
                 f"output_schema:\n{json.dumps(output_schema, ensure_ascii=False)}\n\n"
                 f"runtime_input:\n{json.dumps(context, ensure_ascii=False)}"
             ),
         },
     ]
-
-
-def _build_patch_draft(
-    *,
-    workspace: SalesWorkspace,
-    source_message: ConversationMessage,
-    agent_run: SalesAgentTurnRun,
-    context_pack: SalesAgentTurnContextPack,
-    output: SalesAgentTurnLlmOutput,
-    base_workspace_version: int,
-    instruction: str,
-    settings: Settings,
-    usage: dict[str, Any],
-    llm_request_attempts: int,
-) -> WorkspacePatchDraft | None:
-    if output.message_type != "draft_summary":
-        return None
-
-    next_workspace_version = workspace.workspace_version + 1
-    operations: list[WorkspacePatchDraftOperation] = []
-    current_product = (
-        workspace.product_profile_revisions.get(workspace.current_product_profile_revision_id)
-        if workspace.current_product_profile_revision_id
-        else None
-    )
-    current_direction = (
-        workspace.lead_direction_versions.get(workspace.current_lead_direction_version_id)
-        if workspace.current_lead_direction_version_id
-        else None
-    )
-    product_version = (current_product.version + 1) if current_product else 1
-    direction_version = (current_direction.version + 1) if current_direction else 1
-    direction_id: str | None = None
-
-    for operation in output.patch_operations:
-        payload = _sanitize_operation_payload(operation.type, operation.payload)
-        if operation.type == "upsert_product_profile_revision":
-            if source_message.message_type == "lead_direction_update":
-                continue
-            payload = _merge_product_profile_payload(
-                current_product=current_product,
-                incoming=payload,
-                source_message=source_message,
-            )
-            payload["id"] = payload.get("id") or f"ppr_llm_v{next_workspace_version}"
-            payload["version"] = payload.get("version") or product_version
-            payload["constraints"] = [
-                *list(payload.get("constraints") or []),
-                f"derived from message {source_message.id}",
-            ]
-        elif operation.type == "upsert_lead_direction_version":
-            payload = _merge_lead_direction_payload(
-                current_direction=current_direction,
-                incoming=payload,
-                source_message=source_message,
-            )
-            direction_id = str(payload.get("id") or f"dir_llm_v{next_workspace_version}")
-            payload["id"] = direction_id
-            payload["version"] = payload.get("version") or direction_version
-            payload["change_reason"] = payload.get("change_reason") or (
-                f"LLM runtime generated direction draft from message {source_message.id}: "
-                f"{source_message.content[:120]}"
-            )
-        operations.append(WorkspacePatchDraftOperation(type=operation.type, payload=payload))
-
-    if direction_id is not None:
-        operations.append(
-            WorkspacePatchDraftOperation(
-                type="set_active_lead_direction",
-                payload={"lead_direction_version_id": direction_id},
-            )
-        )
-
-    return WorkspacePatchDraft(
-        id=f"draft_sales_turn_llm_v{next_workspace_version}",
-        workspace_id=workspace.id,
-        base_workspace_version=base_workspace_version,
-        author="sales_agent_turn_llm_runtime",
-        instruction=instruction or f"LLM chat-first {source_message.message_type}",
-        runtime_metadata={
-            "provider": settings.llm_provider,
-            "model": settings.llm_model,
-            "prompt_version": settings.sales_agent_llm_prompt_version,
-            "mode": "real_llm_no_langgraph",
-            "intent": source_message.message_type,
-            "agent_run_id": agent_run.id,
-            "context_pack_id": context_pack.id,
-            "source_message_ids": [source_message.id],
-            "llm_usage": _normalize_llm_usage(usage),
-            "llm_request_attempts": llm_request_attempts,
-            "confidence": output.confidence,
-            "missing_fields": output.missing_fields,
-            "kernel_boundary": (
-                "Runtime returns WorkspacePatchDraft; Sales Workspace Kernel validates and writes formal objects."
-            ),
-        },
-        operations=operations,
-    )
-
-
-def _sanitize_operation_payload(operation_type: str, payload: dict[str, Any]) -> dict[str, Any]:
-    product_fields = {
-        "id",
-        "workspace_id",
-        "version",
-        "product_name",
-        "one_liner",
-        "target_customers",
-        "target_industries",
-        "pain_points",
-        "value_props",
-        "constraints",
-    }
-    direction_fields = {
-        "id",
-        "workspace_id",
-        "version",
-        "priority_industries",
-        "target_customer_types",
-        "regions",
-        "company_sizes",
-        "priority_constraints",
-        "excluded_industries",
-        "excluded_customer_types",
-        "change_reason",
-    }
-    if operation_type == "upsert_product_profile_revision":
-        allowed = product_fields
-    elif operation_type == "upsert_lead_direction_version":
-        allowed = direction_fields
-    else:
-        return dict(payload)
-    return {key: value for key, value in payload.items() if key in allowed}
-
-
-_UNKNOWN_TEXT_MARKERS = (
-    "待确认",
-    "未知",
-    "未提供",
-    "用户未说明",
-    "用户未提供",
-    "未说明",
-    "未明确",
-    "待补充",
-    "需要确认",
-    "尚不明确",
-    "空值",
-    "n/a",
-    "none",
-    "null",
-)
-
-
-def _merge_product_profile_payload(
-    *,
-    current_product: ProductProfileRevision | None,
-    incoming: dict[str, Any],
-    source_message: ConversationMessage,
-) -> dict[str, Any]:
-    current = current_product.model_dump(mode="json") if current_product else {}
-    merged = {
-        "product_name": _merge_text_field(current.get("product_name"), incoming.get("product_name"))
-        or "待确认产品或服务",
-        "one_liner": _merge_text_field(current.get("one_liner"), incoming.get("one_liner")) or source_message.content[:80],
-        "target_customers": _merge_list_field(current.get("target_customers"), incoming.get("target_customers")),
-        "target_industries": _merge_list_field(current.get("target_industries"), incoming.get("target_industries")),
-        "pain_points": _merge_list_field(current.get("pain_points"), incoming.get("pain_points")),
-        "value_props": _merge_list_field(current.get("value_props"), incoming.get("value_props")),
-        "constraints": _merge_list_field(current.get("constraints"), incoming.get("constraints")),
-    }
-    for field in ("id", "version", "workspace_id"):
-        if incoming.get(field):
-            merged[field] = incoming[field]
-    return merged
-
-
-def _merge_lead_direction_payload(
-    *,
-    current_direction: LeadDirectionVersion | None,
-    incoming: dict[str, Any],
-    source_message: ConversationMessage,
-) -> dict[str, Any]:
-    current = current_direction.model_dump(mode="json") if current_direction else {}
-    merged = {
-        "priority_industries": _merge_list_field(current.get("priority_industries"), incoming.get("priority_industries")),
-        "target_customer_types": _merge_list_field(
-            current.get("target_customer_types"),
-            incoming.get("target_customer_types"),
-        ),
-        "regions": _merge_list_field(current.get("regions"), incoming.get("regions")),
-        "company_sizes": _merge_list_field(current.get("company_sizes"), incoming.get("company_sizes")),
-        "priority_constraints": _merge_list_field(
-            current.get("priority_constraints"),
-            incoming.get("priority_constraints"),
-        ),
-        "excluded_industries": _merge_list_field(current.get("excluded_industries"), incoming.get("excluded_industries")),
-        "excluded_customer_types": _merge_list_field(
-            current.get("excluded_customer_types"),
-            incoming.get("excluded_customer_types"),
-        ),
-        "change_reason": _merge_text_field(current.get("change_reason"), incoming.get("change_reason"))
-        or f"根据本轮对话更新获客方向：{source_message.content[:120]}",
-    }
-    for field in ("id", "version", "workspace_id"):
-        if incoming.get(field):
-            merged[field] = incoming[field]
-    return merged
-
-
-def _merge_text_field(existing: Any, incoming: Any) -> str:
-    existing_text = str(existing).strip() if existing is not None else ""
-    incoming_text = str(incoming).strip() if incoming is not None else ""
-    if _is_unknown_text(incoming_text):
-        return "" if _is_unknown_text(existing_text) else existing_text
-    if incoming_text:
-        return incoming_text
-    return "" if _is_unknown_text(existing_text) else existing_text
-
-
-def _merge_list_field(existing: Any, incoming: Any) -> list[str]:
-    merged: list[str] = []
-    for item in [*_coerce_string_list(existing), *_coerce_string_list(incoming)]:
-        normalized = item.strip()
-        if _is_unknown_text(normalized):
-            continue
-        if normalized not in merged:
-            merged.append(normalized)
-    return merged
-
-
-def _coerce_string_list(value: Any) -> list[str]:
-    if value is None:
-        return []
-    if isinstance(value, str):
-        return [value]
-    if isinstance(value, list):
-        return [str(item) for item in value if item is not None]
-    return [str(value)]
-
-
-def _is_unknown_text(value: str) -> bool:
-    text = value.strip().lower()
-    if not text or text in {"-", "—"}:
-        return True
-    return any(marker in text for marker in _UNKNOWN_TEXT_MARKERS)
 
 
 def _record_trace(

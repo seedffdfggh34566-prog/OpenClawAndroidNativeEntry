@@ -39,22 +39,24 @@
 
 ### Current delivery package
 
-暂无。当前人工开放的单个 V2.1 Sales Workspace memory decision pipeline task 已完成。
+暂无。当前人工开放的 V2.1 context defect device deep test 已完成。
 
 ### Current task
 
-`docs/delivery/tasks/task_v2_1_sales_workspace_memory_decision_pipeline.md`
+`docs/delivery/tasks/task_v2_1_context_defect_device_deep_test_memory_pipeline.md`
 
 ### Next queued task
 
-暂无下游 implementation task 自动开放。Sales Workspace memory decision pipeline 已完成。
+暂无下游 implementation task 自动开放。Context defect device deep test 已完成，后续修复需单独开放任务。
 
 ### Auto-continue
 
-`no`。`task_v2_1_sales_workspace_memory_decision_pipeline.md` 已完成；暂无下游 implementation task 自动开放。
+`no`。`task_v2_1_context_defect_device_deep_test_memory_pipeline.md` 已完成；暂无下游 implementation task 自动开放。
 
 ### Recently completed
 
+- `docs/delivery/tasks/task_v2_1_context_defect_device_deep_test_memory_pipeline.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_29_v2_1_context_defect_device_deep_test_memory_pipeline.md`（done）
 - `docs/delivery/tasks/task_v2_1_sales_workspace_dev_diagnostics_inspector.md`（done）
 - `docs/delivery/tasks/task_v2_1_sales_workspace_memory_decision_pipeline.md`（done）
 - `docs/delivery/handoffs/handoff_2026_04_29_v2_1_sales_workspace_memory_decision_pipeline.md`（done）

@@ -44,6 +44,8 @@
 
 - `backend/backend-agent-stack-phased-adoption.md`
 - `runtime/v2-1-chat-first-runtime-design.md`
+- `runtime/openclaw-context-management-reference.md`
+- `runtime/hermes-context-management-reference.md`
 - `runtime/langgraph-runtime-architecture.md`
 
 注意：`runtime/langgraph-runtime-architecture.md` 仍包含 2026-04-25 session-first runtime 草案内容；当前 V2 workspace-native 边界以 `workspace/` 文档和 `_active.md` 为准。

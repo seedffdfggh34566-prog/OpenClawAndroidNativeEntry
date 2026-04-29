@@ -1,202 +1,842 @@
 package com.openclaw.android.nativeentry.ui.workspace
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceChatTurnResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationThreadDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationMessageDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationMessagesResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationThreadsResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDefaultThreadId
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDemoWorkspaceId
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewApplyResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewPreviewDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspacePatchDraftDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspacePatchSummaryDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceResponseDto
 import com.openclaw.android.nativeentry.ui.shell.V1SectionState
 
 @Composable
 fun SalesWorkspaceScreen(
     workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
+    workspaceCreateState: V1SectionState<SalesWorkspaceResponseDto>,
+    workspaceThreadState: V1SectionState<SalesWorkspaceConversationThreadsResponseDto>,
+    selectedWorkspaceId: String = SalesWorkspaceDemoWorkspaceId,
+    workspaceSelectorInput: String = SalesWorkspaceDemoWorkspaceId,
+    selectedThreadId: String,
+    workspaceMessageHistoryState: V1SectionState<SalesWorkspaceConversationMessagesResponseDto>,
+    optimisticUserMessage: SalesWorkspaceConversationMessageDto?,
     draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
     patchDraftApplyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
     chatFirstTurnState: V1SectionState<SalesWorkspaceChatTurnResponseDto>,
     chatInput: String,
     chatMessageType: String,
     onRefreshClick: () -> Unit,
+    onCreateWorkspaceClick: () -> Unit,
+    onWorkspaceSelectorInputChange: (String) -> Unit = {},
+    onSwitchWorkspaceClick: (String) -> Unit = {},
+    onCreateThreadClick: (String) -> Unit,
+    onThreadSelected: (String) -> Unit,
     onCreateDraftReviewClick: () -> Unit,
     onChatInputChange: (String) -> Unit,
     onChatMessageTypeChange: (String) -> Unit,
     onSubmitChatTurnClick: () -> Unit,
+    onRetryChatTurnClick: () -> Unit = {},
     onAcceptDraftReviewClick: () -> Unit,
     onRejectDraftReviewClick: () -> Unit,
     onApplyDraftReviewClick: () -> Unit,
     modifier: Modifier = Modifier,
+    initialShowSettings: Boolean = false,
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(PaddingValues(horizontal = 20.dp, vertical = 24.dp)),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(PaddingValues(horizontal = 16.dp, vertical = 12.dp)),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Column(
-            modifier = Modifier.widthIn(max = 720.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier
+                .widthIn(max = 1200.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                text = "Sales Workspace",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = "查看当前 workspace，并通过显式审阅 gate 应用 Runtime PatchDraft。",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
             when (workspaceState) {
-                V1SectionState.Idle -> WorkspaceNotice("尚未读取 workspace。")
-                V1SectionState.Loading -> WorkspaceNotice("正在读取 Sales Workspace。")
-                V1SectionState.Empty -> WorkspaceNotice("当前没有可展示的 workspace。")
-                is V1SectionState.Failed -> WorkspaceCard(title = workspaceState.error.title) {
-                    Text(text = workspaceState.error.detail, style = MaterialTheme.typography.bodyMedium)
-                    Text(
-                        text = "请确认后端已启动、已运行 seed 脚本，并已执行 adb reverse tcp:8013 tcp:8013。",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
                 is V1SectionState.Loaded -> {
-                    WorkspaceContent(workspaceState.value)
-                    ChatFirstWorkspaceTurn(
-                        workspaceVersion = workspaceState.value.workspace.workspaceVersion,
+                    WorkspaceChatSurface(
+                        snapshot = workspaceState.value,
+                        threadState = workspaceThreadState,
+                        selectedWorkspaceId = selectedWorkspaceId,
+                        workspaceSelectorInput = workspaceSelectorInput,
+                        selectedThreadId = selectedThreadId,
+                        historyState = workspaceMessageHistoryState,
+                        optimisticUserMessage = optimisticUserMessage,
+                        draftReviewState = draftReviewState,
+                        patchDraftApplyState = patchDraftApplyState,
+                        chatFirstTurnState = chatFirstTurnState,
                         chatInput = chatInput,
                         chatMessageType = chatMessageType,
-                        chatFirstTurnState = chatFirstTurnState,
+                        onRefreshClick = onRefreshClick,
+                        onWorkspaceSelectorInputChange = onWorkspaceSelectorInputChange,
+                        onSwitchWorkspaceClick = onSwitchWorkspaceClick,
+                        onCreateThreadClick = onCreateThreadClick,
+                        onThreadSelected = onThreadSelected,
+                        onCreateDraftReviewClick = onCreateDraftReviewClick,
                         onChatInputChange = onChatInputChange,
                         onChatMessageTypeChange = onChatMessageTypeChange,
                         onSubmitChatTurnClick = onSubmitChatTurnClick,
-                    )
-                    PatchDraftReviewGate(
-                        workspaceVersion = workspaceState.value.workspace.workspaceVersion,
-                        draftReviewState = draftReviewState,
-                        applyState = patchDraftApplyState,
-                        onCreateDraftReviewClick = onCreateDraftReviewClick,
+                        onRetryChatTurnClick = onRetryChatTurnClick,
                         onAcceptDraftReviewClick = onAcceptDraftReviewClick,
                         onRejectDraftReviewClick = onRejectDraftReviewClick,
                         onApplyDraftReviewClick = onApplyDraftReviewClick,
+                        modifier = Modifier.weight(1f),
+                        initialShowSettings = initialShowSettings,
                     )
                 }
-            }
 
-            Button(
-                onClick = onRefreshClick,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(text = "刷新工作区")
+                else -> {
+                    WorkspaceChatHeader(
+                        workspaceState = workspaceState,
+                        onRefreshClick = onRefreshClick,
+                    )
+                    WorkspaceEntrySurface(
+                        workspaceState = workspaceState,
+                        createState = workspaceCreateState,
+                        onCreateWorkspaceClick = onCreateWorkspaceClick,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ChatFirstWorkspaceTurn(
-    workspaceVersion: Int,
+private fun WorkspaceChatHeader(
+    workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
+    onRefreshClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = "销售工作区",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = workspaceState.toWorkspaceStatusLabel(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        OutlinedButton(onClick = onRefreshClick) {
+            Text(text = "刷新")
+        }
+    }
+}
+
+@Composable
+private fun WorkspaceEntrySurface(
+    workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
+    createState: V1SectionState<SalesWorkspaceResponseDto>,
+    onCreateWorkspaceClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        WorkspaceNotice(
+            title = workspaceState.entryTitle(),
+            message = workspaceState.entryMessage(),
+        )
+        WorkspaceOnboarding(
+            workspaceState = workspaceState,
+            createState = createState,
+            onCreateWorkspaceClick = onCreateWorkspaceClick,
+        )
+    }
+}
+
+@Composable
+private fun WorkspaceChatSurface(
+    snapshot: SalesWorkspaceReadOnlySnapshot,
+    threadState: V1SectionState<SalesWorkspaceConversationThreadsResponseDto>,
+    selectedWorkspaceId: String,
+    workspaceSelectorInput: String,
+    selectedThreadId: String,
+    historyState: V1SectionState<SalesWorkspaceConversationMessagesResponseDto>,
+    optimisticUserMessage: SalesWorkspaceConversationMessageDto?,
+    draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
+    patchDraftApplyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
+    chatFirstTurnState: V1SectionState<SalesWorkspaceChatTurnResponseDto>,
     chatInput: String,
     chatMessageType: String,
-    chatFirstTurnState: V1SectionState<SalesWorkspaceChatTurnResponseDto>,
+    onRefreshClick: () -> Unit,
+    onWorkspaceSelectorInputChange: (String) -> Unit,
+    onSwitchWorkspaceClick: (String) -> Unit,
+    onCreateThreadClick: (String) -> Unit,
+    onThreadSelected: (String) -> Unit,
+    onCreateDraftReviewClick: () -> Unit,
     onChatInputChange: (String) -> Unit,
     onChatMessageTypeChange: (String) -> Unit,
     onSubmitChatTurnClick: () -> Unit,
+    onRetryChatTurnClick: () -> Unit,
+    onAcceptDraftReviewClick: () -> Unit,
+    onRejectDraftReviewClick: () -> Unit,
+    onApplyDraftReviewClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    initialShowSettings: Boolean = false,
 ) {
     val isLoading = chatFirstTurnState is V1SectionState.Loading
-    WorkspaceCard(title = "Chat-first Workspace Turn") {
-        Text(
-            text = "输入产品理解、获客方向或解释问题；Android 只提交文本，backend 决定返回追问、解释或可审阅 Draft Review。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(text = "当前 workspace version：$workspaceVersion", style = MaterialTheme.typography.bodyMedium)
+    val latestTurn = (chatFirstTurnState as? V1SectionState.Loaded<SalesWorkspaceChatTurnResponseDto>)?.value
+    val canSubmit = !isLoading && chatInput.isNotBlank()
+    val transcriptScrollState = rememberScrollState()
+    var showSettings by remember { mutableStateOf(initialShowSettings) }
+    var showCreateThreadDialog by remember { mutableStateOf(false) }
+    var newThreadTitle by remember { mutableStateOf("") }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            ChatMessageTypeButton(
-                label = "产品理解",
-                selected = chatMessageType == "product_profile_update",
-                onClick = { onChatMessageTypeChange("product_profile_update") },
-                modifier = Modifier.weight(1f),
-            )
-            ChatMessageTypeButton(
-                label = "获客方向",
-                selected = chatMessageType == "lead_direction_update",
-                onClick = { onChatMessageTypeChange("lead_direction_update") },
-                modifier = Modifier.weight(1f),
-            )
-            ChatMessageTypeButton(
-                label = "产品+方向",
-                selected = chatMessageType == "mixed_product_and_direction_update",
-                onClick = { onChatMessageTypeChange("mixed_product_and_direction_update") },
-                modifier = Modifier.weight(1f),
-            )
-        }
+    LaunchedEffect(historyState, chatFirstTurnState, transcriptScrollState.maxValue) {
+        transcriptScrollState.scrollTo(transcriptScrollState.maxValue)
+    }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            ChatMessageTypeButton(
-                label = "解释当前方向",
-                selected = chatMessageType == "workspace_question",
-                onClick = { onChatMessageTypeChange("workspace_question") },
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        OutlinedTextField(
-            value = chatInput,
-            onValueChange = onChatInputChange,
-            modifier = Modifier.fillMaxWidth(),
-            minLines = 3,
-            label = { Text(text = "对 Sales Agent 说") },
-            placeholder = { Text(text = "例如：我们做工业设备维保软件，帮工厂减少停机时间。也可以问：为什么建议这个方向？") },
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        CompactWorkspaceHeader(
+            snapshot = snapshot,
+            threadState = threadState,
+            selectedThreadId = selectedThreadId,
+            isLoading = isLoading,
+            showSettings = showSettings,
+            onRefreshClick = onRefreshClick,
+            onToggleSettingsClick = { showSettings = !showSettings },
         )
 
-        Button(
-            onClick = onSubmitChatTurnClick,
-            enabled = !isLoading && chatInput.isNotBlank(),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = if (isLoading) "正在处理 chat-first turn" else "提交 chat-first turn")
+        ThreadSwitcher(
+            threadState = threadState,
+            selectedThreadId = selectedThreadId,
+            onThreadSelected = onThreadSelected,
+            onCreateThreadClick = {
+                newThreadTitle = ""
+                showCreateThreadDialog = true
+            },
+        )
+
+        if (showCreateThreadDialog) {
+            AlertDialog(
+                onDismissRequest = { showCreateThreadDialog = false },
+                title = { Text(text = "命名新对话") },
+                text = {
+                    OutlinedTextField(
+                        value = newThreadTitle,
+                        onValueChange = { newThreadTitle = it },
+                        singleLine = true,
+                        label = { Text(text = "对话名称") },
+                        placeholder = { Text(text = "例如：连锁餐饮线索验证") },
+                    )
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { showCreateThreadDialog = false }) {
+                        Text(text = "取消")
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            onCreateThreadClick(newThreadTitle.trim().ifBlank { "新对话" })
+                            showCreateThreadDialog = false
+                            newThreadTitle = ""
+                        },
+                    ) {
+                        Text(text = "创建")
+                    }
+                },
+            )
         }
 
-        when (chatFirstTurnState) {
-            V1SectionState.Idle -> Text(text = "尚未提交 chat-first 输入。", style = MaterialTheme.typography.bodyMedium)
-            V1SectionState.Loading -> Text(text = "backend 正在创建 ConversationMessage / AgentRun / ContextPack。")
-            V1SectionState.Empty -> Text(text = "本轮未返回 assistant message。", style = MaterialTheme.typography.bodyMedium)
-            is V1SectionState.Failed -> {
-                Text(text = chatFirstTurnState.error.title, style = MaterialTheme.typography.titleSmall)
-                Text(text = chatFirstTurnState.error.detail, style = MaterialTheme.typography.bodyMedium)
+        if (showSettings) {
+            FoldedWorkspaceSettings(
+                snapshot = snapshot,
+                selectedWorkspaceId = selectedWorkspaceId,
+                workspaceSelectorInput = workspaceSelectorInput,
+                chatMessageType = chatMessageType,
+                onWorkspaceSelectorInputChange = onWorkspaceSelectorInputChange,
+                onSwitchWorkspaceClick = onSwitchWorkspaceClick,
+                onChatMessageTypeChange = onChatMessageTypeChange,
+            )
+        }
+
+        Surface(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(transcriptScrollState)
+                    .padding(horizontal = 4.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                ConversationTranscript(
+                    historyState = historyState,
+                    chatFirstTurnState = chatFirstTurnState,
+                    latestTurn = latestTurn,
+                    optimisticUserMessage = optimisticUserMessage?.takeIf { it.threadId == selectedThreadId },
+                    draftReviewState = draftReviewState,
+                    patchDraftApplyState = patchDraftApplyState,
+                    workspaceVersion = snapshot.workspace.workspaceVersion,
+                    onCreateDraftReviewClick = onCreateDraftReviewClick,
+                    onAcceptDraftReviewClick = onAcceptDraftReviewClick,
+                    onRejectDraftReviewClick = onRejectDraftReviewClick,
+                    onApplyDraftReviewClick = onApplyDraftReviewClick,
+                    onRetryChatTurnClick = onRetryChatTurnClick,
+                )
             }
-            is V1SectionState.Loaded -> ChatFirstTurnDetails(chatFirstTurnState.value)
+        }
+
+        CompactChatComposer(
+            chatInput = chatInput,
+            chatMessageType = chatMessageType,
+            canSubmit = canSubmit,
+            isLoading = isLoading,
+            onChatInputChange = onChatInputChange,
+            onSubmitChatTurnClick = onSubmitChatTurnClick,
+        )
+    }
+}
+
+@Composable
+private fun CompactWorkspaceHeader(
+    snapshot: SalesWorkspaceReadOnlySnapshot,
+    threadState: V1SectionState<SalesWorkspaceConversationThreadsResponseDto>,
+    selectedThreadId: String,
+    isLoading: Boolean,
+    showSettings: Boolean,
+    onRefreshClick: () -> Unit,
+    onToggleSettingsClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = selectedThreadTitle(threadState, selectedThreadId),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = if (isLoading) {
+                    "Sales Agent 正在思考"
+                } else {
+                    "销售工作区 · v${snapshot.workspace.workspaceVersion}"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedButton(
+                onClick = onRefreshClick,
+                modifier = Modifier.heightIn(min = 40.dp),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+            ) {
+                Text(text = "刷新", style = MaterialTheme.typography.labelMedium)
+            }
+            Button(
+                onClick = onToggleSettingsClick,
+                modifier = Modifier.heightIn(min = 40.dp),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Tune,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    text = if (showSettings) "收起" else "设置",
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun ThreadSwitcher(
+    threadState: V1SectionState<SalesWorkspaceConversationThreadsResponseDto>,
+    selectedThreadId: String,
+    onThreadSelected: (String) -> Unit,
+    onCreateThreadClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            val threads = (threadState as? V1SectionState.Loaded<SalesWorkspaceConversationThreadsResponseDto>)
+                ?.value
+                ?.threads
+                .orEmpty()
+                .ifEmpty {
+                    listOf(
+                        com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationThreadDto(
+                            id = SalesWorkspaceDefaultThreadId,
+                            title = "主对话",
+                            status = "active",
+                        ),
+                    )
+                }
+            threads.forEach { thread ->
+                ChatMessageTypeButton(
+                    label = thread.title.ifBlank { thread.id },
+                    selected = thread.id == selectedThreadId,
+                    onClick = { onThreadSelected(thread.id) },
+                    modifier = Modifier.widthIn(min = 112.dp, max = 196.dp),
+                )
+            }
+        }
+        Button(
+            onClick = onCreateThreadClick,
+            modifier = Modifier.heightIn(min = 40.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(text = "新对话")
+        }
+    }
+
+    when (threadState) {
+        V1SectionState.Loading -> TranscriptStatusText("正在同步对话列表。")
+        is V1SectionState.Failed -> TranscriptStatusText("对话列表同步失败：${threadState.error.title}")
+        V1SectionState.Empty,
+        V1SectionState.Idle,
+        is V1SectionState.Loaded -> Unit
+    }
+}
+
+@Composable
+private fun ConversationTranscript(
+    historyState: V1SectionState<SalesWorkspaceConversationMessagesResponseDto>,
+    chatFirstTurnState: V1SectionState<SalesWorkspaceChatTurnResponseDto>,
+    latestTurn: SalesWorkspaceChatTurnResponseDto?,
+    optimisticUserMessage: SalesWorkspaceConversationMessageDto?,
+    draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
+    patchDraftApplyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
+    workspaceVersion: Int,
+    onCreateDraftReviewClick: () -> Unit,
+    onAcceptDraftReviewClick: () -> Unit,
+    onRejectDraftReviewClick: () -> Unit,
+    onApplyDraftReviewClick: () -> Unit,
+    onRetryChatTurnClick: () -> Unit,
+) {
+    val messages = (historyState as? V1SectionState.Loaded<SalesWorkspaceConversationMessagesResponseDto>)
+        ?.value
+        ?.messages
+        .orEmpty()
+    val visibleMessages = buildList<SalesWorkspaceConversationMessageDto> {
+        fun addIfMissing(message: SalesWorkspaceConversationMessageDto?) {
+            if (message != null && none { it.id == message.id }) {
+                add(message)
+            }
+        }
+        messages.forEach(::addIfMissing)
+        addIfMissing(optimisticUserMessage)
+        addIfMissing(latestTurn?.conversationMessage)
+        addIfMissing(latestTurn?.assistantMessage)
+    }
+
+    if (historyState is V1SectionState.Loading && visibleMessages.isEmpty()) {
+        TranscriptStatusText("正在同步最近对话。")
+    }
+
+    if (historyState is V1SectionState.Failed && visibleMessages.isEmpty()) {
+        AssistantErrorMessage(
+            title = historyState.error.title,
+            detail = historyState.error.detail,
+        )
+    }
+
+    if (visibleMessages.isEmpty()) {
+        AssistantWelcomeMessage()
+    } else {
+        visibleMessages.takeLast(24).forEach { message ->
+            ConversationMessageBubble(message)
+            if (message.id == latestTurn?.assistantMessage?.id) {
+                latestTurn.draftReview?.let {
+                    DraftReviewAttachment(
+                        workspaceVersion = workspaceVersion,
+                        draftReviewState = draftReviewState,
+                        applyState = patchDraftApplyState,
+                        onCreateDraftReviewClick = onCreateDraftReviewClick,
+                        onAcceptDraftReviewClick = onAcceptDraftReviewClick,
+                        onRejectDraftReviewClick = onRejectDraftReviewClick,
+                        onApplyDraftReviewClick = onApplyDraftReviewClick,
+                        showCreateDraftReviewButton = false,
+                    )
+                }
+            }
+        }
+    }
+
+    when (chatFirstTurnState) {
+        V1SectionState.Loading -> AssistantThinkingMessage()
+        is V1SectionState.Failed -> AssistantErrorMessage(
+            title = chatFirstTurnState.error.title,
+            detail = chatFirstTurnState.error.detail.toLlmFriendlyError(),
+            onRetryClick = onRetryChatTurnClick.takeIf {
+                chatFirstTurnState.error.detail.isRetryableLlmTurnError()
+            },
+        )
+        V1SectionState.Empty -> TranscriptStatusText("本轮没有新的回复。")
+        V1SectionState.Idle,
+        is V1SectionState.Loaded -> Unit
+    }
+}
+
+@Composable
+private fun CompactChatComposer(
+    chatInput: String,
+    chatMessageType: String,
+    canSubmit: Boolean,
+    isLoading: Boolean,
+    onChatInputChange: (String) -> Unit,
+    onSubmitChatTurnClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .imePadding(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                OutlinedTextField(
+                    value = chatInput,
+                    onValueChange = onChatInputChange,
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 52.dp, max = 112.dp),
+                    minLines = 1,
+                    maxLines = 3,
+                    enabled = !isLoading,
+                    label = { Text(text = "对 Sales Agent 说") },
+                    placeholder = { Text(text = "例如：我们做工业设备维保软件，帮工厂减少停机时间。") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(
+                        onSend = {
+                            if (canSubmit) {
+                                onSubmitChatTurnClick()
+                            }
+                        },
+                    ),
+                )
+
+                IconButton(
+                    onClick = onSubmitChatTurnClick,
+                    enabled = canSubmit,
+                    modifier = Modifier
+                        .size(52.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = if (isLoading) "思考中" else "发送",
+                    )
+                }
+            }
+            Text(
+                text = "模式：${chatMessageType.toConversationTypeLabel()}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FoldedWorkspaceSettings(
+    snapshot: SalesWorkspaceReadOnlySnapshot,
+    selectedWorkspaceId: String,
+    workspaceSelectorInput: String,
+    chatMessageType: String,
+    onWorkspaceSelectorInputChange: (String) -> Unit,
+    onSwitchWorkspaceClick: (String) -> Unit,
+    onChatMessageTypeChange: (String) -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 300.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = "开发测试工作区 ID",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = workspaceSelectorInput,
+                    onValueChange = onWorkspaceSelectorInputChange,
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    label = { Text(text = "Workspace ID") },
+                    placeholder = { Text(text = SalesWorkspaceDemoWorkspaceId) },
+                )
+                Button(
+                    onClick = { onSwitchWorkspaceClick(workspaceSelectorInput) },
+                    enabled = workspaceSelectorInput.trim().isNotEmpty(),
+                ) {
+                    Text(text = "切换/创建")
+                }
+            }
+            Text(
+                text = "当前：$selectedWorkspaceId",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            HorizontalDivider()
+            Text(
+                text = "回复模式",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ChatMessageTypeButton(
+                    label = "产品理解",
+                    selected = chatMessageType == "product_profile_update",
+                    onClick = { onChatMessageTypeChange("product_profile_update") },
+                    modifier = Modifier.widthIn(min = 96.dp),
+                )
+                ChatMessageTypeButton(
+                    label = "找客户建议",
+                    selected = chatMessageType == "lead_direction_update",
+                    onClick = { onChatMessageTypeChange("lead_direction_update") },
+                    modifier = Modifier.widthIn(min = 116.dp),
+                )
+                ChatMessageTypeButton(
+                    label = "产品+找客户",
+                    selected = chatMessageType == "mixed_product_and_direction_update",
+                    onClick = { onChatMessageTypeChange("mixed_product_and_direction_update") },
+                    modifier = Modifier.widthIn(min = 126.dp),
+                )
+                ChatMessageTypeButton(
+                    label = "解释当前判断",
+                    selected = chatMessageType == "workspace_question",
+                    onClick = { onChatMessageTypeChange("workspace_question") },
+                    modifier = Modifier.widthIn(min = 132.dp),
+                )
+            }
+            HorizontalDivider()
+            Text(
+                text = "工作区详情",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            WorkspaceDetailsSection(snapshot)
+        }
+    }
+}
+
+@Composable
+private fun AssistantWelcomeMessage() {
+    ConversationMessageBubble(
+        message = SalesWorkspaceConversationMessageDto(
+            id = "local_welcome",
+            threadId = SalesWorkspaceDefaultThreadId,
+            role = "assistant",
+            messageType = "welcome",
+            content = "直接告诉我你卖什么，或问“我的客户是谁”“我该怎么找第一批客户”。我会先给建议，再把可保存的信息整理到工作区。",
+        ),
+    )
+}
+
+@Composable
+private fun ConversationMessageBubble(message: SalesWorkspaceConversationMessageDto) {
+    val isUser = message.role == "user"
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
+    ) {
+        Card(
+            modifier = Modifier.widthIn(max = 620.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isUser) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                },
+            ),
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (!isUser) {
+                    Text(
+                        text = message.role.toConversationSpeaker(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(text = message.content, style = MaterialTheme.typography.bodyMedium)
+                if (isUser) {
+                    Text(
+                        text = message.messageType.toConversationTypeLabel(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AssistantThinkingMessage() {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            Text(
+                text = "Sales Agent 正在思考...",
+                modifier = Modifier.padding(14.dp),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AssistantErrorMessage(
+    title: String,
+    detail: String,
+    onRetryClick: (() -> Unit)? = null,
+) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(text = title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text(text = detail, style = MaterialTheme.typography.bodyMedium)
+                if (onRetryClick != null) {
+                    OutlinedButton(onClick = onRetryClick) {
+                        Text(text = "重试")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TranscriptStatusText(message: String) {
+    Text(
+        text = message,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable
@@ -208,46 +848,126 @@ private fun ChatMessageTypeButton(
 ) {
     if (selected) {
         Button(onClick = onClick, modifier = modifier) {
-            Text(text = label)
+            Text(
+                text = label,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     } else {
         OutlinedButton(onClick = onClick, modifier = modifier) {
-            Text(text = label)
+            Text(
+                text = label,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
 
 @Composable
-private fun ChatFirstTurnDetails(response: SalesWorkspaceChatTurnResponseDto) {
-    val assistantType = response.assistantMessage.messageType
-    val title = when (assistantType) {
-        "clarifying_question" -> "Sales Agent 追问"
-        "workspace_question" -> "解释型回答"
-        "draft_summary" -> "可审阅 Draft Review"
-        "out_of_scope_v2_2" -> "超出 V2.1 范围"
-        else -> "Assistant"
+private fun DraftReviewAttachment(
+    workspaceVersion: Int,
+    draftReviewState: V1SectionState<SalesWorkspaceDraftReviewDto>,
+    applyState: V1SectionState<SalesWorkspaceDraftReviewApplyResponseDto>,
+    onCreateDraftReviewClick: () -> Unit,
+    onAcceptDraftReviewClick: () -> Unit,
+    onRejectDraftReviewClick: () -> Unit,
+    onApplyDraftReviewClick: () -> Unit,
+    showCreateDraftReviewButton: Boolean,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            val draftReview = (draftReviewState as? V1SectionState.Loaded<SalesWorkspaceDraftReviewDto>)?.value
+            val isApplied = draftReview?.status == "applied"
+            Text(
+                text = if (isApplied) "已沉淀到工作区" else "可保存到工作区",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = if (isApplied) {
+                    "本轮有价值信息已自动更新到当前产品理解或获客方向卡。"
+                } else {
+                    "这是本轮对话整理出的保存建议；写入前不会改变正式工作区。"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            PatchDraftReviewGate(
+                workspaceVersion = workspaceVersion,
+                draftReviewState = draftReviewState,
+                applyState = applyState,
+                onCreateDraftReviewClick = onCreateDraftReviewClick,
+                onAcceptDraftReviewClick = onAcceptDraftReviewClick,
+                onRejectDraftReviewClick = onRejectDraftReviewClick,
+                onApplyDraftReviewClick = onApplyDraftReviewClick,
+                showCreateDraftReviewButton = showCreateDraftReviewButton,
+            )
+        }
     }
-    Text(text = "Message：${response.conversationMessage.id}", style = MaterialTheme.typography.bodyMedium)
-    Text(text = "AgentRun：${response.agentRun.id} · ${response.agentRun.status}", style = MaterialTheme.typography.bodyMedium)
+}
+
+@Composable
+private fun WorkspaceDetailsSection(snapshot: SalesWorkspaceReadOnlySnapshot) {
+    HorizontalDivider()
     Text(
-        text = "$title：${response.assistantMessage.content}",
-        style = MaterialTheme.typography.bodyMedium,
-    )
-    response.draftReview?.let { review ->
-        Text(
-            text = "Draft Review：${review.id} · ${review.status}",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Text(
-            text = "Preview version：${review.preview.previewWorkspaceVersion}；operations=${review.draft.operationCount}",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-    } ?: Text(
-        text = "本轮没有 patch draft；不会启用审阅或应用，workspace 未写入。",
-        style = MaterialTheme.typography.bodyMedium,
+        text = "详情 / 调试",
+        style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+    WorkspaceContent(snapshot)
+}
+
+@Composable
+private fun WorkspaceOnboarding(
+    workspaceState: V1SectionState<SalesWorkspaceReadOnlySnapshot>,
+    createState: V1SectionState<SalesWorkspaceResponseDto>,
+    onCreateWorkspaceClick: () -> Unit,
+) {
+    val isLoaded = workspaceState is V1SectionState.Loaded
+    val isCreating = createState is V1SectionState.Loading
+    WorkspaceCard(title = "销售工作区入口") {
+        Text(
+            text = "点击后进入默认销售工作区，再用自然语言描述产品和获客方向。",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Button(
+            onClick = onCreateWorkspaceClick,
+            enabled = !isLoaded && !isCreating,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(text = if (isCreating) "正在进入销售工作区" else "开始销售工作区")
+        }
+        when (createState) {
+            V1SectionState.Idle -> Text(
+                text = if (isLoaded) "已进入销售工作区，可以开始聊天。" else "首次使用时先进入销售工作区。",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            V1SectionState.Loading -> Text(text = "正在创建或进入默认销售工作区。")
+            V1SectionState.Empty -> Text(text = "尚未进入销售工作区。", style = MaterialTheme.typography.bodyMedium)
+            is V1SectionState.Failed -> {
+                Text(text = createState.error.title, style = MaterialTheme.typography.titleSmall)
+                Text(text = createState.error.detail, style = MaterialTheme.typography.bodyMedium)
+            }
+            is V1SectionState.Loaded -> {
+                val workspace = createState.value.workspace
+                Text(
+                    text = "已进入 ${workspace.id}，version ${workspace.workspaceVersion}。",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -259,82 +979,82 @@ private fun PatchDraftReviewGate(
     onAcceptDraftReviewClick: () -> Unit,
     onRejectDraftReviewClick: () -> Unit,
     onApplyDraftReviewClick: () -> Unit,
+    showCreateDraftReviewButton: Boolean,
 ) {
     val draftReview = (draftReviewState as? V1SectionState.Loaded<SalesWorkspaceDraftReviewDto>)?.value
     val draftReviewIsCurrent = draftReview?.baseWorkspaceVersion == workspaceVersion
     val isDraftReviewLoading = draftReviewState is V1SectionState.Loading
     val isApplyLoading = applyState is V1SectionState.Loading
+    val isApplied = draftReview?.status == "applied"
     val canReview = draftReview?.status == "previewed" && draftReviewIsCurrent && !isDraftReviewLoading && !isApplyLoading
     val canApply = draftReview?.status == "reviewed" && draftReviewIsCurrent && !isDraftReviewLoading && !isApplyLoading
+    var showDetails by remember(draftReview?.id) { mutableStateOf(false) }
 
-    WorkspaceCard(title = "PatchDraft Review Gate") {
-        Text(
-            text = "Android 只负责创建和审阅 Draft Review；正式写入由 Sales Workspace Kernel 校验。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(text = "当前 workspace version：$workspaceVersion", style = MaterialTheme.typography.bodyMedium)
-
-        Button(
-            onClick = onCreateDraftReviewClick,
-            enabled = !isDraftReviewLoading && !isApplyLoading,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = if (isDraftReviewLoading) "正在创建 Draft Review" else "生成 Draft Review")
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (showCreateDraftReviewButton && draftReviewState !is V1SectionState.Loaded) {
+            Button(
+                onClick = onCreateDraftReviewClick,
+                enabled = !isDraftReviewLoading && !isApplyLoading,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(text = if (isDraftReviewLoading) "正在生成更新建议" else "生成可审阅更新")
+            }
         }
 
         when (draftReviewState) {
-            V1SectionState.Idle -> Text(
-                text = "尚未生成 Draft Review。",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-
-            V1SectionState.Loading -> Text(
-                text = "Runtime prototype 正在生成 deterministic draft，并由 backend 创建 Draft Review。",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-
-            V1SectionState.Empty -> Text(text = "暂无 Draft Review。", style = MaterialTheme.typography.bodyMedium)
+            V1SectionState.Idle -> Text(text = "尚未生成可审阅更新。", style = MaterialTheme.typography.bodyMedium)
+            V1SectionState.Loading -> Text(text = "正在生成预览。", style = MaterialTheme.typography.bodyMedium)
+            V1SectionState.Empty -> Text(text = "本轮暂无可审阅更新。", style = MaterialTheme.typography.bodyMedium)
             is V1SectionState.Failed -> {
                 Text(text = draftReviewState.error.title, style = MaterialTheme.typography.titleSmall)
                 Text(text = draftReviewState.error.detail, style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    text = "如出现 workspace_version_conflict、draft_review_expired 或 draft_review_state_conflict，请刷新 workspace 后重新生成 Draft Review。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
-
-            is V1SectionState.Loaded -> DraftReviewDetails(draftReviewState.value, draftReviewIsCurrent)
+            is V1SectionState.Loaded -> {
+                DraftReviewCompactSummary(draftReviewState.value, workspaceVersion)
+                if (showDetails) {
+                    DraftReviewDetails(draftReviewState.value, draftReviewIsCurrent)
+                }
+                OutlinedButton(
+                    onClick = { showDetails = !showDetails },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(text = if (showDetails) "收起详情" else "查看更新详情")
+                }
+            }
         }
 
-        OutlinedButton(
-            onClick = onAcceptDraftReviewClick,
-            enabled = canReview,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = "接受 Draft Review")
+        if (!isApplied && (draftReview?.status == "previewed" || draftReview?.status == "reviewed" || isApplyLoading)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = onAcceptDraftReviewClick,
+                    enabled = canReview,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(text = "采纳")
+                }
+                OutlinedButton(
+                    onClick = onRejectDraftReviewClick,
+                    enabled = canReview,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(text = "不采纳")
+                }
+                Button(
+                    onClick = onApplyDraftReviewClick,
+                    enabled = canApply,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(text = if (isApplyLoading) "写入中" else "写入")
+                }
+            }
         }
 
-        OutlinedButton(
-            onClick = onRejectDraftReviewClick,
-            enabled = canReview,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = "拒绝 Draft Review")
-        }
-
-        OutlinedButton(
-            onClick = onApplyDraftReviewClick,
-            enabled = canApply,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = if (isApplyLoading) "正在按 Review ID 应用" else "按 Review ID 应用")
-        }
-
-        if (draftReview != null && !draftReviewIsCurrent) {
+        if (draftReview != null && !draftReviewIsCurrent && draftReview.status in setOf("previewed", "reviewed")) {
             Text(
-                text = "Draft Review 基于 version ${draftReview.baseWorkspaceVersion}，当前 workspace 已是 version $workspaceVersion。请刷新后重新生成。",
+                text = "这条更新基于版本 ${draftReview.baseWorkspaceVersion}，当前工作区已是版本 $workspaceVersion。请刷新后重新生成。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -343,19 +1063,39 @@ private fun PatchDraftReviewGate(
         when (applyState) {
             V1SectionState.Idle,
             V1SectionState.Empty -> Unit
-
-            V1SectionState.Loading -> Text(
-                text = "正在通过 backend review gate 应用 draft。",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-
+            V1SectionState.Loading -> Text(text = "正在通过后端审阅门禁写入。", style = MaterialTheme.typography.bodyMedium)
             is V1SectionState.Failed -> {
                 Text(text = applyState.error.title, style = MaterialTheme.typography.titleSmall)
                 Text(text = applyState.error.detail, style = MaterialTheme.typography.bodyMedium)
             }
-
             is V1SectionState.Loaded -> PatchDraftApplyDetails(applyState.value)
         }
+    }
+}
+
+@Composable
+private fun DraftReviewCompactSummary(
+    draftReview: SalesWorkspaceDraftReviewDto,
+    workspaceVersion: Int,
+) {
+    val stateText = "状态：${draftReview.status.toDraftReviewStatusLabel()} · 当前工作区 v$workspaceVersion"
+    Text(text = stateText, style = MaterialTheme.typography.bodyMedium)
+    val summaryText = if (draftReview.status == "applied") {
+        "已沉淀 ${draftReview.draft.operationCount} 项，当前卡片已更新到 v${draftReview.applyResult?.workspaceVersion ?: workspaceVersion}。"
+    } else {
+        "预计保存 ${draftReview.draft.operationCount} 项，预览后为 v${draftReview.preview.previewWorkspaceVersion}。"
+    }
+    Text(
+        text = summaryText,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    draftReview.applyResult?.workspaceVersion?.let { version ->
+        Text(
+            text = "已写入工作区 v$version。",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -365,54 +1105,48 @@ private fun DraftReviewDetails(
     draftReviewIsCurrent: Boolean,
 ) {
     val topCandidate = draftReview.preview.previewTopCandidate
-    Text(text = "Draft Review：${draftReview.id}", style = MaterialTheme.typography.bodyMedium)
-    Text(text = "Status：${draftReview.status}", style = MaterialTheme.typography.bodyMedium)
-    Text(text = "Draft：${draftReview.draft.id}", style = MaterialTheme.typography.bodyMedium)
-    Text(text = "Materialized Patch：${draftReview.preview.materializedPatch.id}", style = MaterialTheme.typography.bodyMedium)
     Text(
-        text = "Preview version：${draftReview.preview.previewWorkspaceVersion}；would_mutate=${draftReview.preview.wouldMutate}",
+        text = "更新建议状态：${draftReview.status.toDraftReviewStatusLabel()}",
         style = MaterialTheme.typography.bodyMedium,
     )
-    Text(text = "Operations：${draftReview.draft.operationCount}", style = MaterialTheme.typography.bodyMedium)
+    Text(
+        text = "预计改动：${draftReview.draft.operationCount} 项；预览后版本：${draftReview.preview.previewWorkspaceVersion}",
+        style = MaterialTheme.typography.bodyMedium,
+    )
     draftReview.review?.let { review ->
         Text(
-            text = "Review：${review.decision} by ${review.reviewedBy} (${review.client})",
+            text = "当前决策：${review.decision.toDraftReviewDecisionLabel()}",
             style = MaterialTheme.typography.bodyMedium,
         )
         if (review.comment.isNotBlank()) {
             Text(text = review.comment, style = MaterialTheme.typography.bodySmall)
         }
     }
+    val isApplied = draftReview.status == "applied"
     draftReview.applyResult?.let { result ->
-        Text(text = "Apply result：${result.status}", style = MaterialTheme.typography.bodyMedium)
-        result.materializedPatchId?.let {
-            Text(text = "Applied patch：$it", style = MaterialTheme.typography.bodySmall)
-        }
+        Text(text = "写入结果：${result.status.toDraftReviewApplyStatusLabel()}", style = MaterialTheme.typography.bodyMedium)
         result.workspaceVersion?.let {
-            Text(text = "Applied workspace version：$it", style = MaterialTheme.typography.bodySmall)
+            Text(text = "工作区已更新到版本 $it。", style = MaterialTheme.typography.bodySmall)
         }
         result.errorCode?.let {
-            Text(text = "Apply error：$it ${result.errorMessage.orEmpty()}", style = MaterialTheme.typography.bodySmall)
+            Text(text = "写入失败：${result.errorMessage.orEmpty()}", style = MaterialTheme.typography.bodySmall)
         }
     }
+    val reviewFreshnessText = when {
+        isApplied -> "这条更新已写入工作区。"
+        draftReviewIsCurrent -> "这条更新仍匹配当前工作区。"
+        else -> "这条更新已过期，不能写入。"
+    }
     Text(
-        text = if (draftReviewIsCurrent) {
-            "Draft Review 仍匹配当前 workspace version。"
-        } else {
-            "Draft Review 已过期，不能应用。"
-        },
+        text = reviewFreshnessText,
         style = MaterialTheme.typography.bodySmall,
-        color = if (draftReviewIsCurrent) {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        } else {
-            MaterialTheme.colorScheme.error
-        },
+        color = if (!isApplied && !draftReviewIsCurrent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
     )
     if (topCandidate == null) {
-        Text(text = "预览排序暂无 top candidate。", style = MaterialTheme.typography.bodyMedium)
+        Text(text = "预览排序暂无候选。", style = MaterialTheme.typography.bodyMedium)
     } else {
         Text(
-            text = "预览第一：#${topCandidate.rank} ${topCandidate.candidateName} · ${topCandidate.score}",
+            text = "预览第一候选：#${topCandidate.rank} ${topCandidate.candidateName} · ${topCandidate.score}",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
         )
@@ -424,7 +1158,7 @@ private fun DraftReviewDetails(
 private fun PatchDraftApplyDetails(response: SalesWorkspaceDraftReviewApplyResponseDto) {
     val topCandidate = response.topCandidate
     Text(
-        text = "已通过 ${response.draftReview.id} 应用 ${response.patch.id}，workspace version ${response.workspace.workspaceVersion}。",
+        text = "已写入工作区，当前版本 ${response.workspace.workspaceVersion}。",
         style = MaterialTheme.typography.bodyMedium,
     )
     if (topCandidate != null) {
@@ -442,18 +1176,17 @@ private fun WorkspaceContent(snapshot: SalesWorkspaceReadOnlySnapshot) {
     val product = workspace.currentProductProfile
     val direction = workspace.currentLeadDirection
 
-    WorkspaceCard(title = workspace.name) {
-        Text(text = "Workspace ID：${workspace.id}", style = MaterialTheme.typography.bodyMedium)
-        Text(text = "Version：${workspace.workspaceVersion}", style = MaterialTheme.typography.bodyMedium)
-        Text(text = "Goal：${workspace.goal.ifBlank { "-" }}", style = MaterialTheme.typography.bodyMedium)
-        Text(text = "Status：${workspace.status}", style = MaterialTheme.typography.bodyMedium)
+    WorkspaceCard(title = "工作区") {
+        Text(text = workspace.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        Text(text = "目标：${workspace.goal.ifBlank { "-" }}", style = MaterialTheme.typography.bodyMedium)
+        Text(text = "状态：${workspace.status} · 版本 ${workspace.workspaceVersion}", style = MaterialTheme.typography.bodyMedium)
     }
 
     WorkspaceCard(title = "当前产品理解") {
         if (product == null) {
             Text(text = "暂无当前产品画像。", style = MaterialTheme.typography.bodyMedium)
         } else {
-            Text(text = product.productName, style = MaterialTheme.typography.titleMedium)
+            Text(text = product.productName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Text(text = product.oneLiner, style = MaterialTheme.typography.bodyMedium)
             Text(text = "目标客户：${product.targetCustomers.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
             Text(text = "痛点：${product.painPoints.joinToDisplayText()}", style = MaterialTheme.typography.bodyMedium)
@@ -489,57 +1222,31 @@ private fun WorkspaceContent(snapshot: SalesWorkspaceReadOnlySnapshot) {
         }
     }
 
-    WorkspaceCard(title = "Ranking Delta") {
-        val deltas = snapshot.rankingBoard?.deltas.orEmpty()
-        if (deltas.isEmpty()) {
-            Text(text = "暂无 ranking delta。", style = MaterialTheme.typography.bodyMedium)
-        } else {
-            deltas.take(4).forEach { delta ->
-                Text(
-                    text = "${delta.candidateId}: ${delta.previousRank ?: "-"} -> ${delta.newRank}, ${delta.previousScore} -> ${delta.newScore}",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(text = delta.reason, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-
-    WorkspaceCard(title = "ContextPack") {
+    WorkspaceCard(title = "ContextPack / Projection") {
         val contextPack = snapshot.contextPack
         if (contextPack == null) {
             Text(text = "暂无 ContextPack。", style = MaterialTheme.typography.bodyMedium)
         } else {
-            Text(text = contextPack.id, style = MaterialTheme.typography.titleSmall)
-            Text(text = "Top candidates:", style = MaterialTheme.typography.bodyMedium)
-            contextPack.topCandidates.take(5).forEach { candidate ->
+            Text(text = "ContextPack：${contextPack.id}", style = MaterialTheme.typography.bodySmall)
+            contextPack.topCandidates.take(3).forEach { candidate ->
                 Text(
                     text = "#${candidate.rank} ${candidate.name} · ${candidate.score}",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            Text(
-                text = contextPack.kernelBoundary,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
-    }
-
-    WorkspaceCard(title = "Markdown Projection") {
         val files = snapshot.projection?.files.orEmpty().keys.sorted()
-        if (files.isEmpty()) {
-            Text(text = "暂无 projection 文件。", style = MaterialTheme.typography.bodyMedium)
-        } else {
-            files.forEach { file ->
-                Text(text = file, style = MaterialTheme.typography.bodyMedium)
-            }
-        }
+        Text(
+            text = if (files.isEmpty()) "暂无 projection 文件。" else "Projection：${files.joinToString()}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
 @Composable
-private fun WorkspaceNotice(message: String) {
-    WorkspaceCard(title = "状态") {
+private fun WorkspaceNotice(title: String, message: String) {
+    WorkspaceCard(title = title) {
         Text(text = message, style = MaterialTheme.typography.bodyMedium)
     }
 }
@@ -551,12 +1258,12 @@ private fun WorkspaceCard(
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
             content()
@@ -564,5 +1271,373 @@ private fun WorkspaceCard(
     }
 }
 
+private fun V1SectionState<SalesWorkspaceReadOnlySnapshot>.toWorkspaceStatusLabel(): String =
+    when (this) {
+        V1SectionState.Idle -> "尚未同步"
+        V1SectionState.Loading -> "正在同步 Sales Workspace"
+        V1SectionState.Empty -> "尚未进入工作区"
+        is V1SectionState.Failed -> "连接或读取失败"
+        is V1SectionState.Loaded -> "会话已连接 · v${value.workspace.workspaceVersion}"
+    }
+
+private fun V1SectionState<SalesWorkspaceReadOnlySnapshot>.entryTitle(): String =
+    when (this) {
+        V1SectionState.Idle -> "尚未读取工作区"
+        V1SectionState.Loading -> "正在读取工作区"
+        V1SectionState.Empty -> "还没有可展示的工作区"
+        is V1SectionState.Failed -> error.title
+        is V1SectionState.Loaded -> "已进入销售工作区"
+    }
+
+private fun V1SectionState<SalesWorkspaceReadOnlySnapshot>.entryMessage(): String =
+    when (this) {
+        V1SectionState.Idle -> "点击开始后进入默认销售工作区。"
+        V1SectionState.Loading -> "正在连接后端并同步会话。"
+        V1SectionState.Empty -> "点击开始销售工作区后即可进入对话。"
+        is V1SectionState.Failed -> if (error.title == "默认销售工作区尚未创建") {
+            error.detail
+        } else {
+            "${error.detail}\n请确认后端已启动，并已执行 adb reverse tcp:8013 tcp:8013。"
+        }
+        is V1SectionState.Loaded -> "可以开始对话。"
+    }
+
+private fun String.toLlmFriendlyError(): String =
+    when {
+        contains("tokenhub_api_key_missing") || contains("llm_runtime_unavailable") -> {
+            "这轮生成超时或真实 LLM 暂不可用。刚才的输入已保留，请点重试；如果连续失败，再检查 backend/.env 或后端启动参数。"
+        }
+        else -> this
+    }
+
+private fun String.isRetryableLlmTurnError(): Boolean =
+    contains("llm_runtime_unavailable") ||
+        contains("tokenhub_request_timeout") ||
+        contains("timeout", ignoreCase = true) ||
+        contains("timed out", ignoreCase = true) ||
+        contains("unavailable", ignoreCase = true)
+
 private fun List<String>.joinToDisplayText(): String =
     if (isEmpty()) "-" else joinToString("、")
+
+private fun String.toConversationSpeaker(): String =
+    when (this) {
+        "user" -> "你"
+        "assistant" -> "Sales Agent"
+        else -> this
+    }
+
+private fun String.toConversationTypeLabel(): String =
+    when (this) {
+        "product_profile_update" -> "产品理解"
+        "lead_direction_update" -> "找客户建议"
+        "mixed_product_and_direction_update" -> "产品+找客户"
+        "workspace_question" -> "解释判断"
+        "clarifying_question" -> "追问"
+        "draft_summary" -> "更新建议"
+        "welcome" -> "欢迎"
+        "out_of_scope_v2_2" -> "超出范围"
+        else -> this
+    }
+
+private fun selectedThreadTitle(
+    threadState: V1SectionState<SalesWorkspaceConversationThreadsResponseDto>,
+    selectedThreadId: String,
+): String {
+    val thread = (threadState as? V1SectionState.Loaded<SalesWorkspaceConversationThreadsResponseDto>)
+        ?.value
+        ?.threads
+        ?.firstOrNull { it.id == selectedThreadId }
+    return thread?.title?.takeIf { it.isNotBlank() }
+        ?: if (selectedThreadId == SalesWorkspaceDefaultThreadId) "主对话" else selectedThreadId
+}
+
+private fun String.toDraftReviewStatusLabel(): String =
+    when (this) {
+        "previewed" -> "待确认"
+        "reviewed" -> "已确认"
+        "rejected" -> "已拒绝"
+        "applied" -> "已写入"
+        else -> this
+    }
+
+private fun String.toDraftReviewApplyStatusLabel(): String =
+    when (this) {
+        "applied" -> "已写入"
+        "failed" -> "写入失败"
+        else -> this
+    }
+
+private fun String.toDraftReviewDecisionLabel(): String =
+    when (this) {
+        "accept" -> "采纳"
+        "reject" -> "不采纳"
+        else -> this
+    }
+
+@Preview(name = "Workspace long transcript", widthDp = 360, heightDp = 800, showBackground = true)
+@Composable
+private fun WorkspaceLongTranscriptPhonePreview() {
+    MaterialTheme {
+        SalesWorkspaceScreen(
+            workspaceState = V1SectionState.Loaded(sampleWorkspaceSnapshot()),
+            workspaceCreateState = V1SectionState.Idle,
+            workspaceThreadState = V1SectionState.Loaded(sampleThreads()),
+            selectedThreadId = "thread_factory",
+            workspaceMessageHistoryState = V1SectionState.Loaded(
+                SalesWorkspaceConversationMessagesResponseDto(sampleConversationMessages()),
+            ),
+            optimisticUserMessage = null,
+            draftReviewState = V1SectionState.Idle,
+            patchDraftApplyState = V1SectionState.Idle,
+            chatFirstTurnState = V1SectionState.Idle,
+            chatInput = "",
+            chatMessageType = "product_profile_update",
+            onRefreshClick = {},
+            onCreateWorkspaceClick = {},
+            onCreateThreadClick = { _ -> },
+            onThreadSelected = {},
+            onCreateDraftReviewClick = {},
+            onChatInputChange = {},
+            onChatMessageTypeChange = {},
+            onSubmitChatTurnClick = {},
+            onAcceptDraftReviewClick = {},
+            onRejectDraftReviewClick = {},
+            onApplyDraftReviewClick = {},
+        )
+    }
+}
+
+@Preview(name = "Workspace empty welcome", widthDp = 360, heightDp = 800, showBackground = true)
+@Composable
+private fun WorkspaceEmptyWelcomePreview() {
+    MaterialTheme {
+        SalesWorkspaceScreen(
+            workspaceState = V1SectionState.Loaded(sampleWorkspaceSnapshot()),
+            workspaceCreateState = V1SectionState.Idle,
+            workspaceThreadState = V1SectionState.Loaded(sampleThreads()),
+            selectedThreadId = SalesWorkspaceDefaultThreadId,
+            workspaceMessageHistoryState = V1SectionState.Loaded(SalesWorkspaceConversationMessagesResponseDto(emptyList())),
+            optimisticUserMessage = null,
+            draftReviewState = V1SectionState.Idle,
+            patchDraftApplyState = V1SectionState.Idle,
+            chatFirstTurnState = V1SectionState.Idle,
+            chatInput = "",
+            chatMessageType = "workspace_question",
+            onRefreshClick = {},
+            onCreateWorkspaceClick = {},
+            onCreateThreadClick = { _ -> },
+            onThreadSelected = {},
+            onCreateDraftReviewClick = {},
+            onChatInputChange = {},
+            onChatMessageTypeChange = {},
+            onSubmitChatTurnClick = {},
+            onAcceptDraftReviewClick = {},
+            onRejectDraftReviewClick = {},
+            onApplyDraftReviewClick = {},
+        )
+    }
+}
+
+@Preview(name = "Workspace thinking", widthDp = 360, heightDp = 800, showBackground = true)
+@Composable
+private fun WorkspaceAssistantThinkingPreview() {
+    MaterialTheme {
+        SalesWorkspaceScreen(
+            workspaceState = V1SectionState.Loaded(sampleWorkspaceSnapshot()),
+            workspaceCreateState = V1SectionState.Idle,
+            workspaceThreadState = V1SectionState.Loaded(sampleThreads()),
+            selectedThreadId = "thread_food",
+            workspaceMessageHistoryState = V1SectionState.Loaded(
+                SalesWorkspaceConversationMessagesResponseDto(sampleConversationMessages().take(4)),
+            ),
+            optimisticUserMessage = SalesWorkspaceConversationMessageDto(
+                id = "local_pending_preview",
+                threadId = "thread_food",
+                role = "user",
+                messageType = "lead_direction_update",
+                content = "我们补充一下客户主要是直营门店。",
+            ),
+            draftReviewState = V1SectionState.Idle,
+            patchDraftApplyState = V1SectionState.Idle,
+            chatFirstTurnState = V1SectionState.Loading,
+            chatInput = "我们补充一下客户主要是直营门店。",
+            chatMessageType = "lead_direction_update",
+            onRefreshClick = {},
+            onCreateWorkspaceClick = {},
+            onCreateThreadClick = { _ -> },
+            onThreadSelected = {},
+            onCreateDraftReviewClick = {},
+            onChatInputChange = {},
+            onChatMessageTypeChange = {},
+            onSubmitChatTurnClick = {},
+            onAcceptDraftReviewClick = {},
+            onRejectDraftReviewClick = {},
+            onApplyDraftReviewClick = {},
+        )
+    }
+}
+
+@Preview(name = "Workspace folded settings", widthDp = 360, heightDp = 800, showBackground = true)
+@Composable
+private fun WorkspaceFoldedSettingsPreview() {
+    MaterialTheme {
+        WorkspaceChatSurface(
+            snapshot = sampleWorkspaceSnapshot(),
+            threadState = V1SectionState.Loaded(sampleThreads()),
+            selectedWorkspaceId = SalesWorkspaceDemoWorkspaceId,
+            workspaceSelectorInput = SalesWorkspaceDemoWorkspaceId,
+            selectedThreadId = "thread_factory",
+            historyState = V1SectionState.Loaded(
+                SalesWorkspaceConversationMessagesResponseDto(sampleConversationMessages()),
+            ),
+            optimisticUserMessage = null,
+            draftReviewState = V1SectionState.Idle,
+            patchDraftApplyState = V1SectionState.Idle,
+            chatFirstTurnState = V1SectionState.Idle,
+            chatInput = "",
+            chatMessageType = "mixed_product_and_direction_update",
+            onRefreshClick = {},
+            onWorkspaceSelectorInputChange = {},
+            onSwitchWorkspaceClick = {},
+            onCreateThreadClick = { _ -> },
+            onThreadSelected = {},
+            onCreateDraftReviewClick = {},
+            onChatInputChange = {},
+            onChatMessageTypeChange = {},
+            onSubmitChatTurnClick = {},
+            onRetryChatTurnClick = {},
+            onAcceptDraftReviewClick = {},
+            onRejectDraftReviewClick = {},
+            onApplyDraftReviewClick = {},
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            initialShowSettings = true,
+        )
+    }
+}
+
+@Preview(name = "Draft review attachment", widthDp = 360, showBackground = true)
+@Composable
+private fun WorkspaceDraftReviewAttachmentPreview() {
+    MaterialTheme {
+        DraftReviewAttachment(
+            workspaceVersion = 2,
+            draftReviewState = V1SectionState.Loaded(sampleDraftReview()),
+            applyState = V1SectionState.Idle,
+            onCreateDraftReviewClick = {},
+            onAcceptDraftReviewClick = {},
+            onRejectDraftReviewClick = {},
+            onApplyDraftReviewClick = {},
+            showCreateDraftReviewButton = false,
+        )
+    }
+}
+
+private fun sampleWorkspaceSnapshot(): SalesWorkspaceReadOnlySnapshot =
+    SalesWorkspaceReadOnlySnapshot(
+        workspace = SalesWorkspaceDto(
+            id = "ws_demo",
+            name = "销售工作区",
+            goal = "用对话澄清产品、客户和获客方向",
+            status = "active",
+            workspaceVersion = 2,
+            currentProductProfileRevisionId = null,
+            currentLeadDirectionVersionId = null,
+            productProfileRevisions = emptyMap(),
+            leadDirectionVersions = emptyMap(),
+            rankingBoard = null,
+        ),
+        rankingBoard = null,
+        projection = null,
+        contextPack = null,
+    )
+
+private fun sampleThreads(): SalesWorkspaceConversationThreadsResponseDto =
+    SalesWorkspaceConversationThreadsResponseDto(
+        threads = listOf(
+            SalesWorkspaceConversationThreadDto(
+                id = SalesWorkspaceDefaultThreadId,
+                title = "主对话",
+                status = "active",
+            ),
+            SalesWorkspaceConversationThreadDto(
+                id = "thread_factory",
+                title = "工厂维保",
+                status = "active",
+            ),
+            SalesWorkspaceConversationThreadDto(
+                id = "thread_food",
+                title = "连锁餐饮",
+                status = "active",
+            ),
+        ),
+    )
+
+private fun sampleConversationMessages(): List<SalesWorkspaceConversationMessageDto> =
+    listOf(
+        SalesWorkspaceConversationMessageDto(
+            id = "msg_1",
+            threadId = "thread_factory",
+            role = "assistant",
+            messageType = "welcome",
+            content = "可以直接告诉我你卖什么、客户是谁、现在想验证哪类销售方向。",
+        ),
+        SalesWorkspaceConversationMessageDto(
+            id = "msg_2",
+            threadId = "thread_factory",
+            role = "user",
+            messageType = "product_profile_update",
+            content = "我们做工业设备维保软件，帮工厂减少停机时间。",
+        ),
+        SalesWorkspaceConversationMessageDto(
+            id = "msg_3",
+            threadId = "thread_factory",
+            role = "assistant",
+            messageType = "clarifying_question",
+            content = "收到。为了把产品理解补完整，我需要确认：主要设备类型是什么，目标客户是终端工厂还是设备制造商，当前交付是 SaaS 还是本地部署？",
+        ),
+        SalesWorkspaceConversationMessageDto(
+            id = "msg_4",
+            threadId = "thread_factory",
+            role = "user",
+            messageType = "lead_direction_update",
+            content = "优先面向华东的中大型制造工厂，设备运维团队比较成熟。",
+        ),
+        SalesWorkspaceConversationMessageDto(
+            id = "msg_5",
+            threadId = "thread_factory",
+            role = "assistant",
+            messageType = "draft_summary",
+            content = "当前方向可以先聚焦有多产线、多设备类型、停机损失明确的制造工厂。下一步建议补充行业细分和已有客户案例。",
+        ),
+    )
+
+private fun sampleDraftReview(): SalesWorkspaceDraftReviewDto =
+    SalesWorkspaceDraftReviewDto(
+        id = "review_preview",
+        workspaceId = "ws_demo",
+        status = "previewed",
+        baseWorkspaceVersion = 2,
+        draft = SalesWorkspacePatchDraftDto(
+            id = "draft_preview",
+            workspaceId = "ws_demo",
+            baseWorkspaceVersion = 2,
+            operationCount = 2,
+            rawJson = "{}",
+        ),
+        preview = SalesWorkspaceDraftReviewPreviewDto(
+            materializedPatch = SalesWorkspacePatchSummaryDto(
+                id = "patch_preview",
+                workspaceId = "ws_demo",
+                baseWorkspaceVersion = 2,
+                operationCount = 2,
+            ),
+            previewWorkspaceVersion = 3,
+            previewRankingBoard = null,
+            wouldMutate = true,
+        ),
+        review = null,
+        applyResult = null,
+    )

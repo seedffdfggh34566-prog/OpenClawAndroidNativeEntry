@@ -39,10 +39,15 @@ import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichRequest
 import com.openclaw.android.nativeentry.data.backend.ProductProfileEnrichResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceBackendClient
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceChatTurnResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationMessageDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationThreadsResponseDto
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDefaultThreadId
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceConversationMessagesResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDemoWorkspaceId
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewApplyResponseDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceDraftReviewDto
 import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceReadOnlySnapshot
+import com.openclaw.android.nativeentry.data.backend.SalesWorkspaceResponseDto
 import com.openclaw.android.nativeentry.data.backend.V1BackendClient
 import com.openclaw.android.nativeentry.navigation.OpenClawDestination
 import com.openclaw.android.nativeentry.navigation.OpenClawNavHost
@@ -85,11 +90,15 @@ fun OpenClawApp() {
     val currentDestination = backStackEntry?.destination
     val currentScreen = OpenClawDestination.fromRoute(currentDestination?.route) ?: OpenClawDestination.Home
     val isTopLevelScreen = OpenClawDestination.topLevelDestinations.any { it.route == currentScreen.route }
+    val hideGlobalChrome = currentScreen == OpenClawDestination.Workspace
     val placeholderState = remember { sampleV1ShellPlaceholderState() }
     val workspaceClient = remember { SalesWorkspaceBackendClient() }
     var backendState by remember { mutableStateOf(V1BackendUiState()) }
     var workspaceState by remember {
         mutableStateOf<V1SectionState<SalesWorkspaceReadOnlySnapshot>>(V1SectionState.Idle)
+    }
+    var workspaceCreateState by remember {
+        mutableStateOf<V1SectionState<SalesWorkspaceResponseDto>>(V1SectionState.Idle)
     }
     var draftReviewState by remember {
         mutableStateOf<V1SectionState<SalesWorkspaceDraftReviewDto>>(V1SectionState.Idle)
@@ -100,6 +109,17 @@ fun OpenClawApp() {
     var chatFirstTurnState by remember {
         mutableStateOf<V1SectionState<SalesWorkspaceChatTurnResponseDto>>(V1SectionState.Idle)
     }
+    var workspaceMessageHistoryState by remember {
+        mutableStateOf<V1SectionState<SalesWorkspaceConversationMessagesResponseDto>>(V1SectionState.Idle)
+    }
+    var workspaceThreadState by remember {
+        mutableStateOf<V1SectionState<SalesWorkspaceConversationThreadsResponseDto>>(V1SectionState.Idle)
+    }
+    var selectedSalesWorkspaceId by remember { mutableStateOf(SalesWorkspaceDemoWorkspaceId) }
+    var workspaceSelectorInput by remember { mutableStateOf(SalesWorkspaceDemoWorkspaceId) }
+    var selectedWorkspaceThreadId by remember { mutableStateOf(SalesWorkspaceDefaultThreadId) }
+    var optimisticWorkspaceUserMessage by remember { mutableStateOf<SalesWorkspaceConversationMessageDto?>(null) }
+    var failedWorkspaceTurnMessage by remember { mutableStateOf<SalesWorkspaceConversationMessageDto?>(null) }
     var workspaceChatInput by remember { mutableStateOf("") }
     var workspaceChatMessageType by remember { mutableStateOf("product_profile_update") }
     var productName by remember { mutableStateOf("") }
@@ -114,6 +134,7 @@ fun OpenClawApp() {
     var refreshJob by remember { mutableStateOf<Job?>(null) }
     var backendRefreshJob by remember { mutableStateOf<Job?>(null) }
     var workspaceLoadJob by remember { mutableStateOf<Job?>(null) }
+    var workspaceCreateJob by remember { mutableStateOf<Job?>(null) }
     var draftReviewJob by remember { mutableStateOf<Job?>(null) }
     var patchDraftApplyJob by remember { mutableStateOf<Job?>(null) }
     var chatFirstTurnJob by remember { mutableStateOf<Job?>(null) }
@@ -188,13 +209,251 @@ fun OpenClawApp() {
         }
     }
 
+    suspend fun syncWorkspaceThreadsAndMessages(workspaceId: String) {
+        workspaceThreadState = V1SectionState.Loading
+        val threadsResult = workspaceClient.listConversationThreads(workspaceId)
+        when (threadsResult) {
+            is BackendReadResult.Failure -> {
+                workspaceThreadState = V1SectionState.Failed(threadsResult.error)
+                workspaceMessageHistoryState = V1SectionState.Failed(threadsResult.error)
+                return
+            }
+
+            is BackendReadResult.Success -> {
+                val threads = threadsResult.value.threads
+                workspaceThreadState = if (threads.isEmpty()) {
+                    V1SectionState.Empty
+                } else {
+                    V1SectionState.Loaded(threadsResult.value)
+                }
+                if (threads.none { it.id == selectedWorkspaceThreadId }) {
+                    selectedWorkspaceThreadId = threads.firstOrNull()?.id ?: SalesWorkspaceDefaultThreadId
+                }
+            }
+        }
+
+        workspaceMessageHistoryState = when (
+            val messages = workspaceClient.listConversationMessages(
+                workspaceId = workspaceId,
+                threadId = selectedWorkspaceThreadId,
+            )
+        ) {
+            is BackendReadResult.Failure -> V1SectionState.Failed(messages.error)
+            is BackendReadResult.Success -> if (messages.value.messages.isEmpty()) {
+                V1SectionState.Empty
+            } else {
+                V1SectionState.Loaded(messages.value)
+            }
+        }
+    }
+
     fun refreshSalesWorkspace() {
         workspaceLoadJob?.cancel()
         workspaceState = V1SectionState.Loading
+        workspaceMessageHistoryState = V1SectionState.Loading
+        workspaceThreadState = V1SectionState.Loading
+        optimisticWorkspaceUserMessage = null
+        failedWorkspaceTurnMessage = null
         workspaceLoadJob = scope.launch {
-            workspaceState = when (val result = workspaceClient.getReadOnlySnapshot(SalesWorkspaceDemoWorkspaceId)) {
-                is BackendReadResult.Failure -> V1SectionState.Failed(result.error)
-                is BackendReadResult.Success -> V1SectionState.Loaded(result.value)
+            when (val result = workspaceClient.getReadOnlySnapshot(selectedSalesWorkspaceId)) {
+                is BackendReadResult.Failure -> {
+                    workspaceState = V1SectionState.Failed(result.error)
+                    workspaceMessageHistoryState = V1SectionState.Failed(result.error)
+                    workspaceThreadState = V1SectionState.Failed(result.error)
+                }
+
+                is BackendReadResult.Success -> {
+                    workspaceState = V1SectionState.Loaded(result.value)
+                    syncWorkspaceThreadsAndMessages(result.value.workspace.id)
+                }
+            }
+        }
+    }
+
+    fun selectSalesWorkspaceThread(threadId: String) {
+        selectedWorkspaceThreadId = threadId
+        chatFirstTurnJob?.cancel()
+        chatFirstTurnState = V1SectionState.Idle
+        draftReviewState = V1SectionState.Idle
+        patchDraftApplyState = V1SectionState.Idle
+        optimisticWorkspaceUserMessage = null
+        failedWorkspaceTurnMessage = null
+        workspaceChatInput = ""
+        val loadedWorkspace = (workspaceState as? V1SectionState.Loaded<SalesWorkspaceReadOnlySnapshot>)
+            ?.value
+            ?.workspace
+        if (loadedWorkspace == null) return
+        workspaceMessageHistoryState = V1SectionState.Loading
+        workspaceLoadJob?.cancel()
+        workspaceLoadJob = scope.launch {
+            workspaceMessageHistoryState = when (
+                val messages = workspaceClient.listConversationMessages(
+                    workspaceId = loadedWorkspace.id,
+                    threadId = threadId,
+                )
+            ) {
+                is BackendReadResult.Failure -> V1SectionState.Failed(messages.error)
+                is BackendReadResult.Success -> if (messages.value.messages.isEmpty()) {
+                    V1SectionState.Empty
+                } else {
+                    V1SectionState.Loaded(messages.value)
+                }
+            }
+        }
+    }
+
+    fun createSalesWorkspaceThread(title: String) {
+        val loadedWorkspace = (workspaceState as? V1SectionState.Loaded<SalesWorkspaceReadOnlySnapshot>)
+            ?.value
+            ?.workspace
+        if (loadedWorkspace == null) {
+            workspaceThreadState = V1SectionState.Failed(
+                BackendReadError(
+                    title = "无法创建新对话",
+                    detail = "请先进入 Sales Workspace。",
+                ),
+            )
+            return
+        }
+        workspaceLoadJob?.cancel()
+        workspaceThreadState = V1SectionState.Loading
+        optimisticWorkspaceUserMessage = null
+        failedWorkspaceTurnMessage = null
+        workspaceLoadJob = scope.launch {
+            when (
+                val result = workspaceClient.createConversationThread(
+                    workspaceId = loadedWorkspace.id,
+                    title = title.trim().ifBlank { "新对话" },
+                )
+            ) {
+                is BackendReadResult.Failure -> workspaceThreadState = V1SectionState.Failed(result.error)
+                is BackendReadResult.Success -> {
+                    selectedWorkspaceThreadId = result.value.id
+                    chatFirstTurnState = V1SectionState.Idle
+                    draftReviewState = V1SectionState.Idle
+                    patchDraftApplyState = V1SectionState.Idle
+                    optimisticWorkspaceUserMessage = null
+                    failedWorkspaceTurnMessage = null
+                    workspaceChatInput = ""
+                    syncWorkspaceThreadsAndMessages(loadedWorkspace.id)
+                }
+            }
+        }
+    }
+
+    fun createDefaultSalesWorkspace() {
+        workspaceCreateJob?.cancel()
+        workspaceCreateState = V1SectionState.Loading
+        workspaceCreateJob = scope.launch {
+            when (
+                val result = workspaceClient.createWorkspace(
+                    workspaceId = selectedSalesWorkspaceId,
+                    name = if (selectedSalesWorkspaceId == SalesWorkspaceDemoWorkspaceId) {
+                        "FactoryOps AI Workspace"
+                    } else {
+                        "$selectedSalesWorkspaceId Workspace"
+                    },
+                    goal = "Build chat-first V2.1 product experience.",
+                )
+            ) {
+                is BackendReadResult.Failure -> {
+                    if (!result.error.isWorkspaceAlreadyExists()) {
+                        workspaceCreateState = V1SectionState.Failed(result.error)
+                        return@launch
+                    }
+                    workspaceState = V1SectionState.Loading
+                    workspaceMessageHistoryState = V1SectionState.Loading
+                    workspaceThreadState = V1SectionState.Loading
+                    when (val snapshot = workspaceClient.getReadOnlySnapshot(selectedSalesWorkspaceId)) {
+                        is BackendReadResult.Failure -> {
+                            workspaceCreateState = V1SectionState.Failed(snapshot.error)
+                            workspaceState = V1SectionState.Failed(snapshot.error)
+                            workspaceMessageHistoryState = V1SectionState.Failed(snapshot.error)
+                            workspaceThreadState = V1SectionState.Failed(snapshot.error)
+                        }
+
+                        is BackendReadResult.Success -> {
+                            workspaceCreateState = V1SectionState.Loaded(
+                                SalesWorkspaceResponseDto(snapshot.value.workspace),
+                            )
+                            workspaceState = V1SectionState.Loaded(snapshot.value)
+                            syncWorkspaceThreadsAndMessages(snapshot.value.workspace.id)
+                        }
+                    }
+                }
+
+                is BackendReadResult.Success -> {
+                    workspaceCreateState = V1SectionState.Loaded(result.value)
+                    workspaceState = V1SectionState.Loading
+                    workspaceMessageHistoryState = V1SectionState.Loading
+                    workspaceThreadState = V1SectionState.Loading
+                    when (val snapshot = workspaceClient.getReadOnlySnapshot(result.value.workspace.id)) {
+                        is BackendReadResult.Failure -> {
+                            workspaceState = V1SectionState.Failed(snapshot.error)
+                            workspaceMessageHistoryState = V1SectionState.Failed(snapshot.error)
+                            workspaceThreadState = V1SectionState.Failed(snapshot.error)
+                        }
+                        is BackendReadResult.Success -> {
+                            workspaceState = V1SectionState.Loaded(snapshot.value)
+                            syncWorkspaceThreadsAndMessages(snapshot.value.workspace.id)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun switchSalesWorkspace(workspaceId: String) {
+        val targetWorkspaceId = workspaceId.trim().ifBlank { SalesWorkspaceDemoWorkspaceId }
+        workspaceLoadJob?.cancel()
+        workspaceCreateJob?.cancel()
+        chatFirstTurnJob?.cancel()
+        draftReviewJob?.cancel()
+        patchDraftApplyJob?.cancel()
+
+        selectedSalesWorkspaceId = targetWorkspaceId
+        workspaceSelectorInput = targetWorkspaceId
+        selectedWorkspaceThreadId = SalesWorkspaceDefaultThreadId
+        optimisticWorkspaceUserMessage = null
+        failedWorkspaceTurnMessage = null
+        workspaceChatInput = ""
+        chatFirstTurnState = V1SectionState.Idle
+        draftReviewState = V1SectionState.Idle
+        patchDraftApplyState = V1SectionState.Idle
+        workspaceState = V1SectionState.Loading
+        workspaceMessageHistoryState = V1SectionState.Loading
+        workspaceThreadState = V1SectionState.Loading
+        workspaceCreateState = V1SectionState.Loading
+
+        workspaceCreateJob = scope.launch {
+            val createResult = workspaceClient.createWorkspace(
+                workspaceId = targetWorkspaceId,
+                name = "$targetWorkspaceId Workspace",
+                goal = "Dev/test Sales Workspace chat validation.",
+            )
+            if (createResult is BackendReadResult.Failure && !createResult.error.isWorkspaceAlreadyExists()) {
+                workspaceCreateState = V1SectionState.Failed(createResult.error)
+                workspaceState = V1SectionState.Failed(createResult.error)
+                workspaceMessageHistoryState = V1SectionState.Failed(createResult.error)
+                workspaceThreadState = V1SectionState.Failed(createResult.error)
+                return@launch
+            }
+            if (createResult is BackendReadResult.Success) {
+                workspaceCreateState = V1SectionState.Loaded(createResult.value)
+            }
+            when (val snapshot = workspaceClient.getReadOnlySnapshot(targetWorkspaceId)) {
+                is BackendReadResult.Failure -> {
+                    workspaceCreateState = V1SectionState.Failed(snapshot.error)
+                    workspaceState = V1SectionState.Failed(snapshot.error)
+                    workspaceMessageHistoryState = V1SectionState.Failed(snapshot.error)
+                    workspaceThreadState = V1SectionState.Failed(snapshot.error)
+                }
+
+                is BackendReadResult.Success -> {
+                    workspaceCreateState = V1SectionState.Loaded(SalesWorkspaceResponseDto(snapshot.value.workspace))
+                    workspaceState = V1SectionState.Loaded(snapshot.value)
+                    syncWorkspaceThreadsAndMessages(snapshot.value.workspace.id)
+                }
             }
         }
     }
@@ -256,21 +515,121 @@ fun OpenClawApp() {
         chatFirstTurnJob?.cancel()
         patchDraftApplyState = V1SectionState.Idle
         draftReviewState = V1SectionState.Idle
+        optimisticWorkspaceUserMessage = SalesWorkspaceConversationMessageDto(
+            id = "local_pending_${selectedWorkspaceThreadId}_${System.currentTimeMillis()}",
+            threadId = selectedWorkspaceThreadId,
+            role = "user",
+            messageType = workspaceChatMessageType,
+            content = content,
+        )
+        failedWorkspaceTurnMessage = null
+        workspaceChatInput = ""
         chatFirstTurnState = V1SectionState.Loading
         chatFirstTurnJob = scope.launch {
-            when (
-                val result = workspaceClient.runChatFirstSalesAgentTurn(
+            val createdMessage = when (
+                val messageResult = workspaceClient.createConversationMessage(
                     workspaceId = loadedWorkspace.id,
-                    baseWorkspaceVersion = loadedWorkspace.workspaceVersion,
+                    threadId = selectedWorkspaceThreadId,
                     messageType = workspaceChatMessageType,
                     content = content,
                 )
             ) {
-                is BackendReadResult.Failure -> chatFirstTurnState = V1SectionState.Failed(result.error)
+                is BackendReadResult.Failure -> {
+                    chatFirstTurnState = V1SectionState.Failed(messageResult.error)
+                    return@launch
+                }
+
+                is BackendReadResult.Success -> messageResult.value
+            }
+            optimisticWorkspaceUserMessage = createdMessage
+            when (
+                val result = workspaceClient.runSalesAgentTurnForMessage(
+                    workspaceId = loadedWorkspace.id,
+                    threadId = selectedWorkspaceThreadId,
+                    messageId = createdMessage.id,
+                    baseWorkspaceVersion = loadedWorkspace.workspaceVersion,
+                )
+            ) {
+                is BackendReadResult.Failure -> {
+                    failedWorkspaceTurnMessage = createdMessage
+                    chatFirstTurnState = V1SectionState.Failed(result.error)
+                }
+
                 is BackendReadResult.Success -> {
+                    failedWorkspaceTurnMessage = null
                     chatFirstTurnState = V1SectionState.Loaded(result.value)
                     draftReviewState = result.value.draftReview?.let { V1SectionState.Loaded(it) } ?: V1SectionState.Empty
-                    workspaceChatInput = ""
+                    when (val snapshot = workspaceClient.getReadOnlySnapshot(loadedWorkspace.id)) {
+                        is BackendReadResult.Failure -> workspaceState = V1SectionState.Failed(snapshot.error)
+                        is BackendReadResult.Success -> workspaceState = V1SectionState.Loaded(snapshot.value)
+                    }
+                    workspaceMessageHistoryState = when (
+                        val messages = workspaceClient.listConversationMessages(
+                            workspaceId = loadedWorkspace.id,
+                            threadId = selectedWorkspaceThreadId,
+                        )
+                    ) {
+                        is BackendReadResult.Failure -> V1SectionState.Failed(messages.error)
+                        is BackendReadResult.Success -> V1SectionState.Loaded(messages.value)
+                    }
+                    optimisticWorkspaceUserMessage = null
+                }
+            }
+        }
+    }
+
+    fun retryFailedWorkspaceTurn() {
+        val loadedWorkspace = (workspaceState as? V1SectionState.Loaded<SalesWorkspaceReadOnlySnapshot>)
+            ?.value
+            ?.workspace
+        val failedMessage = failedWorkspaceTurnMessage
+        if (loadedWorkspace == null || failedMessage == null) {
+            chatFirstTurnState = V1SectionState.Failed(
+                BackendReadError(
+                    title = "无法重试",
+                    detail = "没有可重试的上一轮用户消息。",
+                ),
+            )
+            return
+        }
+
+        chatFirstTurnJob?.cancel()
+        patchDraftApplyState = V1SectionState.Idle
+        draftReviewState = V1SectionState.Idle
+        optimisticWorkspaceUserMessage = failedMessage
+        chatFirstTurnState = V1SectionState.Loading
+        chatFirstTurnJob = scope.launch {
+            when (
+                val result = workspaceClient.runSalesAgentTurnForMessage(
+                    workspaceId = loadedWorkspace.id,
+                    threadId = failedMessage.threadId,
+                    messageId = failedMessage.id,
+                    baseWorkspaceVersion = loadedWorkspace.workspaceVersion,
+                )
+            ) {
+                is BackendReadResult.Failure -> {
+                    failedWorkspaceTurnMessage = failedMessage
+                    chatFirstTurnState = V1SectionState.Failed(result.error)
+                }
+
+                is BackendReadResult.Success -> {
+                    failedWorkspaceTurnMessage = null
+                    chatFirstTurnState = V1SectionState.Loaded(result.value)
+                    draftReviewState = result.value.draftReview?.let { V1SectionState.Loaded(it) } ?: V1SectionState.Empty
+                    when (val snapshot = workspaceClient.getReadOnlySnapshot(loadedWorkspace.id)) {
+                        is BackendReadResult.Failure -> workspaceState = V1SectionState.Failed(snapshot.error)
+                        is BackendReadResult.Success -> workspaceState = V1SectionState.Loaded(snapshot.value)
+                    }
+                    workspaceMessageHistoryState = when (
+                        val messages = workspaceClient.listConversationMessages(
+                            workspaceId = loadedWorkspace.id,
+                            threadId = failedMessage.threadId,
+                        )
+                    ) {
+                        is BackendReadResult.Failure -> V1SectionState.Failed(messages.error)
+                        is BackendReadResult.Success -> V1SectionState.Loaded(messages.value)
+                    }
+                    optimisticWorkspaceUserMessage = null
                 }
             }
         }
@@ -363,13 +722,26 @@ fun OpenClawApp() {
 
                 is BackendReadResult.Success -> {
                     patchDraftApplyState = V1SectionState.Loaded(result.value)
-                    draftReviewState = V1SectionState.Idle
+                    draftReviewState = V1SectionState.Loaded(result.value.draftReview)
                     workspaceState = V1SectionState.Loading
                     workspaceState = when (
                         val snapshot = workspaceClient.getReadOnlySnapshot(result.value.workspace.id)
                     ) {
                         is BackendReadResult.Failure -> V1SectionState.Failed(snapshot.error)
                         is BackendReadResult.Success -> V1SectionState.Loaded(snapshot.value)
+                    }
+                    workspaceMessageHistoryState = when (
+                        val messages = workspaceClient.listConversationMessages(
+                            workspaceId = result.value.workspace.id,
+                            threadId = selectedWorkspaceThreadId,
+                        )
+                    ) {
+                        is BackendReadResult.Failure -> V1SectionState.Failed(messages.error)
+                        is BackendReadResult.Success -> if (messages.value.messages.isEmpty()) {
+                            V1SectionState.Empty
+                        } else {
+                            V1SectionState.Loaded(messages.value)
+                        }
                     }
                 }
             }
@@ -1263,22 +1635,24 @@ fun OpenClawApp() {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(text = currentScreen.title) },
-                navigationIcon = {
-                    if (!isTopLevelScreen) {
-                        IconButton(onClick = ::navigateBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "返回",
-                            )
+            if (!hideGlobalChrome) {
+                TopAppBar(
+                    title = { Text(text = currentScreen.title) },
+                    navigationIcon = {
+                        if (!isTopLevelScreen) {
+                            IconButton(onClick = ::navigateBack) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "返回",
+                                )
+                            }
                         }
-                    }
-                },
-            )
+                    },
+                )
+            }
         },
         bottomBar = {
-            if (isTopLevelScreen) {
+            if (isTopLevelScreen && !hideGlobalChrome) {
                 NavigationBar {
                     OpenClawDestination.topLevelDestinations.forEach { destination ->
                         val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
@@ -1301,6 +1675,13 @@ fun OpenClawApp() {
             navController = navController,
             backendState = backendState,
             workspaceState = workspaceState,
+            workspaceCreateState = workspaceCreateState,
+            workspaceThreadState = workspaceThreadState,
+            selectedSalesWorkspaceId = selectedSalesWorkspaceId,
+            workspaceSelectorInput = workspaceSelectorInput,
+            selectedWorkspaceThreadId = selectedWorkspaceThreadId,
+            workspaceMessageHistoryState = workspaceMessageHistoryState,
+            optimisticWorkspaceUserMessage = optimisticWorkspaceUserMessage,
             draftReviewState = draftReviewState,
             patchDraftApplyState = patchDraftApplyState,
             chatFirstTurnState = chatFirstTurnState,
@@ -1311,12 +1692,18 @@ fun OpenClawApp() {
             onRefreshGatewayStatus = ::refreshGatewayStatus,
             onRefreshBackend = ::refreshV1History,
             onRefreshWorkspace = ::refreshSalesWorkspace,
+            onCreateWorkspace = ::createDefaultSalesWorkspace,
+            onWorkspaceSelectorInputChange = { workspaceSelectorInput = it },
+            onSwitchWorkspace = ::switchSalesWorkspace,
+            onCreateWorkspaceThread = ::createSalesWorkspaceThread,
+            onSelectWorkspaceThread = ::selectSalesWorkspaceThread,
             onCreateDraftReview = ::createDraftReviewFromRuntimePreview,
             workspaceChatInput = workspaceChatInput,
             workspaceChatMessageType = workspaceChatMessageType,
             onWorkspaceChatInputChange = { workspaceChatInput = it },
             onWorkspaceChatMessageTypeChange = { workspaceChatMessageType = it },
             onSubmitWorkspaceChatTurn = ::submitChatFirstWorkspaceTurn,
+            onRetryWorkspaceChatTurn = ::retryFailedWorkspaceTurn,
             onAcceptDraftReview = ::acceptDraftReview,
             onRejectDraftReview = ::rejectDraftReview,
             onApplyDraftReview = ::applyReviewedDraftReview,
@@ -1345,6 +1732,9 @@ fun OpenClawApp() {
         )
     }
 }
+
+private fun BackendReadError.isWorkspaceAlreadyExists(): Boolean =
+    title.contains("HTTP 409") && detail.contains("workspace_already_exists")
 
 private fun extractDashboardUrl(result: OpenClawTermuxCommandResult?): String? {
     if (result == null) return null

@@ -5,10 +5,18 @@ import logging
 from time import perf_counter
 from uuid import uuid4
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
+from backend.api.sales_workspace_diagnostics import (
+    get_sales_workspace_diagnostics,
+    is_workspace_not_found,
+    list_sales_workspace_diagnostics,
+    sales_workspace_inspector_html,
+    workspace_not_found_payload,
+)
 from backend.api import serializers, services
 from backend.api.config import get_settings
 from backend.api.database import get_db_session, init_db
@@ -347,6 +355,12 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail="dev_llm_trace_not_enabled")
         return request_settings
 
+    def require_dev_sales_workspace_diagnostics_enabled():
+        request_settings = get_settings()
+        if not request_settings.dev_sales_workspace_diagnostics_enabled:
+            raise HTTPException(status_code=404, detail="dev_sales_workspace_diagnostics_not_enabled")
+        return request_settings
+
     @app.get("/dev/llm-runs")
     def list_dev_llm_runs() -> dict[str, object]:
         request_settings = require_dev_llm_trace_enabled()
@@ -364,6 +378,26 @@ def create_app() -> FastAPI:
     def get_dev_llm_inspector() -> HTMLResponse:
         require_dev_llm_trace_enabled()
         return HTMLResponse(_dev_llm_inspector_html())
+
+    @app.get("/dev/sales-workspaces")
+    def list_dev_sales_workspaces(request: Request) -> dict[str, object]:
+        require_dev_sales_workspace_diagnostics_enabled()
+        return list_sales_workspace_diagnostics(request)
+
+    @app.get("/dev/sales-workspaces/{workspace_id}/diagnostics", response_model=None)
+    def get_dev_sales_workspace_diagnostics(workspace_id: str, request: Request):
+        require_dev_sales_workspace_diagnostics_enabled()
+        try:
+            return get_sales_workspace_diagnostics(request, workspace_id)
+        except Exception as exc:  # noqa: BLE001
+            if is_workspace_not_found(exc):
+                return JSONResponse(status_code=404, content=workspace_not_found_payload(workspace_id))
+            raise
+
+    @app.get("/dev/sales-workspace-inspector", response_class=HTMLResponse)
+    def get_dev_sales_workspace_inspector() -> HTMLResponse:
+        require_dev_sales_workspace_diagnostics_enabled()
+        return HTMLResponse(sales_workspace_inspector_html())
 
     return app
 

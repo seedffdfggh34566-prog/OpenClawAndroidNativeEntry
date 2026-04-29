@@ -221,6 +221,39 @@ If a task closeout, handoff, README, or `_active.md` status conflicts with PRD,
 roadmap, ADR, or architecture baseline success criteria, the Dev Agent must stop,
 surface the mismatch, and avoid upgrading the result into version completion.
 
+### Milestone Completion Claims
+
+Ordinary task files and handoffs must not declare a product version, milestone,
+product experience, or phase complete.
+
+They may only state that the task is done, that a validation path passed, or that
+the result provides evidence toward a milestone.
+
+Milestone completion claims require an explicit milestone closeout or acceptance
+review, must reference PRD / roadmap / ADR / architecture baseline sources, and
+must include PRD Acceptance Traceability.
+
+Prototype, demo, smoke, or backend acceptance evidence must be labeled as such
+and must not be broadened into product-stage completion.
+
+### Multi-Agent Responsibility Split
+
+When multiple Dev Agent threads are used, keep responsibilities separate:
+
+- Status / Planning Agent, Execution Agent, and Review Agent are Dev Agent
+  workflow roles, not product agents or fixed tool identities.
+- Status / Planning agents maintain project status, capability matrices, gap backlog, and package recommendations.
+- Execution agents implement only the current `_active.md` package / task.
+- Review agents inspect diffs, risks, validation, scope drift, and milestone-claim drift.
+
+Opening `_active.md` current delivery package requires an explicit authorization
+source, such as human instruction, an accepted Status / Planning Agent
+recommendation, an `_active.md` auto-continue rule, or a documented current
+package next-package rule.
+
+Execution agents must not invent new packages or upgrade task / handoff evidence
+into milestone completion.
+
 ---
 
 ## 6. Scope Discipline
@@ -352,6 +385,42 @@ Avoid touching these unless the task clearly requires it.
 
 When a task changes behavior, structure, or workflow, the agent must update the relevant docs.
 
+Documentation updates should be proportional to the change:
+
+- Small implementation steps inside an already-open package usually update only
+  the task outcome and handoff, unless they change public docs, contracts, or
+  project status.
+- Update `docs/product/project_status.md`, root / docs README files, or milestone
+  reviews only when the package closeout, milestone evidence, navigation, or
+  project status actually changes.
+- Update `_active.md` only when execution authorization, current package / task,
+  queue state, auto-continue, or stop conditions change.
+
+### Product-First Execution Mode
+
+When the current task is Android UI, demo path, product polish, or
+user-visible experience recovery, default to product work and device validation
+over documentation expansion.
+
+Allowed by default:
+
+- edit Android UI / state / navigation files within the current task scope
+- run build, install, launch, and device smoke checks
+- update only the current task outcome and one short handoff
+
+Do not update by default:
+
+- `docs/README.md`
+- `docs/delivery/README.md`
+- `docs/product/project_status.md`
+- milestone review documents
+- multi-agent workflow docs
+- package closeout
+
+Escalate to heavier docs only when the work changes public API / schema /
+migrations, PRD / ADR meaning, V2.2 search/contact/privacy scope, milestone
+status, release/deployment assumptions, or secrets handling.
+
 ### At minimum, update:
 - the active task file in `docs/delivery/tasks/`
 - a handoff note in `docs/delivery/handoffs/` for non-trivial work
@@ -433,6 +502,18 @@ In addition, the current delivery entrypoint should preferably record:
 
 This is the minimum structure that allows an execution agent to continue safely
 without per-task manual scheduling.
+
+### Task Granularity
+
+Task files should usually represent reviewable delivery units, not every small
+execution step. Small execution steps may stay inside one task when they share
+the same objective, scope boundary, validation path, and handoff.
+
+Split work into separate tasks when combining it would blur ownership, review,
+validation, product intent, or stop conditions.
+
+Keep detailed task-type and auto-continuation guidance in
+`docs/delivery/tasks/_template.md` and the developer workflow playbook.
 
 ---
 

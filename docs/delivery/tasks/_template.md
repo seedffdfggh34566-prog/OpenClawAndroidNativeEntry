@@ -8,18 +8,42 @@
 - 建议路径：`docs/delivery/tasks/<文件名>.md`
 - 当前状态：`planned`
 - 优先级：P0 / P1 / P2
+- 任务类型：`delivery / planning / guardrail / closeout / step`
+- 是否属于 delivery package：`yes / no`
+- 所属 package：`<名称或 none>`
+- 文档同步级别：`Level 0 step / Level 1 task / Level 2 package / Level 3 status`
 
 ---
 
 ## 1.1 队列衔接
 
 - 当前 task 是否允许执行 agent 自主推进：`yes / no`
+- 当前 task 内部 steps 是否允许连续执行：`yes / no`
+- 完成后是否允许自动进入下游任务：`yes / no`
 - 建议上游入口：`docs/delivery/tasks/_active.md`
 - 建议下游任务：
   1. ...
   2. ...
+- 自动继续条件：
+  - ...
 - 停止条件：
   - ...
+  - ...
+
+---
+
+## 1.2 自动化契约
+
+- 本任务允许编辑：
+  - ...
+- 本任务禁止编辑：
+  - ...
+- 可在任务内连续完成的 steps：
+  1. ...
+  2. ...
+- 不应拆成独立 task 的小步骤：
+  - ...
+- 必须拆出独立 task 或停止确认的情况：
   - ...
 
 ---
@@ -66,6 +90,17 @@
 
 1. ...
 2. ...
+
+文档同步范围：
+
+- 默认同步：
+  - ...
+- 不默认同步：
+  - `docs/product/project_status.md`
+  - milestone review
+  - root / docs README
+- 需要更新高层文档的条件：
+  - ...
 
 ---
 

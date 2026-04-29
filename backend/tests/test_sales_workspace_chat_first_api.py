@@ -77,6 +77,61 @@ def test_chat_first_product_turn_creates_review_without_workspace_mutation(clien
     ]["output_refs"]
 
 
+def test_workspace_threads_keep_conversation_history_separate(client) -> None:
+    _create_workspace(client, "ws_threads")
+
+    thread_a = client.post("/sales-workspaces/ws_threads/threads", json={"id": "thread_factory", "title": "工厂维保"})
+    thread_b = client.post("/sales-workspaces/ws_threads/threads", json={"id": "thread_restaurant", "title": "连锁餐饮"})
+    assert thread_a.status_code == 201
+    assert thread_b.status_code == 201
+
+    _post_thread_message(
+        client,
+        workspace_id="ws_threads",
+        thread_id="thread_factory",
+        message_id="msg_user_thread_factory_001",
+        message_type="product_profile_update",
+        content="我们做工业设备维保软件。",
+    )
+    _post_thread_message(
+        client,
+        workspace_id="ws_threads",
+        thread_id="thread_restaurant",
+        message_id="msg_user_thread_restaurant_001",
+        message_type="product_profile_update",
+        content="我们做连锁餐饮排班和库存 SaaS。",
+    )
+
+    response_a = client.post(
+        "/sales-workspaces/ws_threads/threads/thread_factory/agent-runs/sales-agent-turns",
+        json={"message_id": "msg_user_thread_factory_001", "base_workspace_version": 0},
+    )
+    response_b = client.post(
+        "/sales-workspaces/ws_threads/threads/thread_restaurant/agent-runs/sales-agent-turns",
+        json={"message_id": "msg_user_thread_restaurant_001", "base_workspace_version": 0},
+    )
+    assert response_a.status_code == 200
+    assert response_b.status_code == 200
+    assert response_a.json()["agent_run"]["thread_id"] == "thread_factory"
+    assert response_b.json()["agent_run"]["thread_id"] == "thread_restaurant"
+
+    messages_a = client.get("/sales-workspaces/ws_threads/threads/thread_factory/messages").json()["messages"]
+    messages_b = client.get("/sales-workspaces/ws_threads/threads/thread_restaurant/messages").json()["messages"]
+    assert all(message["thread_id"] == "thread_factory" for message in messages_a)
+    assert all(message["thread_id"] == "thread_restaurant" for message in messages_b)
+    assert any("工业设备维保" in message["content"] for message in messages_a)
+    assert not any("连锁餐饮" in message["content"] for message in messages_a)
+    assert any("连锁餐饮" in message["content"] for message in messages_b)
+    assert not any("工业设备维保" in message["content"] for message in messages_b)
+
+    recent_a = response_a.json()["context_pack"]["recent_messages"]
+    recent_b = response_b.json()["context_pack"]["recent_messages"]
+    assert any("工业设备维保" in message["content_excerpt"] for message in recent_a)
+    assert not any("连锁餐饮" in message["content_excerpt"] for message in recent_a)
+    assert any("连锁餐饮" in message["content_excerpt"] for message in recent_b)
+    assert not any("工业设备维保" in message["content_excerpt"] for message in recent_b)
+
+
 @pytest.mark.parametrize(
     ("workspace_id", "content", "expected_name", "expected_pain"),
     [
@@ -587,6 +642,27 @@ def _post_message(
 ) -> dict:
     response = client.post(
         f"/sales-workspaces/{workspace_id}/messages",
+        json={
+            "id": message_id,
+            "message_type": message_type,
+            "content": content,
+        },
+    )
+    assert response.status_code == 201
+    return response.json()["message"]
+
+
+def _post_thread_message(
+    client: TestClient,
+    *,
+    workspace_id: str,
+    thread_id: str,
+    message_id: str,
+    message_type: str,
+    content: str,
+) -> dict:
+    response = client.post(
+        f"/sales-workspaces/{workspace_id}/threads/{thread_id}/messages",
         json={
             "id": message_id,
             "message_type": message_type,

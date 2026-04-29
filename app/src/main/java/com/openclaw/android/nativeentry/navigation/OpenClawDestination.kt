@@ -40,8 +40,8 @@ sealed class OpenClawDestination(
 
     data object Workspace : OpenClawDestination(
         route = "workspace",
-        title = "Sales Workspace",
-        label = "Workspace",
+        title = "销售工作区",
+        label = "销售工作区",
         iconVector = Icons.AutoMirrored.Outlined.ListAlt,
     )
 

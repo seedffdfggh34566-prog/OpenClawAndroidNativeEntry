@@ -1,6 +1,6 @@
 # 项目总览（当前阶段）
 
-更新时间：2026-04-27
+更新时间：2026-04-28
 
 ## 1. 文档定位
 
@@ -74,7 +74,7 @@ V2 当前规划重点：
 - 结构化后端对象是主真相；Markdown 是 agent-readable workspace projection，不是唯一主存。
 - Product Sales Agent / Runtime 每次运行应尽量生成 `WorkspacePatchDraft`，由后端 workspace kernel 裁决正式写回。
 - V2.1 workspace/kernel engineering baseline 已验证 Sales Workspace Kernel、Draft Review ID flow、Postgres / Alembic persistence chain 与 Draft Review audit persistence。
-- V2.1 chat-first deterministic demo flow 和 backend-level 5-sample conversational acceptance 已完成：contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook、PRD Traceability、clarifying questions、workspace explanation、product extraction、lead direction adjustment 和 backend e2e 均已补齐；V2.1 product experience prototype 已通过 Android polish 与真机验收。
+- V2.1 chat-first deterministic demo flow、backend-level 5-sample conversational acceptance 和 Tencent TokenHub LLM runtime prototype 已形成 validated prototype path：contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook、PRD Traceability、clarifying questions、workspace explanation、product extraction、lead direction adjustment、backend e2e 和 explicit-flag LLM runtime eval 均已补齐；这不等于完整 V2.1 product milestone 已关闭。
 - V2.2 再进入证据化 ResearchRound、候选客户、来源证据和候选优先级榜更新。
 - V2.3 作为 Persistent Sales Workspace MVP gate，验证长期记忆、历史研究复用、候选状态管理和用户反馈闭环是否值得进入 MVP。
 
@@ -144,7 +144,12 @@ Android / client
 
 当前处于：
 
-> **V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed；V2.1 conversational product experience prototype completed 阶段。**
+> **V2.1 validated prototype path completed；V2.1 product milestone remains open under planning control。**
+
+当前阶段状态的权威入口为：
+
+- `docs/product/project_status.md`
+- `docs/product/research/v2_1_completion_semantics_correction_2026_04_28.md`
 
 已经明确：
 
@@ -152,7 +157,7 @@ Android / client
 - V1 是资产库，不是 V2 产品主路径。
 - V2 北极星是 Sales Workspace，而不是一次性报告生成器。
 - V2.1 workspace/kernel engineering baseline 已完成 Sales Workspace Kernel、FastAPI prototype、Android Draft Review ID flow、Postgres / Alembic persistence chain、Sales Workspace Postgres store 和 Draft Review audit persistence。
-- V2.1 chat-first Runtime design、contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook、backend acceptance、Android polish、真机端到端验收和 PRD Acceptance final review 已完成；V2.1 conversational product experience prototype completed。
+- V2.1 chat-first Runtime design、contract examples、trace persistence、backend prototype、Android chat-first UI、demo runbook、backend acceptance、Android polish、真机端到端验收、PRD Acceptance final review 和 Tencent TokenHub LLM runtime prototype 已验证 prototype path；V2.1 product milestone 仍可由规划层继续开放 continuation package。
 - V2.2 允许主动联网 / 中文公开网页搜索。
 - V2.2 可以产出具体公司候选，但候选必须带来源证据和排序解释。
 - V2 不做 Web 前端。
@@ -222,7 +227,7 @@ Android 是控制入口，runtime 是执行层，backend services / workspace ke
 
 ### 原则 8：小步任务化
 
-V2 继续实现前，应先确保当前 task 已在 `_active.md` 中开放。V2.1 product experience prototype 已完成；后续不应直接进入真实 LLM、LangGraph implementation、search 或 Android 扩展，除非规划层先开放对应 task。
+V2 继续实现前，应先确保当前 package / task 已在 `_active.md` 中开放。V2.1 validated prototype path 已完成，但 V2.1 product milestone 仍开放于规划控制下；后续不应直接进入正式 LangGraph implementation、search 或 Android 扩展，除非规划层先开放对应 task。
 
 ---
 
@@ -231,11 +236,12 @@ V2 继续实现前，应先确保当前 task 已在 `_active.md` 中开放。V2.
 当前推荐顺序：
 
 1. 承认 V2.1 workspace/kernel engineering baseline completed。
-2. 承认 V2.1 conversational backend acceptance 与 V2.1 conversational product experience prototype 已完成；下一步只允许由规划层开放 V2.2 docs-level planning。
-3. V2.2 implementation 前，不直接接真实 LLM、联网搜索、ContactPoint 或 CRM/contact。
-4. Android review history、正式 LangGraph 和 DB hardening 也应通过独立 task 开放。
+2. 承认 V2.1 validated prototype path completed，但不把它升级为完整 V2.1 product milestone completed。
+3. 当前项目状态以 `docs/product/project_status.md` 为准，task / handoff 只作为 evidence。
+4. 后续可由规划层开放 V2.1 continuation package，例如 demo reproducibility、Android onboarding、LLM prompt quality、trace/history visibility 或 Postgres verification。
+5. V2.2 implementation 前，不直接接正式 LangGraph、联网搜索、ContactPoint 或 CRM/contact。
 
-当前不建议直接实现真实 LangGraph graph、真实 LLM、搜索 provider、Android UI 扩展或 CRM/contact。
+当前不建议直接实现正式 LangGraph graph、搜索 provider、Android UI 扩展或 CRM/contact。
 
 ---
 
@@ -243,4 +249,4 @@ V2 继续实现前，应先确保当前 task 已在 `_active.md` 中开放。V2.
 
 当前项目已经从 V1 demo baseline 转入：
 
-> **AI 销售助手 V2.1 workspace/kernel engineering baseline completed；V2.1 conversational backend acceptance completed：Sales Workspace Kernel、Android Draft Review ID flow、Postgres persistence chain、Draft Review audit persistence 和 5-sample backend conversational acceptance 已完成；V2.1 conversational product experience prototype completed，不直接进入真实搜索或 LLM implementation。**
+> **AI 销售助手 V2.1 validated prototype path completed；V2.1 product milestone remains open under planning control；不直接进入真实搜索、ContactPoint 或 formal LangGraph implementation。**

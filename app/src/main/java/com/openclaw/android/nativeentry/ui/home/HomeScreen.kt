@@ -28,6 +28,7 @@ import com.openclaw.android.nativeentry.ui.shell.V1ShellPlaceholderState
 fun HomeScreen(
     backendState: V1BackendUiState,
     placeholderState: V1ShellPlaceholderState,
+    onStartWorkspaceClick: () -> Unit,
     onStartAnalysisClick: () -> Unit,
     onContinueFlowClick: () -> Unit,
     onViewHistoryClick: () -> Unit,
@@ -52,22 +53,29 @@ fun HomeScreen(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "AI 销售助手 V1",
+                    text = "AI 销售助手",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = "通过产品学习、获客分析和结构化报告，帮助你用更短时间明确下一步销售方向。",
+                    text = "进入销售工作区，用对话澄清产品、客户和下一步销售方向。",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
             Button(
+                onClick = onStartWorkspaceClick,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(text = "开始销售工作区")
+            }
+
+            OutlinedButton(
                 onClick = onStartAnalysisClick,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(text = "开始分析")
+                Text(text = "继续 V1 分析")
             }
 
             CurrentWorkCard(

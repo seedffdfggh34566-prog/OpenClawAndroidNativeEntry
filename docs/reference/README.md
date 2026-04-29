@@ -9,6 +9,7 @@
   - `api/sales-workspace-kernel-v0-examples.md`
   - `api/sales-workspace-draft-review-contract.md`
   - `api/sales-workspace-chat-first-runtime-contract.md`
+  - `api/sales-workspace-chat-first-llm-runtime-contract.md`
   - `api/sales-workspace-chat-first-runtime-examples.md`
   - `api/sales-workspace-draft-review-contract.md` Draft Review routes prototype section
   - `api/sales-workspace-kernel-v0-contract.md` runtime PatchDraft prototype endpoint section

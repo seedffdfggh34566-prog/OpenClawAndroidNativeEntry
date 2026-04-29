@@ -18,6 +18,22 @@ import org.json.JSONObject
 class SalesWorkspaceBackendClient(
     private val baseUrl: String = V1BackendBaseUrl,
 ) {
+    suspend fun createWorkspace(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+        name: String = "FactoryOps AI Workspace",
+        goal: String = "Build chat-first V2.1 product experience.",
+    ): BackendReadResult<SalesWorkspaceResponseDto> =
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces",
+            body = JSONObject()
+                .put("workspace_id", workspaceId)
+                .put("name", name)
+                .put("goal", goal)
+                .toString(),
+            parser = ::parseSalesWorkspaceResponse,
+        )
+
     suspend fun getReadOnlySnapshot(
         workspaceId: String = SalesWorkspaceDemoWorkspaceId,
     ): BackendReadResult<SalesWorkspaceReadOnlySnapshot> = withContext(Dispatchers.IO) {
@@ -131,6 +147,7 @@ class SalesWorkspaceBackendClient(
 
     suspend fun runChatFirstSalesAgentTurn(
         workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+        threadId: String = SalesWorkspaceDefaultThreadId,
         baseWorkspaceVersion: Int,
         messageType: String,
         content: String,
@@ -138,6 +155,7 @@ class SalesWorkspaceBackendClient(
         val message = when (
             val result = createConversationMessage(
                 workspaceId = workspaceId,
+                threadId = threadId,
                 messageType = messageType,
                 content = content,
             )
@@ -145,26 +163,73 @@ class SalesWorkspaceBackendClient(
             is BackendReadResult.Failure -> return@withContext result
             is BackendReadResult.Success -> result.value
         }
-        requestJson(
-            method = "POST",
-            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/agent-runs/sales-agent-turns",
-            body = JSONObject()
-                .put("message_id", message.id)
-                .put("base_workspace_version", baseWorkspaceVersion)
-                .put("instruction", "handle Android chat-first workspace input")
-                .toString(),
-            parser = ::parseSalesWorkspaceChatTurnResponse,
+        runSalesAgentTurnForMessage(
+            workspaceId = workspaceId,
+            threadId = threadId,
+            messageId = message.id,
+            baseWorkspaceVersion = baseWorkspaceVersion,
         )
     }
 
-    private suspend fun createConversationMessage(
+    suspend fun runSalesAgentTurnForMessage(
         workspaceId: String,
+        threadId: String = SalesWorkspaceDefaultThreadId,
+        messageId: String,
+        baseWorkspaceVersion: Int,
+    ): BackendReadResult<SalesWorkspaceChatTurnResponseDto> =
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/threads/${threadId.encodePathSegment()}/agent-runs/sales-agent-turns",
+            body = JSONObject()
+                .put("message_id", messageId)
+                .put("base_workspace_version", baseWorkspaceVersion)
+                .put("instruction", "handle Android chat-first workspace input")
+                .toString(),
+            readTimeoutMillis = 120_000,
+            parser = ::parseSalesWorkspaceChatTurnResponse,
+        )
+
+    suspend fun listConversationMessages(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+        threadId: String = SalesWorkspaceDefaultThreadId,
+    ): BackendReadResult<SalesWorkspaceConversationMessagesResponseDto> =
+        requestJson(
+            method = "GET",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/threads/${threadId.encodePathSegment()}/messages",
+            parser = ::parseSalesWorkspaceConversationMessagesResponse,
+        )
+
+    suspend fun listConversationThreads(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+    ): BackendReadResult<SalesWorkspaceConversationThreadsResponseDto> =
+        requestJson(
+            method = "GET",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/threads",
+            parser = ::parseSalesWorkspaceConversationThreadsResponse,
+        )
+
+    suspend fun createConversationThread(
+        workspaceId: String = SalesWorkspaceDemoWorkspaceId,
+        title: String = "新对话",
+    ): BackendReadResult<SalesWorkspaceConversationThreadDto> =
+        requestJson(
+            method = "POST",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/threads",
+            body = JSONObject()
+                .put("title", title)
+                .toString(),
+            parser = ::parseSalesWorkspaceConversationThreadResponse,
+        )
+
+    suspend fun createConversationMessage(
+        workspaceId: String,
+        threadId: String,
         messageType: String,
         content: String,
     ): BackendReadResult<SalesWorkspaceConversationMessageDto> =
         requestJson(
             method = "POST",
-            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/messages",
+            path = "/sales-workspaces/${workspaceId.encodePathSegment()}/threads/${threadId.encodePathSegment()}/messages",
             body = JSONObject()
                 .put("message_type", messageType)
                 .put("content", content)
@@ -175,6 +240,7 @@ class SalesWorkspaceBackendClient(
                     .let { messageJson ->
                         SalesWorkspaceConversationMessageDto(
                             id = messageJson.getString("id"),
+                            threadId = messageJson.optString("thread_id", SalesWorkspaceDefaultThreadId),
                             role = messageJson.getString("role"),
                             messageType = messageJson.getString("message_type"),
                             content = messageJson.getString("content"),
@@ -233,13 +299,14 @@ class SalesWorkspaceBackendClient(
         method: String,
         path: String,
         body: String? = null,
+        readTimeoutMillis: Int = 5_000,
         parser: (String) -> T,
     ): BackendReadResult<T> = withContext(Dispatchers.IO) {
         val connection = try {
             (URL(baseUrl.trimEnd('/') + path).openConnection() as HttpURLConnection).apply {
                 requestMethod = method
                 connectTimeout = 3_000
-                readTimeout = 5_000
+                readTimeout = readTimeoutMillis
                 instanceFollowRedirects = false
                 useCaches = false
                 setRequestProperty("Accept", "application/json")
@@ -265,9 +332,10 @@ class SalesWorkspaceBackendClient(
             val responseBody = connection.bodyFor(statusCode)
             if (statusCode !in 200..299) {
                 return@withContext BackendReadResult.Failure(
-                    BackendReadError(
-                        title = "Sales Workspace API 返回 HTTP $statusCode",
-                        detail = responseBody.ifBlank { "请求 $path 未成功。" },
+                    salesWorkspaceHttpError(
+                        statusCode = statusCode,
+                        path = path,
+                        responseBody = responseBody,
                     ),
                 )
             }
@@ -316,6 +384,29 @@ private fun Exception.toSalesWorkspaceReadFailure(): BackendReadResult.Failure =
             },
         ),
     )
+
+private fun salesWorkspaceHttpError(
+    statusCode: Int,
+    path: String,
+    responseBody: String,
+): BackendReadError {
+    if (
+        statusCode == 404 &&
+        responseBody.contains("\"code\":\"not_found\"") &&
+        responseBody.contains("\"object_type\":\"workspace\"") &&
+        responseBody.contains("\"workspace_id\":\"$SalesWorkspaceDemoWorkspaceId\"")
+    ) {
+        return BackendReadError(
+            title = "默认销售工作区尚未创建",
+            detail = "后端已连接，但默认工作区 $SalesWorkspaceDemoWorkspaceId 不存在。点击下方“开始销售工作区”即可创建并进入对话。",
+        )
+    }
+
+    return BackendReadError(
+        title = "Sales Workspace API 返回 HTTP $statusCode",
+        detail = responseBody.ifBlank { "请求 $path 未成功。" },
+    )
+}
 
 private fun BackendReadError.isMissingCandidateRankingBoard(): Boolean =
     title.contains("HTTP 404") && detail.contains("candidate_ranking_board")

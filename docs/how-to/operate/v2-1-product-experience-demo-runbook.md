@@ -1,6 +1,6 @@
 # V2.1 Product Experience Demo Runbook
 
-更新时间：2026-04-27
+更新时间：2026-04-28
 
 ## 1. Purpose
 
@@ -45,6 +45,14 @@ Postgres backend
 
 ## 3. Start Postgres Backend
 
+建议先固定本地 demo 环境变量，后续命令可复用同一条连接串：
+
+```bash
+export OPENCLAW_BACKEND_DATABASE_URL=postgresql+psycopg://openclaw:openclaw_dev_password@127.0.0.1:55432/openclaw_dev
+export OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_BACKEND=postgres
+export OPENCLAW_BACKEND_DEMO_BASE_URL=http://127.0.0.1:8013
+```
+
 ```bash
 docker compose -f compose.postgres.yml up -d
 docker exec openclaw-postgres pg_isready -U openclaw -d openclaw_dev
@@ -53,15 +61,12 @@ docker exec openclaw-postgres pg_isready -U openclaw -d openclaw_dev
 升级 schema：
 
 ```bash
-OPENCLAW_BACKEND_DATABASE_URL=postgresql+psycopg://openclaw:openclaw_dev_password@127.0.0.1:55432/openclaw_dev \
 backend/.venv/bin/alembic -c alembic.ini upgrade head
 ```
 
 启动 backend：
 
 ```bash
-OPENCLAW_BACKEND_DATABASE_URL=postgresql+psycopg://openclaw:openclaw_dev_password@127.0.0.1:55432/openclaw_dev \
-OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_BACKEND=postgres \
 PYTHONPATH=$PWD \
 backend/.venv/bin/python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8013
 ```
@@ -80,11 +85,29 @@ curl http://127.0.0.1:8013/health
 
 ## 4. Seed Workspace
 
+### 4.1 Clean workspace choice
+
+`POST /sales-workspaces` is intentionally non-destructive. If `ws_demo` already exists and a clean flow is required, use one of these options:
+
+- choose a new workspace id such as `ws_demo_20260428_001`;
+- or reset the local Postgres demo environment before seeding.
+
+For a full local reset, only use this on disposable development data:
+
+```bash
+docker compose -f compose.postgres.yml down -v
+docker compose -f compose.postgres.yml up -d
+docker exec openclaw-postgres pg_isready -U openclaw -d openclaw_dev
+backend/.venv/bin/alembic -c alembic.ini upgrade head
+```
+
+### 4.2 Seed or create
+
 如果需要从已有候选排序 demo 起步：
 
 ```bash
 python3 scripts/seed_sales_workspace_demo.py \
-  --base-url http://127.0.0.1:8013 \
+  --base-url "$OPENCLAW_BACKEND_DEMO_BASE_URL" \
   --workspace-id ws_demo
 ```
 
@@ -96,7 +119,15 @@ curl -X POST http://127.0.0.1:8013/sales-workspaces \
   -d '{"workspace_id":"ws_demo","name":"FactoryOps AI Workspace","goal":"Build chat-first V2.1 product experience."}'
 ```
 
+创建后确认 workspace 可读：
+
+```bash
+curl http://127.0.0.1:8013/sales-workspaces/ws_demo
+```
+
 ## 5. Backend Chat-first Smoke
+
+每轮 smoke 建议使用空 workspace，或者确认当前 `workspace_version` 与请求中的 `base_workspace_version` 一致。
 
 ### 5.1 Product understanding
 
@@ -138,6 +169,12 @@ curl -X POST http://127.0.0.1:8013/sales-workspaces/ws_demo/draft-reviews/draft_
 
 期望 workspace version 变为 `1`，`current_product_profile_revision_id = ppr_chat_v1`。
 
+确认写入结果：
+
+```bash
+curl http://127.0.0.1:8013/sales-workspaces/ws_demo
+```
+
 ### 5.2 Lead direction
 
 Create user message：
@@ -176,6 +213,13 @@ curl -X POST http://127.0.0.1:8013/sales-workspaces/ws_demo/draft-reviews/draft_
 
 期望 workspace version 变为 `2`，`current_lead_direction_version_id = dir_chat_v2`。
 
+确认 trace 可读：
+
+```bash
+curl http://127.0.0.1:8013/sales-workspaces/ws_demo/messages
+curl http://127.0.0.1:8013/sales-workspaces/ws_demo/agent-runs/run_sales_turn_direction_001
+```
+
 ## 6. Android Demo
 
 构建：
@@ -189,6 +233,7 @@ curl -X POST http://127.0.0.1:8013/sales-workspaces/ws_demo/draft-reviews/draft_
 ```bash
 adb devices
 adb reverse tcp:8013 tcp:8013
+adb reverse --list | grep 'tcp:8013'
 ```
 
 安装并启动：
@@ -201,7 +246,7 @@ adb shell am start -n com.openclaw.android.nativeentry/.MainActivity
 人工检查：
 
 1. 打开底部 `Workspace` tab。
-2. 点击 `刷新工作区`。
+2. 点击 `刷新工作区`。如果 workspace 不存在，先按 P2 之后的 Android onboarding 创建默认 workspace。
 3. 在 `Chat-first Workspace Turn` 输入产品理解。
 4. 选择 `产品理解`，点击 `提交 chat-first turn`。
 5. 确认页面显示 `AgentRun`、assistant summary 和 Draft Review ID。
@@ -221,6 +266,12 @@ OPENCLAW_BACKEND_POSTGRES_VERIFY_URL=postgresql+psycopg://openclaw:openclaw_dev_
 git diff --check
 ```
 
+如果只验证 runbook 文档改动，最低验证为：
+
+```bash
+git diff --check
+```
+
 ## 8. Expected Evidence
 
 handoff 或 PR description 应记录：
@@ -233,3 +284,11 @@ handoff 或 PR description 应记录：
 - Android build / lint 是否通过。
 - `adb devices` 是否有设备。
 - 是否完成手动 Android UI flow。
+
+## 9. Troubleshooting
+
+- `workspace_already_exists`：当前 workspace 已存在。使用新 workspace id，或只在 disposable dev data 上执行 `docker compose -f compose.postgres.yml down -v` 后重建。
+- `workspace_version_conflict`：请求中的 `base_workspace_version` 与当前 workspace 不一致。先 `GET /sales-workspaces/ws_demo`，再用返回的 `workspace_version` 重跑 turn。
+- Android 显示连接失败：确认 backend 监听 `127.0.0.1:8013`，并确认 `adb reverse tcp:8013 tcp:8013` 已生效。
+- Draft Review 无法 apply：确认 review status 是 `reviewed`，且 `base_workspace_version` 仍等于当前 workspace version。
+- Postgres tests skipped：确认 `OPENCLAW_BACKEND_POSTGRES_VERIFY_URL` 已设置，并且 Alembic 已升级到 head。

@@ -88,6 +88,21 @@ class InMemoryDraftReviewStore:
         except KeyError as exc:
             raise DraftReviewNotFound(draft_review_id) from exc
 
+    def list_draft_reviews(
+        self,
+        workspace_id: str,
+        status: DraftReviewStatus | None = None,
+    ) -> list[WorkspacePatchDraftReview]:
+        return sorted(
+            [
+                draft_review
+                for (stored_workspace_id, _), draft_review in self._draft_reviews.items()
+                if stored_workspace_id == workspace_id and (status is None or draft_review.status == status)
+            ],
+            key=lambda draft_review: draft_review.updated_at,
+            reverse=True,
+        )
+
 
 class JsonFileDraftReviewStore(InMemoryDraftReviewStore):
     def __init__(self, store_dir: str | Path) -> None:
@@ -109,6 +124,32 @@ class JsonFileDraftReviewStore(InMemoryDraftReviewStore):
             draft_review = load_draft_review_json(path)
             self._draft_reviews[(draft_review.workspace_id, draft_review.id)] = draft_review
             return draft_review
+
+    def list_draft_reviews(
+        self,
+        workspace_id: str,
+        status: DraftReviewStatus | None = None,
+    ) -> list[WorkspacePatchDraftReview]:
+        file_reviews = {}
+        workspace_dir = self.store_dir / "draft_reviews" / quote(workspace_id, safe="")
+        if workspace_dir.exists():
+            for path in workspace_dir.glob("*.json"):
+                if not path.is_file():
+                    continue
+                draft_review = load_draft_review_json(path)
+                file_reviews[(draft_review.workspace_id, draft_review.id)] = draft_review
+
+        merged = {**file_reviews, **self._draft_reviews}
+        self._draft_reviews.update(merged)
+        return sorted(
+            [
+                draft_review
+                for (stored_workspace_id, _), draft_review in merged.items()
+                if stored_workspace_id == workspace_id and (status is None or draft_review.status == status)
+            ],
+            key=lambda draft_review: draft_review.updated_at,
+            reverse=True,
+        )
 
     def _draft_review_path(self, workspace_id: str, draft_review_id: str) -> Path:
         workspace_dir = quote(workspace_id, safe="")

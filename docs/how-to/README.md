@@ -10,10 +10,13 @@
 当前建议优先关注的工作流文档包括：
 
 - `operate/developer_workflow_playbook.md`
+- `operate/multi_agent_workflow.md`
+- `operate/multi_agent_prompts.md`
 - `operate/codex_backend_first_workflow.md`
 - `operate/dev-agent-vs-sales-agent-runbook.md`
 - `operate/sales-workspace-prototype-demo-runbook.md`
 - `operate/v2-1-product-experience-demo-runbook.md`
+- `operate/v2-1-llm-runtime-dev-runbook.md`
 - `operate/postgres-dev-environment.md`
 - `operate/skills/README.md`
 

@@ -18,7 +18,7 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_2026_04_30_v3_sandbox_runtime_poc.md`
+`docs/delivery/tasks/task_2026_04_30_v3_web_lab_scaffold.md`
 
 ### Current task status
 
@@ -55,6 +55,8 @@
 
 - `docs/delivery/tasks/task_2026_04_30_v3_sandbox_runtime_poc.md`（done）
 - `docs/delivery/handoffs/handoff_2026_04_30_v3_sandbox_runtime_poc.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_web_lab_scaffold.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_web_lab_scaffold.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`（done）
 - `docs/delivery/handoffs/handoff_2026_04_30_v3_sandbox_first_docs_rebaseline.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_agents_product_neutral_entry.md`（done）
@@ -81,7 +83,7 @@
 - Letta server 接入。
 - memory DB schema / migration。
 - 正式 customer intelligence schema / 自动建档 / 候选客户排序或打分实现。
-- Web scaffold / Web UI implementation。
+- 超出 `/lab` scaffold 的 Web UI implementation。
 - Android UI 重写。
 - V2.2 search / ContactPoint。
 - CRM / outreach / bulk contact / 不可逆导出。
@@ -93,7 +95,7 @@
 
 以下仅为候选，不代表已开放：
 
-1. `V3 Web /lab scaffold planning`
+1. `V3 /lab replay and seed controls`
 2. `V3 sandbox memory persistence design`
 3. `V3 workspace user prototype planning`
 

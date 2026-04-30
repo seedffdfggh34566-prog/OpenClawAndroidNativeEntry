@@ -40,6 +40,13 @@ __pycache__/
 *.egg-info/
 .eggs/
 
+# Web / Node
+node_modules/
+web/node_modules/
+web/dist/
+web/playwright-report/
+web/test-results/
+
 # Local run copies / diagnostics
 _buildrun/
 _buildrun2/

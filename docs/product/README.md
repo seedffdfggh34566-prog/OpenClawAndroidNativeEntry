@@ -16,9 +16,10 @@
 
 ## 当前产品基准
 
-- 当前主线：V3 Memory-native Sales Agent。
+- 当前主线：V3 Agent Sandbox-first Memory-native Sales Agent。
 - 当前状态：accepted direction / implementation not started。
-- 核心能力：Product Sales Agent 自编辑认知记忆，LangGraph / LangChain runtime，backend formal governance。
+- 核心能力：Product Sales Agent 自编辑认知记忆、sandbox working state、customer intelligence working state，LangGraph / LangChain runtime。
+- Backend 初期定位：runtime host、storage、trace、API surface。
 - 入口策略：App-first；Web 可作为 `/lab` 内部测试入口和 `/workspace` 用户体验雏形。
 - V1 / V2：historical validated assets / reference only。
 

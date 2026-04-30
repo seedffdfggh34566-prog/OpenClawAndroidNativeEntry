@@ -1,11 +1,11 @@
 ---
 name: backend-runtime-boundary-guard
-description: Use when backend runtime, LangGraph, memory tools, AgentRun, or formal writeback work may blur V3 open cognitive memory with backend-governed formal business objects.
+description: Use when backend runtime, LangGraph, memory tools, AgentRun, sandbox working state, or customer intelligence work may accidentally force V3 into formal object, PatchDraft, or Kernel flows.
 ---
 
 # Backend Runtime Boundary Guard
 
-Use this skill to protect the V3 boundary between open runtime cognition and formal backend commitments.
+Use this skill to protect the V3 sandbox-first boundary: runtime memory and working state should remain open, self-editable, and agent-maintained unless a later task explicitly opens formal governance.
 
 Read these repo files first:
 
@@ -26,42 +26,43 @@ Run this skill when changes touch:
 - `AgentRun` or run-processing flow
 - LangGraph / LangChain runtime adoption
 - memory tools, self-editable memory, archival memory, or memory status labels
-- formal business object writeback from runtime output
+- sandbox workspace working state or customer intelligence working state
+- attempts to reintroduce formal object / PatchDraft / Kernel as the default V3 path
 - MCP, observability, or tool-server adoption that affects runtime authority
 
 ## V3 boundary
 
 - Runtime memory can contain observed, inferred, hypothesis, confirmed, rejected, or superseded knowledge.
-- Runtime memory may be self-editable by the Product Sales Agent.
+- Runtime memory and working state may be self-editable by the Product Sales Agent.
+- V3 first-stage agent writes are sandbox working state, not formal business objects.
+- Backend is initially runtime host, storage, trace, and API surface.
 - LangGraph checkpoint is not the business memory source of truth.
-- Formal business objects still require backend / Sales Workspace Kernel governance.
-- Do not reduce V3 runtime to a `WorkspacePatchDraft` generator.
+- Do not reduce V3 runtime to a `WorkspacePatchDraft` generator or Sales Workspace Kernel feeder.
 
 ## Workflow
 
-1. Classify whether the change affects runtime memory, formal writeback, or both.
+1. Classify whether the change affects runtime memory, sandbox working state, customer intelligence, or external actions.
 2. Confirm runtime memory is allowed to store hypotheses and inferred knowledge.
-3. Confirm formal objects are not written directly without backend governance.
+3. Confirm V3 sandbox state is not prematurely modeled as formal objects.
 4. Check whether LangGraph persistence is being confused with business memory storage.
-5. Decide whether the work needs a dedicated V3 runtime or memory task.
+5. Decide whether the work needs a dedicated V3 runtime, memory, working-state, or customer-intelligence task.
 6. Choose the smallest validation path for the touched backend behavior.
 
 ## Minimum evidence
 
 Report:
 
-- whether the runtime/formal boundary changed
-- which memory or writeback concepts were touched
+- whether sandbox-first assumptions changed
+- which memory, working-state, customer-intelligence, or external-action concepts were touched
 - whether runtime memory remains open and self-editable
-- whether formal object writeback remains backend-governed
 - whether a follow-up task is required
 
 ## Stop conditions
 
 Stop and escalate if:
 
-- runtime memory is treated as a formal business object without governance
-- formal writeback is blocked merely because memory is inferred or hypothetical
+- V3 sandbox working state is forced into formal object / PatchDraft / Kernel flow without an explicit task
+- agent cognition is blocked merely because memory is inferred or hypothetical
 - LangGraph checkpoints are made the only long-term business memory store
 - V3 runtime implementation starts without an opened task
-- MCP or DB tools expose unrestricted formal-object writes
+- MCP or DB tools expose unrestricted production CRM writes, external outreach, irreversible export, or broad SQL access

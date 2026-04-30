@@ -6,11 +6,11 @@
 
 当前仓库主线为：
 
-> **AI 销售助手 App：V3 Memory-native Sales Agent**
+> **AI 销售助手 App：V3 Agent Sandbox-first Memory-native Sales Agent**
 
 V3 不是 V2.1 的小修补。它将产品方向从 “Sales Workspace + PatchDraft-driven runtime” 重基线为：
 
-> **Product Sales Agent 拥有可自编辑认知记忆，基于 LangGraph / LangChain 自研 runtime 持续经营 Sales Workspace；backend 只在正式业务承诺处做治理。**
+> **Product Sales Agent 先在 sandbox working state 中自主维护 memory、workspace state 和 customer intelligence；backend 初期只作为 runtime host、storage、trace 和 API 基础设施。**
 
 当前 V3 处于 accepted direction / implementation not started。
 
@@ -42,9 +42,11 @@ V3 的核心是：
 - Product Sales Agent 长期理解用户、产品、市场假设和销售策略。
 - Memory 可以包含 observed / inferred / hypothesis / confirmed / rejected / superseded。
 - Agent 可以自编辑 memory，并在用户纠错后修正或废弃旧记忆。
+- Agent 可以维护 sandbox workspace working state 和 customer intelligence working state。
+- 未来可以演进为 agent 自动建档、候选客户排序和打分，但当前不实现、不冻结 schema。
 - LangGraph / LangChain 是优先 runtime 路线。
 - Letta-style memory blocks、archival memory、memory tools 和 compaction 是主要参考。
-- Backend / Sales Workspace Kernel 在正式对象、报告、联系方式、导出和对外动作处做治理。
+- Backend 初期是 runtime host、storage、trace 和 API surface，不是业务建档者或第一阶段裁决者。
 - Web 可以作为 V3 双入口原型：内部 `/lab` 用于测试 runtime / memory，用户 `/workspace` 用于验证真实销售工作流；App 仍是长期主要入口。
 
 ---
@@ -59,6 +61,9 @@ V3 的核心是：
 - 完整 CRM。
 - 自动邮件 / 短信 / 企微 / 电话触达。
 - 批量联系人抓取或导出。
+- 真实 CRM 生产写入。
+- 不可逆导出。
+- backend formal governance / Sales Workspace Kernel 作为 V3 默认实现路径。
 - 大规模爬虫系统。
 - 未经 task 开放的 DB schema / migration。
 - 未经 task 开放的 Android 大改。

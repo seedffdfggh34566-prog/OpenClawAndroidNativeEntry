@@ -18,7 +18,7 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_2026_04_30_agents_product_neutral_entry.md`
+`docs/delivery/tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`
 
 ### Current task status
 
@@ -38,7 +38,7 @@
 
 当前项目主线已定为：
 
-> **V3 Memory-native Sales Agent**
+> **V3 Agent Sandbox-first Memory-native Sales Agent**
 
 当前 V3 是 accepted direction / implementation not started。
 
@@ -53,6 +53,8 @@
 
 ## 4. Recently completed
 
+- `docs/delivery/tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_sandbox_first_docs_rebaseline.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_agents_product_neutral_entry.md`（done）
 - `docs/delivery/handoffs/handoff_2026_04_30_agents_product_neutral_entry.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_v3_web_dual_entry_direction.md`（done）
@@ -76,10 +78,11 @@
 - LangGraph / LangChain runtime。
 - Letta server 接入。
 - memory DB schema / migration。
+- customer intelligence schema / 自动建档 / 候选客户排序或打分实现。
 - Web scaffold / Web UI implementation。
 - Android UI 重写。
 - V2.2 search / ContactPoint。
-- CRM / outreach / bulk contact。
+- CRM / outreach / bulk contact / 不可逆导出。
 - production SaaS / auth / tenant。
 
 ---
@@ -88,8 +91,8 @@
 
 以下仅为候选，不代表已开放：
 
-1. `V3 runtime POC planning`
+1. `V3 sandbox runtime POC planning`
 2. `V3 Web dual-entry scaffold planning`
-3. `V3 memory model minimal design`
+3. `V3 memory / working state minimal design`
 
 执行 agent 不得自行从候选项中开工。

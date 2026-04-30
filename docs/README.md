@@ -6,11 +6,11 @@
 
 当前项目主线正式切换为：
 
-> **V3 Memory-native Sales Agent**
+> **V3 Agent Sandbox-first Memory-native Sales Agent**
 
 V3 的一句话方向：
 
-> Product Sales Agent 拥有可自编辑认知记忆，基于 LangGraph / LangChain 自研 runtime 持续经营 Sales Workspace；backend 只在正式业务承诺处做治理。
+> Product Sales Agent 先在 sandbox working state 中自主维护 memory、workspace state 和 customer intelligence；backend 初期只作为 runtime host、storage、trace 和 API 基础设施。
 
 当前 V3 是 accepted direction / implementation not started。本文档只提供当前入口，不代表 V3 implementation、MVP 或 production-ready 已完成。
 
@@ -85,4 +85,5 @@ V2：
 - 不自动改 Android UI。
 - 不自动 scaffold Web 工程或启动 production Web SaaS。
 - 不自动进入 search / ContactPoint / CRM / outreach。
-- V3 runtime memory 可以开放；formal business objects 仍由 backend governance 裁决。
+- V3 初期默认是 sandbox / working state，不把 backend governance、Sales Workspace Kernel、Draft Review 或 `WorkspacePatchDraft` 作为默认实现前提。
+- 真实外部触达、CRM 生产写入、不可逆导出、production SaaS / auth / tenant 仍不自动开放。

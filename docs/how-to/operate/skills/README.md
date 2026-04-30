@@ -1,6 +1,6 @@
 # Android / Backend / Workflow Skill Specs
 
-更新时间：2026-04-29
+更新时间：2026-04-30
 
 ## 1. 文档定位
 
@@ -108,7 +108,7 @@
 原因：
 
 - 数据库风险会在 `Postgres`、迁移和 DB 工具层任务中进一步抬升
-- runtime 边界在真实 runtime 接入前仍需守门，但频率略低于当前 task/bootstrap 与 API/验证
+- runtime 边界在真实 runtime 接入前仍需守门，重点是防止 V3 sandbox-first 被拉回 formal object / PatchDraft / Kernel 默认路径
 - docs / task / handoff 收口对 backend thread 很重要
 
 ---

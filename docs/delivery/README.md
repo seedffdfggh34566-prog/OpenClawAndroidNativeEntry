@@ -15,21 +15,23 @@
 ## 当前状态
 
 - Current delivery package：暂无。
-- Current task：`tasks/task_2026_04_30_agents_product_neutral_entry.md`。
+- Current task：`tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`。
 - Auto-continue：`no`。
 - Next queued task：暂无 implementation task 自动开放。
 
-当前是文档减阻完成状态，不是 implementation started。Web 双入口方向已沉淀，但 Web implementation 未开放。
+当前是 V3 sandbox-first 文档重基线完成状态，不是 implementation started。Web 双入口方向已沉淀，但 Web implementation 未开放。
 
 ---
 
 ## 当前任务入口
 
-- `tasks/task_2026_04_30_agents_product_neutral_entry.md`
-- `handoffs/handoff_2026_04_30_agents_product_neutral_entry.md`
+- `tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`
+- `handoffs/handoff_2026_04_30_v3_sandbox_first_docs_rebaseline.md`
 
 近期记录：
 
+- `tasks/task_2026_04_30_agents_product_neutral_entry.md`
+- `handoffs/handoff_2026_04_30_agents_product_neutral_entry.md`
 - `tasks/task_2026_04_29_v3_repo_skill_guardrail_refresh.md`
 - `handoffs/handoff_2026_04_29_v3_repo_skill_guardrail_refresh.md`
 - `tasks/task_2026_04_30_v3_web_dual_entry_direction.md`

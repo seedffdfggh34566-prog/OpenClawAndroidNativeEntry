@@ -1,6 +1,6 @@
 ---
 name: backend-task-bootstrap
-description: Use when a backend thread needs task scope, validation, or handoff structure before implementation, especially for V3 runtime, memory, API, persistence, or governance work.
+description: Use when a backend thread needs task scope, validation, or handoff structure before implementation, especially for V3 runtime, memory, sandbox working state, customer intelligence, API, or persistence work.
 ---
 
 # Backend Task Bootstrap
@@ -21,7 +21,7 @@ Trigger this skill when:
 
 - backend work is non-trivial and no task clearly fits it
 - the user request is a follow-up rather than a clean extension of the current task
-- work touches API contract, runtime boundary, memory, persistence, migration, observability, or environment assumptions
+- work touches API contract, runtime boundary, memory, sandbox working state, customer intelligence, persistence, migration, observability, or environment assumptions
 - implementation needs a clear validation ladder and handoff before coding
 
 Do not use this skill for tiny typo fixes or docs-only edits that already fit an existing task.
@@ -40,14 +40,14 @@ Do not use this skill for tiny typo fixes or docs-only edits that already fit an
 - docs-only: `git diff --check`
 - backend logic: backend tests
 - API / persistence: tests + migration + backend startup + `/health`
-- runtime / memory boundary: tests + backend startup + one relevant API/manual flow
+- runtime / memory / working-state boundary: tests + backend startup + one relevant API/manual flow
 - storage, observability, MCP, or environment changes: dedicated task and explicit risk notes
 
 ## Stop conditions
 
 Stop and escalate if the task would:
 
-- redefine product direction or formal object semantics
+- redefine product direction or turn sandbox working state into formal object semantics
 - start V3 runtime / memory implementation without explicit task authorization
 - silently bundle LangGraph, memory schema, API contract, and persistence migration
 - switch database, observability, MCP, or deployment assumptions without a dedicated task

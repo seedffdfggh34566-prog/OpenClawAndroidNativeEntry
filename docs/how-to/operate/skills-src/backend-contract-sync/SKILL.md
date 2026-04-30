@@ -15,14 +15,14 @@ Read these repo files first:
 4. the current backend task and handoff
 5. touched backend reference, architecture, or V3 docs
 
-Use `task-handoff-sync` for general task/handoff wording. Use this skill for backend API, runtime, memory, persistence, and governance contracts.
+Use `task-handoff-sync` for general task/handoff wording. Use this skill for backend API, runtime, memory, persistence, working-state, and customer-intelligence contracts.
 
 ## Workflow
 
-1. Review the backend diff and list contract, persistence, runtime, memory, or governance assumptions changed.
+1. Review the backend diff and list contract, persistence, runtime, memory, working-state, customer-intelligence, or external-action assumptions changed.
 2. Check whether the current task reflects the real outcome.
 3. Check whether backend docs need synchronization.
-4. Confirm memory runtime and formal writeback boundaries are described consistently.
+4. Confirm V3 sandbox-first assumptions are described consistently and not replaced by formal object / PatchDraft / Kernel defaults.
 5. Confirm validation evidence is recorded.
 6. Run `git diff --check` before closeout.
 
@@ -44,7 +44,7 @@ Report:
 - backend contract/docs updated
 - backend docs still needing follow-up
 - task and handoff agreement with actual work
-- V3 memory/formal boundary consistency
+- V3 sandbox-first consistency
 - validation evidence status
 
 ## Stop conditions

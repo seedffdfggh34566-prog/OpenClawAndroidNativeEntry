@@ -42,8 +42,8 @@ Web /lab developer and product test surface
       -> LangGraph / LangChain
       -> Tencent Cloud API or OpenClaw LLM Gateway
       -> Memory tools
-    -> Backend governance / Sales Workspace Kernel
-    -> Formal business objects and traces
+    -> Backend infrastructure: runtime host / storage / trace / API
+    -> Sandbox working state and customer intelligence working state
 ```
 
 Web 的职责是更快验证 V3 runtime、memory 和 user workflow，不改变 backend / runtime / memory 的产品核心位置。
@@ -60,8 +60,9 @@ Web 的职责是更快验证 V3 runtime、memory 和 user workflow，不改变 b
 - tool calls。
 - prompt / response summary。
 - latency、error、request id。
-- draft review payload。
-- formal writeback decision。
+- workspace working state。
+- customer intelligence working state。
+- agent actions、trace 和 replay。
 - demo seed、reset、replay。
 
 `/lab` 的主要验收不是漂亮，而是能让人工和 Dev Agent 快速判断 agent 是否真的记住、修正和使用 memory。

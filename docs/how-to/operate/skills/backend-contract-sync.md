@@ -1,6 +1,6 @@
 # Skill Spec: `backend-contract-sync`
 
-更新时间：2026-04-29
+更新时间：2026-04-30
 
 ## Purpose
 
@@ -10,7 +10,7 @@
 
 - backend 实现任务收尾
 - API / schema / persistence / runtime / memory 边界文档同步
-- V3 backend governance follow-up 完成后收口
+- V3 sandbox working state / customer intelligence follow-up 完成后收口
 
 ## Required repo docs
 
@@ -25,7 +25,7 @@
 - 哪些 backend contract/docs 已同步
 - 哪些 backend docs 仍需要 follow-up
 - task 与 handoff 是否反映真实工作
-- V3 memory / formal boundary 是否一致
+- V3 sandbox-first 口径是否一致
 - validation evidence 是否记录清楚
 
 ## Stop / escalate conditions

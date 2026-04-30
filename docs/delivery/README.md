@@ -15,21 +15,31 @@
 ## 当前状态
 
 - Current delivery package：暂无。
-- Current task：`tasks/task_2026_04_30_v3_web_lab_scaffold.md`。
+- Current task：`tasks/task_2026_04_30_v3_lab_settings_trace_inspector.md`。
 - Auto-continue：`no`。
 - Next queued task：暂无 implementation task 自动开放。
 
-当前是 V3 `/lab` scaffold 完成状态。该 scaffold 是内部开发/产品测试台，不代表 `/workspace`、V3 product implementation、MVP 或 production-ready 完成。
+当前是 V3 `/lab` Settings + fullscreen Trace Inspector 完成状态。该能力用于观察 backend status、有限 runtime config overrides、LangGraph workflow、prompt/raw output、actions、state diff 和 memory transition events，不代表 `/workspace`、Android、正式 CRM、V3 product implementation、MVP 或 production-ready 完成。
 
 ---
 
 ## 当前任务入口
 
-- `tasks/task_2026_04_30_v3_web_lab_scaffold.md`
-- `handoffs/handoff_2026_04_30_v3_web_lab_scaffold.md`
+- `tasks/task_2026_04_30_v3_lab_settings_trace_inspector.md`
+- `handoffs/handoff_2026_04_30_v3_lab_settings_trace_inspector.md`
 
 近期记录：
 
+- `tasks/task_2026_04_30_v3_lab_full_trace_visualization.md`
+- `handoffs/handoff_2026_04_30_v3_lab_full_trace_visualization.md`
+- `tasks/task_2026_04_30_v3_lab_db_persistence_inspection.md`
+- `handoffs/handoff_2026_04_30_v3_lab_db_persistence_inspection.md`
+- `tasks/task_2026_04_30_v3_sandbox_memory_persistence.md`
+- `handoffs/handoff_2026_04_30_v3_sandbox_memory_persistence.md`
+- `tasks/task_2026_04_30_v3_lab_seed_reset_replay.md`
+- `handoffs/handoff_2026_04_30_v3_lab_seed_reset_replay.md`
+- `tasks/task_2026_04_30_v3_web_lab_scaffold.md`
+- `handoffs/handoff_2026_04_30_v3_web_lab_scaffold.md`
 - `tasks/task_2026_04_30_v3_sandbox_runtime_poc.md`
 - `handoffs/handoff_2026_04_30_v3_sandbox_runtime_poc.md`
 - `tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`

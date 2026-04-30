@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     dev_sales_workspace_diagnostics_enabled: bool = False
     sales_workspace_store_backend: str | None = None
     sales_workspace_store_dir: str | None = None
+    v3_sandbox_store_backend: str | None = None
     v3_sandbox_store_dir: str | None = None
 
     model_config = SettingsConfigDict(

@@ -15,6 +15,7 @@ from backend.runtime.v3_sandbox.schemas import (
     AgentAction,
     CustomerCandidateDraft,
     MemoryItem,
+    V3SandboxDebugTraceOptions,
     V3SandboxMessage,
     V3SandboxSession,
     V3SandboxTraceEvent,
@@ -45,6 +46,8 @@ class V3SandboxGraphState(TypedDict, total=False):
     assistant_message: V3SandboxMessage
     trace_event: V3SandboxTraceEvent
     started_perf: float
+    debug_options: V3SandboxDebugTraceOptions
+    debug_trace: dict[str, Any] | None
 
 
 def run_v3_sandbox_turn(
@@ -53,11 +56,14 @@ def run_v3_sandbox_turn(
     session: V3SandboxSession,
     user_message: V3SandboxMessage,
     client: TokenHubClient | None = None,
+    debug_options: V3SandboxDebugTraceOptions | dict[str, Any] | None = None,
 ) -> V3SandboxTurnResult:
     graph = _build_graph(client=client)
     turn_id = f"turn_{uuid4().hex[:12]}"
     runtime_session = session.model_copy(deep=True)
     started_perf = perf_counter()
+    normalized_debug_options = V3SandboxDebugTraceOptions.model_validate(debug_options or {})
+    debug_trace = _new_debug_trace(normalized_debug_options) if _debug_enabled(normalized_debug_options) else None
     try:
         state = graph.invoke(
             {
@@ -66,6 +72,8 @@ def run_v3_sandbox_turn(
                 "user_message": user_message,
                 "turn_id": turn_id,
                 "started_perf": started_perf,
+                "debug_options": normalized_debug_options,
+                "debug_trace": debug_trace,
             }
         )
     except TokenHubClientError as exc:
@@ -75,6 +83,7 @@ def run_v3_sandbox_turn(
             user_message=user_message,
             turn_id=turn_id,
             started_perf=started_perf,
+            debug_trace=debug_trace,
             code="llm_runtime_unavailable",
             message=str(exc),
         )
@@ -86,6 +95,7 @@ def run_v3_sandbox_turn(
             user_message=user_message,
             turn_id=turn_id,
             started_perf=started_perf,
+            debug_trace=debug_trace,
             code="llm_structured_output_invalid",
             message=str(exc),
         )
@@ -116,10 +126,36 @@ def _build_graph(*, client: TokenHubClient | None = None):
 
 
 def _load_state(state: V3SandboxGraphState) -> V3SandboxGraphState:
+    started = perf_counter()
     session = state["session"]
     user_message = state["user_message"]
+    before_messages = len(session.messages)
     session.messages.append(user_message)
     session.updated_at = utc_now()
+    _append_debug_event(
+        state.get("debug_trace"),
+        state["debug_options"],
+        {
+            "node": "load_state",
+            "status": "completed",
+            "duration_ms": _duration_ms(started),
+            "input": _maybe_node_io(
+                state,
+                {
+                    "session_id": session.id,
+                    "message_count_before": before_messages,
+                    "user_message": user_message.model_dump(mode="json"),
+                },
+            ),
+            "output": _maybe_node_io(
+                state,
+                {
+                    "message_count_after": len(session.messages),
+                    "updated_at": session.updated_at.isoformat(),
+                },
+            ),
+        },
+    )
     return {
         "session": session,
         "runtime_metadata": {
@@ -134,6 +170,7 @@ def _load_state(state: V3SandboxGraphState) -> V3SandboxGraphState:
 
 
 def _call_llm(state: V3SandboxGraphState, *, client: TokenHubClient | None) -> V3SandboxGraphState:
+    started = perf_counter()
     settings = state["settings"]
     llm_client = client or TokenHubClient(
         api_key=settings.llm_api_key,
@@ -142,27 +179,99 @@ def _call_llm(state: V3SandboxGraphState, *, client: TokenHubClient | None) -> V
         timeout_seconds=max(settings.llm_timeout_seconds, 90.0),
     )
     messages = _build_messages(state["session"], state["user_message"])
-    completion = llm_client.complete(messages)
-    if not _is_valid_turn_output(completion.content):
-        repair_messages = [
-            *messages,
+    event: dict[str, Any] = {
+        "node": "call_llm",
+        "status": "completed",
+        "input": _maybe_node_io(
+            state,
             {
-                "role": "user",
-                "content": (
-                    "上一次输出没有通过 backend JSON/Pydantic 校验。"
-                    "请只重新输出一个 JSON object，必须包含 assistant_message、actions、"
-                    "reasoning_summary、confidence。actions 必须是数组；每个 action 必须包含 "
-                    "type 和 payload。不要输出 markdown、注释、空对象或额外文本。"
-                ),
+                "message_count": len(messages),
+                "current_user_message_id": state["user_message"].id,
             },
-        ]
-        completion = llm_client.complete(repair_messages)
+        ),
+    }
+    if state["debug_options"].include_prompt:
+        event["messages"] = messages
+    try:
+        completion = llm_client.complete(messages)
+        valid_initial = _is_valid_turn_output(completion.content)
+        event["output"] = _maybe_node_io(
+            state,
+            {
+                "usage": _normalize_usage(completion.usage),
+                "initial_output_valid": valid_initial,
+            },
+        )
+        if state["debug_options"].include_raw_llm_output:
+            event["raw_output"] = completion.content
+        if not valid_initial:
+            repair_messages = [
+                *messages,
+                {
+                    "role": "user",
+                    "content": (
+                        "上一次输出没有通过 backend JSON/Pydantic 校验。"
+                        "请只重新输出一个 JSON object，必须包含 assistant_message、actions、"
+                        "reasoning_summary、confidence。actions 必须是数组；每个 action 必须包含 "
+                        "type 和 payload。不要输出 markdown、注释、空对象或额外文本。"
+                    ),
+                },
+            ]
+            repair_completion = llm_client.complete(repair_messages)
+            repair_attempt: dict[str, Any] = {
+                "usage": _normalize_usage(repair_completion.usage),
+                "output_valid": _is_valid_turn_output(repair_completion.content),
+            }
+            if state["debug_options"].include_prompt:
+                repair_attempt["messages"] = repair_messages
+            if state["debug_options"].include_raw_llm_output:
+                repair_attempt["raw_output"] = repair_completion.content
+            if state["debug_options"].include_repair_attempts:
+                event["repair_attempts"] = [repair_attempt]
+            completion = repair_completion
+    except Exception as exc:
+        event["status"] = "error"
+        event["duration_ms"] = _duration_ms(started)
+        event["error"] = _debug_error(exc)
+        _append_debug_event(state.get("debug_trace"), state["debug_options"], event)
+        raise
+    event["duration_ms"] = _duration_ms(started)
+    _append_debug_event(state.get("debug_trace"), state["debug_options"], event)
     return {"raw_content": completion.content, "usage": completion.usage}
 
 
 def _parse_actions(state: V3SandboxGraphState) -> V3SandboxGraphState:
-    parsed = _parse_json_object(state["raw_content"])
-    output = V3SandboxTurnOutput.model_validate(parsed)
+    started = perf_counter()
+    event: dict[str, Any] = {
+        "node": "parse_actions",
+        "status": "completed",
+        "input": _maybe_node_io(
+            state,
+            {
+                "raw_content_length": len(state["raw_content"]),
+            },
+        ),
+    }
+    try:
+        parsed = _parse_json_object(state["raw_content"])
+        output = V3SandboxTurnOutput.model_validate(parsed)
+    except Exception as exc:
+        event["status"] = "error"
+        event["duration_ms"] = _duration_ms(started)
+        event["error"] = _debug_error(exc)
+        _append_debug_event(state.get("debug_trace"), state["debug_options"], event)
+        raise
+    event["duration_ms"] = _duration_ms(started)
+    event["output"] = _maybe_node_io(
+        state,
+        {
+            "action_count": len(output.actions),
+            "confidence": output.confidence,
+        },
+    )
+    if state["debug_options"].verbose:
+        event["parsed_output"] = output.model_dump(mode="json")
+    _append_debug_event(state.get("debug_trace"), state["debug_options"], event)
     return {
         "parsed_output": output,
         "actions": output.actions,
@@ -170,14 +279,53 @@ def _parse_actions(state: V3SandboxGraphState) -> V3SandboxGraphState:
 
 
 def _apply_actions(state: V3SandboxGraphState) -> V3SandboxGraphState:
+    started = perf_counter()
     session = state["session"]
-    for action in state["actions"]:
-        _apply_action(session, action)
+    before_session = session.model_copy(deep=True)
+    action_results: list[dict[str, Any]] = []
+    event: dict[str, Any] = {
+        "node": "apply_actions",
+        "status": "completed",
+        "input": _maybe_node_io(state, {"action_count": len(state["actions"])}),
+    }
+    try:
+        for index, action in enumerate(state["actions"]):
+            result = {"index": index, "type": action.type, "status": "applied", "payload": _action_payload(action)}
+            try:
+                _apply_action(session, action)
+            except Exception as exc:
+                result["status"] = "error"
+                result["error"] = _debug_error(exc)
+                action_results.append(result)
+                raise
+            action_results.append(result)
+    except Exception as exc:
+        event["status"] = "error"
+        event["duration_ms"] = _duration_ms(started)
+        event["error"] = _debug_error(exc)
+        event["action_results"] = action_results
+        if state["debug_options"].include_state_diff:
+            event["state_diff"] = _state_diff(before_session, session)
+        _append_debug_event(state.get("debug_trace"), state["debug_options"], event)
+        raise
     session.updated_at = utc_now()
+    event["duration_ms"] = _duration_ms(started)
+    event["output"] = _maybe_node_io(
+        state,
+        {
+            "memory_count": len(session.memory_items),
+            "action_count": len(action_results),
+        },
+    )
+    event["action_results"] = action_results
+    if state["debug_options"].include_state_diff:
+        event["state_diff"] = _state_diff(before_session, session)
+    _append_debug_event(state.get("debug_trace"), state["debug_options"], event)
     return {"session": session}
 
 
 def _return_turn(state: V3SandboxGraphState) -> V3SandboxGraphState:
+    started = perf_counter()
     output = state["parsed_output"]
     session = state["session"]
     assistant_message = V3SandboxMessage(
@@ -200,9 +348,21 @@ def _return_turn(state: V3SandboxGraphState) -> V3SandboxGraphState:
         },
         actions=state["actions"],
         parsed_output=output.model_dump(mode="json"),
+        debug_trace=state.get("debug_trace"),
     )
     session.trace.append(trace_event)
     session.updated_at = utc_now()
+    _append_debug_event(
+        state.get("debug_trace"),
+        state["debug_options"],
+        {
+            "node": "return_turn",
+            "status": "completed",
+            "duration_ms": _duration_ms(started),
+            "input": _maybe_node_io(state, {"assistant_message_id": assistant_message.id}),
+            "output": _maybe_node_io(state, {"trace_event_id": trace_event.id, "message_count": len(session.messages)}),
+        },
+    )
     return {
         "session": session,
         "assistant_message": assistant_message,
@@ -415,6 +575,178 @@ def _is_valid_turn_output(content: str) -> bool:
     return True
 
 
+def _debug_enabled(options: V3SandboxDebugTraceOptions) -> bool:
+    return any(
+        (
+            options.verbose,
+            options.include_prompt,
+            options.include_raw_llm_output,
+            options.include_repair_attempts,
+            options.include_node_io,
+            options.include_state_diff,
+        )
+    )
+
+
+def _new_debug_trace(options: V3SandboxDebugTraceOptions) -> dict[str, Any]:
+    return {
+        "version": "v3_sandbox_debug_trace_v1",
+        "truncated": False,
+        "options": options.model_dump(mode="json"),
+        "graph": {
+            "nodes": ["load_state", "call_llm", "parse_actions", "apply_actions", "return_turn"],
+            "edges": [
+                ["START", "load_state"],
+                ["load_state", "call_llm"],
+                ["call_llm", "parse_actions"],
+                ["parse_actions", "apply_actions"],
+                ["apply_actions", "return_turn"],
+                ["return_turn", "END"],
+            ],
+        },
+        "events": [],
+    }
+
+
+def _append_debug_event(
+    debug_trace: dict[str, Any] | None,
+    options: V3SandboxDebugTraceOptions,
+    event: dict[str, Any],
+) -> None:
+    if debug_trace is None:
+        return
+    event = {key: value for key, value in event.items() if value is not None}
+    debug_trace.setdefault("events", []).append(event)
+    _enforce_debug_trace_limit(debug_trace, options.max_bytes)
+
+
+def _enforce_debug_trace_limit(debug_trace: dict[str, Any], max_bytes: int) -> None:
+    if _json_size(debug_trace) <= max_bytes:
+        return
+    debug_trace["truncated"] = True
+    for event in debug_trace.get("events", []):
+        if not isinstance(event, dict):
+            continue
+        for key in (
+            "messages",
+            "raw_output",
+            "repair_attempts",
+            "parsed_output",
+            "action_results",
+            "state_diff",
+            "input",
+            "output",
+        ):
+            if key in event:
+                event[key] = _summarize_debug_value(event[key])
+        if _json_size(debug_trace) <= max_bytes:
+            return
+    if _json_size(debug_trace) > max_bytes:
+        debug_trace["events"] = [
+            {
+                "node": "debug_trace",
+                "status": "truncated",
+                "message": "Debug trace exceeded max_bytes; detailed node payloads were truncated.",
+            }
+        ]
+
+
+def _json_size(value: Any) -> int:
+    return len(json.dumps(value, ensure_ascii=False, default=str).encode("utf-8"))
+
+
+def _summarize_debug_value(value: Any) -> dict[str, Any]:
+    if isinstance(value, str):
+        return {"truncated": True, "type": "string", "length": len(value), "preview": value[:500]}
+    if isinstance(value, list):
+        return {"truncated": True, "type": "list", "length": len(value)}
+    if isinstance(value, dict):
+        return {"truncated": True, "type": "object", "keys": sorted(str(key) for key in value.keys())[:40]}
+    return {"truncated": True, "type": type(value).__name__}
+
+
+def _maybe_node_io(state: V3SandboxGraphState, payload: dict[str, Any]) -> dict[str, Any] | None:
+    if state["debug_options"].include_node_io or state["debug_options"].verbose:
+        return payload
+    return None
+
+
+def _duration_ms(started: float) -> float:
+    return round((perf_counter() - started) * 1000, 3)
+
+
+def _debug_error(exc: Exception) -> dict[str, str]:
+    return {"type": type(exc).__name__, "message": str(exc)}
+
+
+def _state_diff(before: V3SandboxSession, after: V3SandboxSession) -> dict[str, Any]:
+    return {
+        "memory_items": _memory_diff(before, after),
+        "working_state": _model_field_diff(before.working_state.model_dump(mode="json"), after.working_state.model_dump(mode="json")),
+        "customer_intelligence": _model_field_diff(
+            before.customer_intelligence.model_dump(mode="json"),
+            after.customer_intelligence.model_dump(mode="json"),
+        ),
+    }
+
+
+def _memory_diff(before: V3SandboxSession, after: V3SandboxSession) -> list[dict[str, Any]]:
+    changes: list[dict[str, Any]] = []
+    before_items = before.memory_items
+    after_items = after.memory_items
+    for memory_id in sorted(set(before_items) | set(after_items)):
+        before_item = before_items.get(memory_id)
+        after_item = after_items.get(memory_id)
+        if before_item is None and after_item is not None:
+            changes.append(
+                {
+                    "id": memory_id,
+                    "change": "added",
+                    "after_status": after_item.status,
+                    "after_content": after_item.content,
+                    "superseded_by": after_item.superseded_by,
+                }
+            )
+            continue
+        if before_item is not None and after_item is None:
+            changes.append(
+                {
+                    "id": memory_id,
+                    "change": "removed",
+                    "before_status": before_item.status,
+                    "before_content": before_item.content,
+                }
+            )
+            continue
+        if before_item is None or after_item is None:
+            continue
+        before_dump = before_item.model_dump(mode="json")
+        after_dump = after_item.model_dump(mode="json")
+        changed_fields = sorted(field for field in before_dump if before_dump.get(field) != after_dump.get(field))
+        if changed_fields:
+            changes.append(
+                {
+                    "id": memory_id,
+                    "change": "updated",
+                    "changed_fields": changed_fields,
+                    "before_status": before_item.status,
+                    "after_status": after_item.status,
+                    "before_content": before_item.content,
+                    "after_content": after_item.content,
+                    "superseded_by": after_item.superseded_by,
+                }
+            )
+    return changes
+
+
+def _model_field_diff(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
+    changes: dict[str, Any] = {}
+    for key in sorted(set(before) | set(after)):
+        if before.get(key) != after.get(key):
+            changes[key] = {"before": before.get(key), "after": after.get(key)}
+    return changes
+
+
 def _failed_session(
     *,
     settings: Settings,
@@ -422,6 +754,7 @@ def _failed_session(
     user_message: V3SandboxMessage,
     turn_id: str,
     started_perf: float,
+    debug_trace: dict[str, Any] | None,
     code: str,
     message: str,
 ) -> V3SandboxSession:
@@ -441,6 +774,7 @@ def _failed_session(
                 "llm_model": settings.llm_model,
                 "duration_ms": round((perf_counter() - started_perf) * 1000, 3),
             },
+            debug_trace=debug_trace,
             error={"code": code, "message": message},
         )
     )

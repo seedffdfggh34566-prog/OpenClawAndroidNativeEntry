@@ -18,7 +18,7 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_2026_04_30_v3_web_lab_scaffold.md`
+`docs/delivery/tasks/task_2026_04_30_v3_lab_settings_trace_inspector.md`
 
 ### Current task status
 
@@ -53,6 +53,16 @@
 
 ## 4. Recently completed
 
+- `docs/delivery/tasks/task_2026_04_30_v3_lab_settings_trace_inspector.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_lab_settings_trace_inspector.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_lab_full_trace_visualization.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_lab_full_trace_visualization.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_lab_db_persistence_inspection.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_lab_db_persistence_inspection.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_sandbox_memory_persistence.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_sandbox_memory_persistence.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_lab_seed_reset_replay.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_lab_seed_reset_replay.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_v3_sandbox_runtime_poc.md`（done）
 - `docs/delivery/handoffs/handoff_2026_04_30_v3_sandbox_runtime_poc.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_v3_web_lab_scaffold.md`（done）
@@ -81,9 +91,10 @@
 
 - 超出 V3 sandbox runtime POC 的 LangGraph / LangChain runtime。
 - Letta server 接入。
-- memory DB schema / migration。
+- 超出 opt-in V3 sandbox persistence 的 memory DB schema / migration。
 - 正式 customer intelligence schema / 自动建档 / 候选客户排序或打分实现。
-- 超出 `/lab` scaffold 的 Web UI implementation。
+- 超出 `/lab` DB persistence inspection 内部测试能力的 Web UI implementation。
+- 超出 `/lab` full trace visualization 内部调试能力的 Web UI implementation。
 - Android UI 重写。
 - V2.2 search / ContactPoint。
 - CRM / outreach / bulk contact / 不可逆导出。
@@ -95,8 +106,9 @@
 
 以下仅为候选，不代表已开放：
 
-1. `V3 /lab replay and seed controls`
-2. `V3 sandbox memory persistence design`
-3. `V3 workspace user prototype planning`
+1. `V3 workspace user prototype planning`
+2. `V3 archival memory design`
+3. `V3 /lab trace playback`
+4. `V3 LangGraph Studio adapter spike`
 
 执行 agent 不得自行从候选项中开工。

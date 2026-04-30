@@ -85,6 +85,16 @@ class AgentAction(V3SandboxModel):
     payload: dict[str, Any] = Field(default_factory=dict)
 
 
+class V3SandboxDebugTraceOptions(V3SandboxModel):
+    verbose: bool = False
+    include_prompt: bool = False
+    include_raw_llm_output: bool = False
+    include_repair_attempts: bool = False
+    include_node_io: bool = False
+    include_state_diff: bool = False
+    max_bytes: int = Field(default=80_000, ge=8_000, le=500_000)
+
+
 class V3SandboxMessage(V3SandboxModel):
     id: str
     role: Literal["user", "assistant"]
@@ -100,6 +110,7 @@ class V3SandboxTraceEvent(V3SandboxModel):
     runtime_metadata: dict[str, Any] = Field(default_factory=dict)
     actions: list[AgentAction] = Field(default_factory=list)
     parsed_output: dict[str, Any] | None = None
+    debug_trace: dict[str, Any] | None = None
     error: dict[str, str] | None = None
     created_at: datetime = Field(default_factory=utc_now)
 
@@ -128,3 +139,12 @@ class V3SandboxTurnResult(V3SandboxModel):
     assistant_message: V3SandboxMessage
     actions: list[AgentAction]
     trace_event: V3SandboxTraceEvent
+
+
+class V3SandboxReplayReport(V3SandboxModel):
+    status: Literal["completed", "failed"]
+    source_session_id: str
+    replay_session_id: str
+    replayed_turns: int = 0
+    failed_turn_index: int | None = None
+    error: dict[str, str] | None = None

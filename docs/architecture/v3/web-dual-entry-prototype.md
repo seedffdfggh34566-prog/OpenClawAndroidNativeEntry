@@ -6,7 +6,7 @@
 
 本文档记录 V3 Web 入口方向：Web 可以同时承担内部开发测试台和真实销售用户产品雏形，但它们应是同一个 Web 工程里的两个入口，而不是两个独立产品。
 
-当前状态：`/lab` scaffold completed / `/workspace` implementation not started。
+当前状态：`/lab` Settings + fullscreen Trace Inspector completed / `/workspace` implementation not started。
 
 ---
 
@@ -24,7 +24,7 @@ web/
 
 - 一个 Web 工程，两个 route / app shell。
 - 共享 API client、domain types、memory rendering 和 conversation state。
-- `/lab` 面向开发者和产品调试，强调可观察、可回放、可验证。当前已有第一版 scaffold。
+- `/lab` 面向开发者和产品调试，强调可观察、可回放、可验证。当前已有第一版 scaffold，已支持 demo seed、safe reset、replay report、Settings runtime config、fullscreen Trace Inspector，并可观察 DB store、memory transition events 和完整 LangGraph debug trace。
 - `/workspace` 面向真实销售用户体验雏形，强调任务、对话、确认和行动建议。
 - Android / App 仍是长期主要用户入口。
 - Web 不代表 production SaaS、正式多租户、正式登录权限或正式部署已启动。
@@ -64,6 +64,12 @@ Web 的职责是更快验证 V3 runtime、memory 和 user workflow，不改变 b
 - customer intelligence working state。
 - agent actions、trace 和 replay。
 - demo seed、reset、replay。
+- store backend。
+- memory transition events。
+- LangGraph workflow node timeline。
+- prompt / raw LLM output / repair attempts。
+- action apply results 和 state diff。
+- backend status 和有限进程级 runtime config overrides。
 
 `/lab` 的主要验收不是漂亮，而是能让人工和 Dev Agent 快速判断 agent 是否真的记住、修正和使用 memory。
 
@@ -110,9 +116,12 @@ Web 不应在当前阶段抢先定义：
 
 1. 已建立最小 `web/` 工程和 Playwright 验证链路。
 2. 已实现 `/lab` scaffold，接入 V3 `/v3/sandbox` memory、working state、customer intelligence draft 和 trace。
-3. 后续可补 `/lab` demo seed、reset、replay。
-4. 再实现 `/workspace` 的真实销售用户雏形。
-5. 将 `/workspace` 中验证有效的流程同步到 Android App 设计。
+3. 已补 `/lab` demo seed、reset、replay。
+4. 已补 `/lab` DB persistence inspection。
+5. 已补 `/lab` full trace visualization。
+6. 已补 `/lab` Settings + fullscreen Trace Inspector。
+7. 后续可实现 `/workspace` 的真实销售用户雏形。
+8. 将 `/workspace` 中验证有效的流程同步到 Android App 设计。
 
 ---
 

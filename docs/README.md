@@ -12,7 +12,7 @@ V3 的一句话方向：
 
 > Product Sales Agent 先在 sandbox working state 中自主维护 memory、workspace state 和 customer intelligence；backend 初期只作为 runtime host、storage、trace 和 API 基础设施。
 
-当前 V3 已有 backend-only sandbox runtime POC。本文档只提供当前入口，不代表 V3 product implementation、MVP 或 production-ready 已完成。
+当前 V3 已有 backend-only sandbox runtime POC、`/lab` 内部测试入口、seed/reset/replay 控制、opt-in sandbox DB persistence、`/lab` full trace inspection，以及 Settings + fullscreen Trace Inspector。本文档只提供当前入口，不代表 V3 product implementation、MVP 或 production-ready 已完成。
 
 ---
 
@@ -26,9 +26,10 @@ V3 的一句话方向：
 4. `docs/product/prd/ai_sales_assistant_v3_prd.md`
 5. `docs/adr/ADR-009-v3-memory-native-sales-agent-direction.md`
 6. `docs/architecture/v3/memory-native-sales-agent.md`
-7. `docs/architecture/v3/web-dual-entry-prototype.md`
-8. `docs/delivery/tasks/_active.md`
-9. 当前 task / handoff
+7. `docs/architecture/v3/sandbox-memory-persistence.md`
+8. `docs/architecture/v3/web-dual-entry-prototype.md`
+9. `docs/delivery/tasks/_active.md`
+10. 当前 task / handoff
 
 V2 历史资产可按需参考，但不再作为当前默认开发方向。
 
@@ -43,6 +44,7 @@ V2 历史资产可按需参考，但不再作为当前默认开发方向。
 - `docs/product/prd/ai_sales_assistant_v3_prd.md`
 - `docs/adr/ADR-009-v3-memory-native-sales-agent-direction.md`
 - `docs/architecture/v3/memory-native-sales-agent.md`
+- `docs/architecture/v3/sandbox-memory-persistence.md`
 - `docs/architecture/v3/web-dual-entry-prototype.md`
 - `docs/delivery/tasks/_active.md`
 
@@ -83,7 +85,7 @@ V2：
 - 不自动扩展 LangGraph / LangChain runtime 到 POC 之外。
 - 不自动新增 DB schema / migration。
 - 不自动改 Android UI。
-- 不自动 scaffold Web 工程或启动 production Web SaaS。
+- 不自动扩展 Web `/workspace`、正式部署或 production Web SaaS。
 - 不自动进入 search / ContactPoint / CRM / outreach。
 - V3 初期默认是 sandbox / working state，不把 backend governance、Sales Workspace Kernel、Draft Review 或 `WorkspacePatchDraft` 作为默认实现前提。
 - 真实外部触达、CRM 生产写入、不可逆导出、production SaaS / auth / tenant 仍不自动开放。

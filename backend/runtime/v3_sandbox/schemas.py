@@ -14,6 +14,9 @@ AgentActionType = Literal[
     "update_customer_intelligence",
     "no_op",
 ]
+CoreMemoryBlockLabel = Literal["persona", "human", "product", "sales_strategy", "customer_intelligence"]
+CoreMemoryToolName = Literal["core_memory_append", "memory_insert", "memory_replace", "send_message"]
+CoreMemoryToolEventStatus = Literal["applied", "error"]
 
 
 def utc_now() -> datetime:
@@ -85,6 +88,72 @@ class AgentAction(V3SandboxModel):
     payload: dict[str, Any] = Field(default_factory=dict)
 
 
+class CoreMemoryBlock(V3SandboxModel):
+    label: CoreMemoryBlockLabel
+    description: str
+    limit: int = Field(default=2000, ge=1, le=20000)
+    value: str = ""
+    read_only: bool = False
+    updated_at: datetime = Field(default_factory=utc_now)
+
+    @field_validator("value")
+    @classmethod
+    def _value_fits_limit(cls, value: str, info) -> str:
+        limit = 2000
+        if info.data and isinstance(info.data.get("limit"), int):
+            limit = info.data["limit"]
+        if len(value) > limit:
+            raise ValueError("core_memory_block_value_exceeds_limit")
+        return value
+
+
+def default_core_memory_blocks() -> dict[str, CoreMemoryBlock]:
+    return {
+        "persona": CoreMemoryBlock(
+            label="persona",
+            description="Agent identity, behavior preferences, and standing instructions for this sales-agent session.",
+            value=(
+                "You are OpenClaw V3 Product Sales Agent. Maintain concise, editable core memory, "
+                "help the user clarify product positioning and sales strategy, and never claim CRM/outreach actions were executed."
+            ),
+        ),
+        "human": CoreMemoryBlock(
+            label="human",
+            description="What is known about the user, their preferences, constraints, and corrections in this session.",
+            value="",
+        ),
+        "product": CoreMemoryBlock(
+            label="product",
+            description="Current understanding of the user's product, market, delivery model, and constraints.",
+            value="",
+        ),
+        "sales_strategy": CoreMemoryBlock(
+            label="sales_strategy",
+            description="Current sales strategy, positioning, outreach hypotheses, and open sales questions.",
+            value="",
+        ),
+        "customer_intelligence": CoreMemoryBlock(
+            label="customer_intelligence",
+            description="Draft target customer, buyer role, ranking reason, score, and validation signal memory.",
+            value="",
+        ),
+    }
+
+
+class CoreMemoryToolEvent(V3SandboxModel):
+    id: str
+    tool_call_id: str
+    tool_name: str
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    status: CoreMemoryToolEventStatus
+    result: dict[str, Any] = Field(default_factory=dict)
+    error: dict[str, str] | None = None
+    block_label: str | None = None
+    before_value: str | None = None
+    after_value: str | None = None
+    created_at: datetime = Field(default_factory=utc_now)
+
+
 class V3SandboxDebugTraceOptions(V3SandboxModel):
     verbose: bool = False
     include_prompt: bool = False
@@ -109,6 +178,7 @@ class V3SandboxTraceEvent(V3SandboxModel):
     event_type: str
     runtime_metadata: dict[str, Any] = Field(default_factory=dict)
     actions: list[AgentAction] = Field(default_factory=list)
+    tool_events: list[CoreMemoryToolEvent] = Field(default_factory=list)
     parsed_output: dict[str, Any] | None = None
     debug_trace: dict[str, Any] | None = None
     error: dict[str, str] | None = None
@@ -118,6 +188,7 @@ class V3SandboxTraceEvent(V3SandboxModel):
 class V3SandboxSession(V3SandboxModel):
     id: str
     title: str = "V3 Sandbox Session"
+    core_memory_blocks: dict[str, CoreMemoryBlock] = Field(default_factory=default_core_memory_blocks)
     memory_items: dict[str, MemoryItem] = Field(default_factory=dict)
     working_state: SandboxWorkingState = Field(default_factory=SandboxWorkingState)
     customer_intelligence: CustomerIntelligenceDraft = Field(default_factory=CustomerIntelligenceDraft)

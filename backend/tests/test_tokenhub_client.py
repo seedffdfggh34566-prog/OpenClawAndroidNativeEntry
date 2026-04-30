@@ -8,6 +8,7 @@ import pytest
 from backend.runtime.graphs.lead_analysis import _parse_lead_analysis_json
 from backend.runtime.graphs.product_learning import _parse_product_learning_json
 from backend.runtime.llm_client import TokenHubClient, TokenHubClientError
+from backend.runtime.tokenhub_native_fc import tokenhub_native_fc_request_policy
 
 
 def test_tokenhub_client_returns_content_and_usage() -> None:
@@ -41,6 +42,179 @@ def test_tokenhub_client_returns_content_and_usage() -> None:
 
     assert "target_customers" in completion.content
     assert completion.usage["total_tokens"] == 32
+    assert completion.tool_calls is None
+
+
+def test_tokenhub_client_complete_with_tools_sends_tools_and_parses_tool_calls() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.content)
+        assert request.headers["Authorization"] == "Bearer test-key"
+        assert payload["model"] == "minimax-m2.7"
+        assert payload["tools"][0]["function"]["name"] == "upsert_memory"
+        assert payload["tool_choice"] == "required"
+        assert payload["temperature"] == 0
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "finish_reason": "tool_calls",
+                        "message": {
+                            "role": "assistant",
+                            "content": "",
+                            "tool_calls": [
+                                {
+                                    "id": "call_1",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "upsert_memory",
+                                        "arguments": '{"label":"product","content":"销售培训"}',
+                                    },
+                                }
+                            ],
+                        },
+                    }
+                ],
+                "usage": {"total_tokens": 18},
+            },
+        )
+
+    client = TokenHubClient(
+        api_key="test-key",
+        base_url="https://tokenhub.tencentmaas.com/v1",
+        model="minimax-m2.7",
+        timeout_seconds=5,
+        transport=httpx.MockTransport(handler),
+    )
+
+    completion = client.complete_with_tools(
+        [{"role": "user", "content": "记住我们做销售培训"}],
+        tools=[_upsert_memory_tool()],
+        tool_choice="required",
+    )
+
+    assert completion.content == ""
+    assert completion.finish_reason == "tool_calls"
+    assert completion.usage["total_tokens"] == 18
+    assert completion.raw_message is not None
+    assert completion.tool_calls is not None
+    assert completion.tool_calls[0].id == "call_1"
+    assert completion.tool_calls[0].function.name == "upsert_memory"
+    assert json.loads(completion.tool_calls[0].function.arguments)["label"] == "product"
+
+
+def test_tokenhub_client_complete_with_tools_applies_model_policy() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.content)
+        assert payload["temperature"] == 0.6
+        assert payload["thinking"] == {"type": "disabled"}
+        assert payload["reasoning_effort"] == "low"
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "finish_reason": "tool_calls",
+                        "message": {
+                            "content": "",
+                            "tool_calls": [
+                                {
+                                    "id": "call_policy",
+                                    "type": "function",
+                                    "function": {"name": "upsert_memory", "arguments": "{}"},
+                                }
+                            ],
+                        },
+                    }
+                ],
+                "usage": {},
+            },
+        )
+
+    client = TokenHubClient(
+        api_key="test-key",
+        base_url="https://tokenhub.tencentmaas.com/v1",
+        model="kimi-k2.6",
+        timeout_seconds=5,
+        transport=httpx.MockTransport(handler),
+    )
+
+    completion = client.complete_with_tools(
+        [{"role": "user", "content": "call tool"}],
+        tools=[_upsert_memory_tool()],
+        tool_choice={"type": "function", "function": {"name": "upsert_memory"}},
+        model_policy={"temperature": 0.6, "thinking": {"type": "disabled"}, "reasoning_effort": "low"},
+    )
+
+    assert completion.tool_calls is not None
+    assert completion.tool_calls[0].id == "call_policy"
+
+
+def test_tokenhub_native_fc_model_policy_handles_model_specific_parameters() -> None:
+    assert tokenhub_native_fc_request_policy("minimax-m2.7", "required") == {"temperature": 0}
+    assert tokenhub_native_fc_request_policy("kimi-k2.6", "auto") == {"temperature": 1}
+    assert tokenhub_native_fc_request_policy("kimi-k2.6", "required") == {
+        "temperature": 0.6,
+        "thinking": {"type": "disabled"},
+    }
+    assert tokenhub_native_fc_request_policy(
+        "deepseek-v4-flash",
+        {"type": "function", "function": {"name": "upsert_memory"}},
+    ) == {"temperature": 0, "thinking": {"type": "disabled"}}
+
+
+def test_tokenhub_client_complete_with_tools_rejects_missing_content_and_tool_calls() -> None:
+    client = TokenHubClient(
+        api_key="test-key",
+        base_url="https://tokenhub.tencentmaas.com/v1",
+        model="minimax-m2.7",
+        timeout_seconds=5,
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(200, json={"choices": [{"message": {"content": ""}}]})
+        ),
+    )
+
+    with pytest.raises(TokenHubClientError, match="tokenhub_response_missing_content_and_tool_calls"):
+        client.complete_with_tools(
+            [{"role": "user", "content": "call tool"}],
+            tools=[_upsert_memory_tool()],
+        )
+
+
+def test_tokenhub_client_complete_with_tools_rejects_malformed_tool_calls() -> None:
+    client = TokenHubClient(
+        api_key="test-key",
+        base_url="https://tokenhub.tencentmaas.com/v1",
+        model="minimax-m2.7",
+        timeout_seconds=5,
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(
+                200,
+                json={
+                    "choices": [
+                        {
+                            "message": {
+                                "content": "",
+                                "tool_calls": [
+                                    {
+                                        "id": "call_bad",
+                                        "type": "function",
+                                        "function": {"name": "upsert_memory", "arguments": {}},
+                                    }
+                                ],
+                            }
+                        }
+                    ]
+                },
+            )
+        ),
+    )
+
+    with pytest.raises(TokenHubClientError, match="tokenhub_response_tool_call_arguments_not_string"):
+        client.complete_with_tools(
+            [{"role": "user", "content": "call tool"}],
+            tools=[_upsert_memory_tool()],
+        )
 
 
 def test_tokenhub_client_raises_for_http_error() -> None:
@@ -81,6 +255,36 @@ def test_tokenhub_client_requires_api_key() -> None:
 
     with pytest.raises(TokenHubClientError, match="tokenhub_api_key_missing"):
         client.complete([{"role": "user", "content": "hello"}])
+
+
+def test_tokenhub_client_complete_with_tools_requires_tools() -> None:
+    client = TokenHubClient(
+        api_key="test-key",
+        base_url="https://tokenhub.tencentmaas.com/v1",
+        model="minimax-m2.7",
+        timeout_seconds=5,
+    )
+
+    with pytest.raises(TokenHubClientError, match="tokenhub_tools_required"):
+        client.complete_with_tools([{"role": "user", "content": "hello"}], tools=[])
+
+
+def _upsert_memory_tool() -> dict:
+    return {
+        "type": "function",
+        "function": {
+            "name": "upsert_memory",
+            "description": "Create or update a memory block.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "label": {"type": "string"},
+                    "content": {"type": "string"},
+                },
+                "required": ["label", "content"],
+            },
+        },
+    }
 
 
 def test_parse_product_learning_json_strips_thinking_and_markdown() -> None:

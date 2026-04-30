@@ -11,12 +11,13 @@ from backend.api.config import reset_settings_cache
 from backend.api.database import get_session_factory, init_db, reset_database_state
 from backend.api.models import (
     V3SandboxActionEventRecord,
+    V3SandboxCoreMemoryBlockTransitionEventRecord,
     V3SandboxMemoryItemRecord,
     V3SandboxMemoryTransitionEventRecord,
     V3SandboxMessageRecord,
     V3SandboxTraceEventRecord,
 )
-from backend.runtime.llm_client import TokenHubClientError, TokenHubCompletion
+from backend.runtime.llm_client import TokenHubClientError, TokenHubCompletion, TokenHubToolCall, TokenHubToolCallFunction
 from backend.runtime.v3_sandbox import (
     DatabaseV3SandboxStore,
     InMemoryV3SandboxStore,
@@ -86,17 +87,19 @@ def test_database_store_round_trips_session_and_normalized_events(tmp_path, monk
     store.save_session(third.session)
 
     reloaded = DatabaseV3SandboxStore().get_session("v3s_db_store")
-    assert reloaded.memory_items["mem_target_hypothesis"].status == "superseded"
-    assert reloaded.memory_items["mem_target_corrected"].status == "confirmed"
+    assert "产品是中小企业财税 SaaS" in reloaded.core_memory_blocks["product"].value
+    assert "目标联系人是老板本人" in reloaded.core_memory_blocks["customer_intelligence"].value
 
     with get_session_factory()() as db:
         assert db.query(V3SandboxMessageRecord).filter_by(session_id="v3s_db_store").count() == 6
         assert db.query(V3SandboxTraceEventRecord).filter_by(session_id="v3s_db_store").count() == 3
-        assert db.query(V3SandboxActionEventRecord).filter_by(session_id="v3s_db_store").count() == 8
-        assert db.query(V3SandboxMemoryItemRecord).filter_by(session_id="v3s_db_store").count() == 3
+        assert db.query(V3SandboxActionEventRecord).filter_by(session_id="v3s_db_store").count() == 0
+        assert db.query(V3SandboxMemoryItemRecord).filter_by(session_id="v3s_db_store").count() == 0
         transitions = db.query(V3SandboxMemoryTransitionEventRecord).filter_by(session_id="v3s_db_store").all()
-        assert len(transitions) == 4
-        assert {item.transition_type for item in transitions} >= {"write_memory", "supersede_memory"}
+        assert len(transitions) == 0
+        core_transitions = db.query(V3SandboxCoreMemoryBlockTransitionEventRecord).filter_by(session_id="v3s_db_store").all()
+        assert len(core_transitions) >= 3
+        assert {item.tool_name for item in core_transitions} >= {"core_memory_append"}
 
     reset_database_state()
     reset_settings_cache()
@@ -219,12 +222,20 @@ def test_v3_sandbox_runtime_config_api_is_safe_and_mutable(tmp_path, monkeypatch
         assert str(tmp_path / "safe.db") not in dumped
         assert str(tmp_path / "json-store") not in dumped
         assert initial_payload["backend_status"]["llm_api_key_status"] == "configured"
+        assert initial_payload["backend_status"]["llm_model"] == "minimax-m2.7"
+        assert initial_payload["backend_status"]["native_fc_supported"] is True
         assert initial_payload["danger_readonly"]["database_url_status"] == "configured"
+        assert "minimax-m2.7" in initial_payload["allowlists"]["llm_models"]
+        assert "deepseek-v3.1" not in initial_payload["allowlists"]["llm_models"]
+        assert "deepseek-r1" not in initial_payload["allowlists"]["llm_models"]
+        assert initial_payload["native_fc"]["default_model"] == "minimax-m2.7"
+        assert initial_payload["native_fc"]["effective_model_policy"]["recommended_role"] == "default"
+        assert initial_payload["native_fc"]["model_policies"]["kimi-k2.6"]["thinking_policy"]
 
         updated = client.patch(
             "/v3/sandbox/runtime-config",
             json={
-                "llm_model": "deepseek-v3.1",
+                "llm_model": "deepseek-v4-flash",
                 "llm_timeout_seconds": 180,
                 "default_debug_trace": True,
                 "default_include_prompt": True,
@@ -236,14 +247,16 @@ def test_v3_sandbox_runtime_config_api_is_safe_and_mutable(tmp_path, monkeypatch
         )
         assert updated.status_code == 200
         runtime_config = updated.json()["runtime_config"]
-        assert runtime_config["llm_model"] == "deepseek-v3.1"
+        assert runtime_config["llm_model"] == "deepseek-v4-flash"
         assert runtime_config["llm_timeout_seconds"] == 180
         assert runtime_config["default_debug_trace"] is True
         assert runtime_config["trace_max_bytes"] == 200_000
+        assert updated.json()["native_fc"]["effective_model_policy"]["recommended_role"] == "low_cost"
 
         reset = client.post("/v3/sandbox/runtime-config/reset")
         assert reset.status_code == 200
         reset_config = reset.json()["runtime_config"]
+        assert reset_config["llm_model"] == "minimax-m2.7"
         assert reset_config["default_debug_trace"] is False
         assert reset_config["replay_debug_trace"] is False
 
@@ -260,10 +273,12 @@ def test_v3_sandbox_runtime_config_rejects_unsupported_values(tmp_path, monkeypa
 
     with TestClient(create_app()) as client:
         bad_model = client.patch("/v3/sandbox/runtime-config", json={"llm_model": "bad-model"})
+        retired_model = client.patch("/v3/sandbox/runtime-config", json={"llm_model": "deepseek-v3.1"})
         bad_timeout = client.patch("/v3/sandbox/runtime-config", json={"llm_timeout_seconds": 30})
         bad_max_bytes = client.patch("/v3/sandbox/runtime-config", json={"trace_max_bytes": 1_000})
 
     assert bad_model.status_code == 422
+    assert retired_model.status_code == 422
     assert bad_timeout.status_code == 422
     assert bad_max_bytes.status_code == 422
     reset_database_state()
@@ -276,8 +291,8 @@ def test_v3_sandbox_runtime_config_defaults_debug_trace_for_turns(tmp_path, monk
     reset_settings_cache()
     reset_database_state()
     monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete",
-        _SequenceLlmClient([_product_turn_output()]).complete,
+        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
+        _SequenceLlmClient([_product_turn_output()]).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -305,11 +320,11 @@ def test_v3_sandbox_runtime_config_defaults_debug_trace_for_turns(tmp_path, monk
     assert response.status_code == 200
     debug_trace = response.json()["trace_event"]["debug_trace"]
     assert debug_trace is not None
-    call_llm = next(event for event in debug_trace["events"] if event["node"] == "call_llm")
+    call_llm = next(event for event in debug_trace["events"] if event["node"] == "call_agent_with_tools")
     assert "messages" in call_llm
     assert "raw_output" in call_llm
-    apply_actions = next(event for event in debug_trace["events"] if event["node"] == "apply_actions")
-    assert "state_diff" in apply_actions
+    execute_tools = next(event for event in debug_trace["events"] if event["node"] == "execute_tool_calls")
+    assert "state_diff" in execute_tools
     reset_database_state()
     reset_settings_cache()
 
@@ -320,8 +335,8 @@ def test_v3_sandbox_runtime_config_can_trace_replay(tmp_path, monkeypatch) -> No
     reset_settings_cache()
     reset_database_state()
     monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete",
-        _SequenceLlmClient([_product_turn_output(), _correction_turn_output()]).complete,
+        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
+        _SequenceLlmClient([_product_turn_output(), _correction_turn_output()]).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -345,7 +360,7 @@ def test_v3_sandbox_runtime_config_can_trace_replay(tmp_path, monkeypatch) -> No
     assert response.status_code == 200
     replay_trace = response.json()["session"]["trace"]
     assert replay_trace[0]["debug_trace"] is not None
-    assert any(event["node"] == "call_llm" for event in replay_trace[0]["debug_trace"]["events"])
+    assert any(event["node"] == "call_agent_with_tools" for event in replay_trace[0]["debug_trace"]["events"])
     reset_database_state()
     reset_settings_cache()
 
@@ -363,10 +378,10 @@ def test_langgraph_runtime_applies_actions_with_mocked_llm(backend_env, monkeypa
         client=client,
     )
 
-    assert result.session.memory_items["mem_product"].status == "observed"
-    assert result.trace_event.runtime_metadata["graph_name"] == "v3_sandbox_runtime_poc"
+    assert "产品是中小企业财税 SaaS" in result.session.core_memory_blocks["product"].value
+    assert result.trace_event.runtime_metadata["graph_name"] == "v3_sandbox_core_memory_tool_loop_poc"
     assert result.trace_event.debug_trace is None
-    assert result.actions[0].type == "write_memory"
+    assert result.trace_event.tool_events[0].tool_name == "core_memory_append"
 
 
 def test_langgraph_runtime_records_verbose_debug_trace_with_prompt_and_raw_output(backend_env, monkeypatch) -> None:
@@ -391,15 +406,21 @@ def test_langgraph_runtime_records_verbose_debug_trace_with_prompt_and_raw_outpu
 
     debug_trace = result.trace_event.debug_trace
     assert debug_trace is not None
-    assert debug_trace["graph"]["nodes"] == ["load_state", "call_llm", "parse_actions", "apply_actions", "return_turn"]
+    assert debug_trace["graph"]["nodes"] == [
+        "load_state",
+        "compose_context",
+        "call_agent_with_tools",
+        "execute_tool_calls",
+        "return_turn",
+    ]
     node_names = [event["node"] for event in debug_trace["events"]]
-    assert node_names == ["load_state", "call_llm", "parse_actions", "apply_actions", "return_turn"]
-    call_llm = next(event for event in debug_trace["events"] if event["node"] == "call_llm")
+    assert node_names == ["load_state", "compose_context", "call_agent_with_tools", "execute_tool_calls", "return_turn"]
+    call_llm = next(event for event in debug_trace["events"] if event["node"] == "call_agent_with_tools")
     assert call_llm["messages"][0]["role"] == "system"
     assert "raw_output" in call_llm
-    apply_actions = next(event for event in debug_trace["events"] if event["node"] == "apply_actions")
-    assert apply_actions["action_results"][0]["type"] == "write_memory"
-    assert apply_actions["state_diff"]["memory_items"][0]["change"] == "added"
+    execute_tools = next(event for event in debug_trace["events"] if event["node"] == "execute_tool_calls")
+    assert execute_tools["tool_results"][0]["tool_name"] == "core_memory_append"
+    assert execute_tools["state_diff"]["core_memory_blocks"][0]["change"] == "updated"
 
 
 def test_langgraph_runtime_records_repair_attempt_in_debug_trace(backend_env, monkeypatch) -> None:
@@ -422,11 +443,11 @@ def test_langgraph_runtime_records_repair_attempt_in_debug_trace(backend_env, mo
         },
     )
 
-    call_llm = next(event for event in result.trace_event.debug_trace["events"] if event["node"] == "call_llm")
-    assert call_llm["output"]["initial_output_valid"] is False
-    assert call_llm["repair_attempts"][0]["output_valid"] is True
-    assert call_llm["repair_attempts"][0]["messages"][-1]["role"] == "user"
-    assert "raw_output" in call_llm["repair_attempts"][0]
+    events = result.trace_event.debug_trace["events"]
+    execute_events = [event for event in events if event["node"] == "execute_tool_calls"]
+    assert execute_events[0]["tool_results"][0]["status"] == "error"
+    assert execute_events[-1]["tool_results"][-1]["tool_name"] == "send_message"
+    assert "产品是中小企业财税 SaaS" in result.session.core_memory_blocks["product"].value
 
 
 def test_langgraph_runtime_accepts_action_type_nested_payload(backend_env, monkeypatch) -> None:
@@ -444,7 +465,7 @@ def test_langgraph_runtime_accepts_action_type_nested_payload(backend_env, monke
         client=client,
     )
 
-    assert result.session.memory_items["mem_product"].content == "产品是中小企业财税 SaaS"
+    assert "产品是中小企业财税 SaaS" in result.session.core_memory_blocks["product"].value
 
 
 def test_v3_sandbox_api_runs_memory_correction_loop(tmp_path, monkeypatch) -> None:
@@ -460,8 +481,8 @@ def test_v3_sandbox_api_runs_memory_correction_loop(tmp_path, monkeypatch) -> No
         _followup_turn_output(),
     ]
     monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete",
-        _SequenceLlmClient(outputs).complete,
+        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
+        _SequenceLlmClient(outputs).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -472,13 +493,12 @@ def test_v3_sandbox_api_runs_memory_correction_loop(tmp_path, monkeypatch) -> No
 
         first = client.post("/v3/sandbox/sessions/v3s_demo/turns", json={"content": "我们做中小企业财税 SaaS。"})
         assert first.status_code == 200
-        assert first.json()["session"]["memory_items"]["mem_product"]["status"] == "observed"
+        assert "产品是中小企业财税 SaaS" in first.json()["session"]["core_memory_blocks"]["product"]["value"]
 
         second = client.post("/v3/sandbox/sessions/v3s_demo/turns", json={"content": "我的客户是谁？"})
         assert second.status_code == 200
         second_payload = second.json()
-        assert second_payload["session"]["memory_items"]["mem_target_hypothesis"]["status"] == "hypothesis"
-        assert second_payload["session"]["customer_intelligence"]["candidates"][0]["id"] == "cand_sme_owner"
+        assert "可能优先找中小企业老板和财务负责人" in second_payload["session"]["core_memory_blocks"]["customer_intelligence"]["value"]
 
         third = client.post(
             "/v3/sandbox/sessions/v3s_demo/turns",
@@ -486,8 +506,7 @@ def test_v3_sandbox_api_runs_memory_correction_loop(tmp_path, monkeypatch) -> No
         )
         assert third.status_code == 200
         third_payload = third.json()
-        assert third_payload["session"]["memory_items"]["mem_target_hypothesis"]["status"] == "superseded"
-        assert third_payload["session"]["memory_items"]["mem_target_corrected"]["status"] == "confirmed"
+        assert "目标联系人是老板本人" in third_payload["session"]["core_memory_blocks"]["customer_intelligence"]["value"]
 
         fourth = client.post("/v3/sandbox/sessions/v3s_demo/turns", json={"content": "那下一步怎么做？"})
         assert fourth.status_code == 200
@@ -501,7 +520,7 @@ def test_v3_sandbox_api_runs_memory_correction_loop(tmp_path, monkeypatch) -> No
         session_response = client.get("/v3/sandbox/sessions/v3s_demo")
         assert session_response.status_code == 200
         session = session_response.json()["session"]
-        assert session["working_state"]["correction_summary"] == ["目标联系人已从财务负责人纠正为老板本人"]
+        assert "老板本人" in session["core_memory_blocks"]["customer_intelligence"]["value"]
 
     reset_database_state()
     reset_settings_cache()
@@ -515,8 +534,8 @@ def test_v3_sandbox_api_uses_database_store_when_configured(tmp_path, monkeypatc
     reset_database_state()
     outputs = [_product_turn_output(), _hypothesis_turn_output(), _correction_turn_output()]
     monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete",
-        _SequenceLlmClient(outputs).complete,
+        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
+        _SequenceLlmClient(outputs).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -532,9 +551,9 @@ def test_v3_sandbox_api_uses_database_store_when_configured(tmp_path, monkeypatc
         assert response.status_code == 200
 
     reloaded = DatabaseV3SandboxStore().get_session("v3s_db_api")
-    assert reloaded.memory_items["mem_target_hypothesis"].status == "superseded"
+    assert "目标联系人是老板本人" in reloaded.core_memory_blocks["customer_intelligence"].value
     with get_session_factory()() as db:
-        assert db.query(V3SandboxMemoryTransitionEventRecord).filter_by(session_id="v3s_db_api").count() == 4
+        assert db.query(V3SandboxCoreMemoryBlockTransitionEventRecord).filter_by(session_id="v3s_db_api").count() >= 3
 
     reset_database_state()
     reset_settings_cache()
@@ -630,8 +649,8 @@ def test_v3_sandbox_replay_runs_user_turns_into_new_session(tmp_path, monkeypatc
     reset_database_state()
     outputs = [_product_turn_output(), _correction_turn_output()]
     monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete",
-        _SequenceLlmClient(outputs).complete,
+        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
+        _SequenceLlmClient(outputs).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -647,7 +666,7 @@ def test_v3_sandbox_replay_runs_user_turns_into_new_session(tmp_path, monkeypatc
     assert payload["replay"]["replayed_turns"] == 2
     assert payload["session"]["id"].startswith("v3s_replay_")
     assert len(payload["session"]["messages"]) == 4
-    assert payload["session"]["memory_items"]["mem_product"]["status"] == "observed"
+    assert "产品是中小企业财税 SaaS" in payload["session"]["core_memory_blocks"]["product"]["value"]
 
     reset_database_state()
     reset_settings_cache()
@@ -661,8 +680,8 @@ def test_v3_sandbox_replay_success_persists_database_store(tmp_path, monkeypatch
     reset_database_state()
     outputs = [_product_turn_output(), _correction_turn_output()]
     monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete",
-        _SequenceLlmClient(outputs).complete,
+        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
+        _SequenceLlmClient(outputs).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -678,7 +697,7 @@ def test_v3_sandbox_replay_success_persists_database_store(tmp_path, monkeypatch
     assert DatabaseV3SandboxStore().get_session(replay_session_id).id == replay_session_id
     with get_session_factory()() as db:
         assert db.query(V3SandboxTraceEventRecord).filter_by(session_id=replay_session_id).count() == 2
-        assert db.query(V3SandboxActionEventRecord).filter_by(session_id=replay_session_id).count() == 5
+        assert db.query(V3SandboxCoreMemoryBlockTransitionEventRecord).filter_by(session_id=replay_session_id).count() >= 2
 
     reset_database_state()
     reset_settings_cache()
@@ -691,8 +710,8 @@ def test_v3_sandbox_replay_persists_partial_failure_in_database_store(tmp_path, 
     reset_settings_cache()
     reset_database_state()
     monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete",
-        _FailSecondTurnClient().complete,
+        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
+        _FailSecondTurnClient().complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -721,8 +740,8 @@ def test_v3_sandbox_replay_reports_partial_failure(tmp_path, monkeypatch) -> Non
     reset_settings_cache()
     reset_database_state()
     monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete",
-        _FailSecondTurnClient().complete,
+        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
+        _FailSecondTurnClient().complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -770,7 +789,7 @@ def test_v3_sandbox_api_returns_structured_error_for_bad_llm_json(tmp_path, monk
     reset_settings_cache()
     reset_database_state()
     monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete",
+        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
         lambda *args, **kwargs: TokenHubCompletion(content="not json", usage={}),
     )
 
@@ -795,8 +814,8 @@ def test_v3_sandbox_api_debug_trace_is_opt_in_and_persists_in_database_store(tmp
     reset_settings_cache()
     reset_database_state()
     monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete",
-        _SequenceLlmClient([_product_turn_output(), _hypothesis_turn_output()]).complete,
+        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
+        _SequenceLlmClient([_product_turn_output(), _hypothesis_turn_output()]).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -823,13 +842,13 @@ def test_v3_sandbox_api_debug_trace_is_opt_in_and_persists_in_database_store(tmp
         )
         assert second.status_code == 200
         debug_trace = second.json()["trace_event"]["debug_trace"]
-        assert debug_trace["events"][1]["node"] == "call_llm"
-        assert "messages" in debug_trace["events"][1]
-        assert "raw_output" in debug_trace["events"][1]
+        assert debug_trace["events"][2]["node"] == "call_agent_with_tools"
+        assert "messages" in debug_trace["events"][2]
+        assert "raw_output" in debug_trace["events"][2]
 
     reloaded = DatabaseV3SandboxStore().get_session("v3s_debug_api")
     assert reloaded.trace[0].debug_trace is None
-    assert reloaded.trace[1].debug_trace["events"][1]["node"] == "call_llm"
+    assert reloaded.trace[1].debug_trace["events"][2]["node"] == "call_agent_with_tools"
 
     reset_database_state()
     reset_settings_cache()
@@ -841,7 +860,7 @@ def test_v3_sandbox_api_failed_debug_trace_records_parse_error(tmp_path, monkeyp
     reset_settings_cache()
     reset_database_state()
     monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete",
+        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
         lambda *args, **kwargs: TokenHubCompletion(content="not json", usage={}),
     )
 
@@ -866,9 +885,9 @@ def test_v3_sandbox_api_failed_debug_trace_records_parse_error(tmp_path, monkeyp
     assert response.status_code == 422
     debug_trace = trace[0]["debug_trace"]
     assert debug_trace is not None
-    assert any(event["node"] == "parse_actions" and event["status"] == "error" for event in debug_trace["events"])
-    call_llm = next(event for event in debug_trace["events"] if event["node"] == "call_llm")
-    assert call_llm["repair_attempts"][0]["output_valid"] is False
+    assert any(event["node"] == "call_agent_with_tools" and event["status"] == "error" for event in debug_trace["events"])
+    call_llm = next(event for event in debug_trace["events"] if event["node"] == "call_agent_with_tools")
+    assert call_llm["output"]["tool_call_count"] == 0
 
     reset_database_state()
     reset_settings_cache()
@@ -886,6 +905,43 @@ class _SequenceLlmClient:
             usage={"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
         )
 
+    def complete_with_tools(self, messages, *, tools, tool_choice="auto", model_policy=None) -> TokenHubCompletion:
+        if not self.outputs:
+            raise TokenHubClientError("no_more_mock_outputs")
+        output = self.outputs.pop(0)
+        if "tool_calls" in output:
+            tool_calls = [
+                TokenHubToolCall(
+                    id=item["id"],
+                    type="function",
+                    function=TokenHubToolCallFunction(
+                        name=item["name"],
+                        arguments=json.dumps(item.get("arguments", {}), ensure_ascii=False),
+                    ),
+                )
+                for item in output["tool_calls"]  # type: ignore[index]
+            ]
+        else:
+            tool_calls = _legacy_output_to_tool_calls(output)
+        return TokenHubCompletion(
+            content="",
+            usage={"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
+            tool_calls=tool_calls,
+            finish_reason="tool_calls",
+            raw_message={
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": item.id,
+                        "type": item.type,
+                        "function": {"name": item.function.name, "arguments": item.function.arguments},
+                    }
+                    for item in tool_calls
+                ],
+            },
+        )
+
 
 class _FailSecondTurnClient:
     def __init__(self) -> None:
@@ -898,6 +954,13 @@ class _FailSecondTurnClient:
                 content=json.dumps(_product_turn_output(), ensure_ascii=False),
                 usage={"total_tokens": 30},
             )
+        raise TokenHubClientError("test_replay_failure")
+
+    def complete_with_tools(self, messages, *, tools, tool_choice="auto", model_policy=None) -> TokenHubCompletion:
+        self.calls += 1
+        if self.calls == 1:
+            tool_calls = _legacy_output_to_tool_calls(_product_turn_output())
+            return TokenHubCompletion(content="", usage={"total_tokens": 30}, tool_calls=tool_calls, finish_reason="tool_calls")
         raise TokenHubClientError("test_replay_failure")
 
 
@@ -913,6 +976,71 @@ class _RepairLlmClient:
             content=json.dumps(_product_turn_output(), ensure_ascii=False),
             usage={"prompt_tokens": 11, "completion_tokens": 12, "total_tokens": 23},
         )
+
+    def complete_with_tools(self, messages, *, tools, tool_choice="auto", model_policy=None) -> TokenHubCompletion:
+        self.calls += 1
+        if self.calls == 1:
+            return TokenHubCompletion(
+                content="",
+                usage={"total_tokens": 4},
+                tool_calls=[
+                    TokenHubToolCall(
+                        id="call_bad_replace",
+                        type="function",
+                        function=TokenHubToolCallFunction(
+                            name="memory_replace",
+                            arguments=json.dumps(
+                                {"label": "product", "old_content": "missing", "new_content": "产品是中小企业财税 SaaS"},
+                                ensure_ascii=False,
+                            ),
+                        ),
+                    )
+                ],
+                finish_reason="tool_calls",
+            )
+        tool_calls = _legacy_output_to_tool_calls(_product_turn_output())
+        return TokenHubCompletion(
+            content="",
+            usage={"prompt_tokens": 11, "completion_tokens": 12, "total_tokens": 23},
+            tool_calls=tool_calls,
+            finish_reason="tool_calls",
+        )
+
+
+def _legacy_output_to_tool_calls(output: dict[str, object]) -> list[TokenHubToolCall]:
+    calls: list[TokenHubToolCall] = []
+    for index, action in enumerate(output.get("actions", [])):  # type: ignore[union-attr]
+        if not isinstance(action, dict):
+            continue
+        action_type = action.get("type")
+        payload = action.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        nested = payload.get(action_type)
+        if isinstance(nested, dict):
+            payload = nested
+        if action_type == "write_memory":
+            content = str(payload.get("content", ""))
+            tags = payload.get("tags") if isinstance(payload.get("tags"), list) else []
+            label = "customer_intelligence" if "customer_intelligence" in tags else "product"
+            calls.append(_tool_call(f"call_{index}", "core_memory_append", {"label": label, "content": content}))
+        elif action_type == "update_working_state":
+            text = "；".join(str(item) for values in payload.values() if isinstance(values, list) for item in values)
+            if text:
+                calls.append(_tool_call(f"call_{index}", "core_memory_append", {"label": "sales_strategy", "content": text}))
+        elif action_type == "update_customer_intelligence":
+            text = json.dumps(payload, ensure_ascii=False)
+            calls.append(_tool_call(f"call_{index}", "core_memory_append", {"label": "customer_intelligence", "content": text}))
+    calls.append(_tool_call("call_send_message", "send_message", {"message": str(output.get("assistant_message", "OK"))}))
+    return calls
+
+
+def _tool_call(call_id: str, name: str, arguments: dict[str, object]) -> TokenHubToolCall:
+    return TokenHubToolCall(
+        id=call_id,
+        type="function",
+        function=TokenHubToolCallFunction(name=name, arguments=json.dumps(arguments, ensure_ascii=False)),
+    )
 
 
 def _product_turn_output() -> dict[str, object]:

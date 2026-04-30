@@ -23,7 +23,9 @@ import {
   createDemoSeed,
   createSession,
   createTurn,
+  CoreMemoryBlock,
   getHealth,
+  getCoreMemoryTransitions,
   getMemoryTransitions,
   getRuntimeConfig,
   getSession,
@@ -35,6 +37,7 @@ import {
   updateRuntimeConfig,
   V3SandboxDebugTraceEvent,
   V3SandboxDebugTraceOptions,
+  V3SandboxCoreMemoryTransitionsResponse,
   V3SandboxRuntimeConfig,
   replaySession,
   V3SandboxMemoryTransitionsResponse,
@@ -78,6 +81,7 @@ export function App() {
   const [runtimeConfig, setRuntimeConfig] = useState<V3SandboxRuntimeConfig | null>(null);
   const [runtimeDraft, setRuntimeDraft] = useState<V3SandboxRuntimeConfig["runtime_config"] | null>(null);
   const [transitionInspection, setTransitionInspection] = useState<V3SandboxMemoryTransitionsResponse | null>(null);
+  const [coreTransitionInspection, setCoreTransitionInspection] = useState<V3SandboxCoreMemoryTransitionsResponse | null>(null);
   const [input, setInput] = useState("我们做面向苏州小企业老板的销售管理培训，主要是线下课。");
   const [error, setError] = useState<ApiError | Error | null>(null);
   const [replayReport, setReplayReport] = useState<V3SandboxReplayReport | null>(null);
@@ -127,9 +131,15 @@ export function App() {
     setTraceOptions(traceOptionsFromRuntimeConfig(config.runtime_config));
     if (!sessionId) {
       setTransitionInspection(null);
+      setCoreTransitionInspection(null);
       return;
     }
-    setTransitionInspection(await getMemoryTransitions(sessionId));
+    const [memoryTransitions, coreMemoryTransitions] = await Promise.all([
+      getMemoryTransitions(sessionId),
+      getCoreMemoryTransitions(sessionId),
+    ]);
+    setTransitionInspection(memoryTransitions);
+    setCoreTransitionInspection(coreMemoryTransitions);
   }
 
   async function handleCreateSession() {
@@ -209,16 +219,18 @@ export function App() {
     setIsBusy(true);
     setError(null);
     try {
-      const [nextSession, nextTrace, nextTransitions, nextStore, nextConfig] = await Promise.all([
+      const [nextSession, nextTrace, nextTransitions, nextCoreTransitions, nextStore, nextConfig] = await Promise.all([
         getSession(session.id),
         getTrace(session.id),
         getMemoryTransitions(session.id),
+        getCoreMemoryTransitions(session.id),
         getStoreStatus(),
         getRuntimeConfig(),
       ]);
       setSession(nextSession);
       setTrace(nextTrace);
       setTransitionInspection(nextTransitions);
+      setCoreTransitionInspection(nextCoreTransitions);
       setStoreStatus(nextStore);
       setRuntimeConfig(nextConfig);
       setRuntimeDraft(nextConfig.runtime_config);
@@ -296,15 +308,17 @@ export function App() {
     } catch (caught) {
       setError(caught instanceof Error ? caught : new Error("turn failed"));
       try {
-        const [nextSession, nextTrace, nextTransitions, nextStore] = await Promise.all([
+        const [nextSession, nextTrace, nextTransitions, nextCoreTransitions, nextStore] = await Promise.all([
           getSession(session.id),
           getTrace(session.id),
           getMemoryTransitions(session.id),
+          getCoreMemoryTransitions(session.id),
           getStoreStatus(),
         ]);
         setSession(nextSession);
         setTrace(nextTrace);
         setTransitionInspection(nextTransitions);
+        setCoreTransitionInspection(nextCoreTransitions);
         setStoreStatus(nextStore);
       } catch {
         // Keep the original backend error visible.
@@ -400,9 +414,14 @@ export function App() {
           </form>
         </Panel>
 
-        <Panel title="Memory" icon={<Brain size={18} />}>
-          <MemoryList items={memoryItems} />
-        </Panel>
+        <div className="stacked-panels">
+          <Panel title="Core Memory Blocks" icon={<Brain size={18} />}>
+            <CoreMemoryBlocks blocks={session?.core_memory_blocks ?? null} />
+          </Panel>
+          <Panel title="Memory" icon={<Brain size={18} />}>
+            <MemoryList items={memoryItems} />
+          </Panel>
+        </div>
 
         <div className="stacked-panels">
           <Panel title="Working State" icon={<Sparkles size={18} />}>
@@ -419,6 +438,9 @@ export function App() {
           </Panel>
           <Panel title="Memory Transitions" icon={<Database size={18} />}>
             <MemoryTransitions inspection={transitionInspection} />
+          </Panel>
+          <Panel title="Core Memory Transitions" icon={<Database size={18} />}>
+            <CoreMemoryTransitions inspection={coreTransitionInspection} />
           </Panel>
         </div>
       </section>
@@ -535,6 +557,10 @@ function SettingsOverlay({
                   ["LLM model", config.backend_status.llm_model],
                   ["LLM key", config.backend_status.llm_api_key_status],
                   ["LLM timeout", `${config.backend_status.llm_timeout_seconds}s`],
+                  ["Native FC", config.backend_status.native_fc_supported ? "supported" : "not supported"],
+                  ["Native FC role", config.backend_status.native_fc_recommended_role],
+                  ["Memory runtime", config.backend_status.memory_runtime],
+                  ["Native function calling", enabled(config.backend_status.native_function_calling)],
                   ["Langfuse", enabled(config.backend_status.langfuse_enabled)],
                   ["Dev LLM trace", enabled(config.backend_status.dev_llm_trace_enabled)],
                 ]}
@@ -546,10 +572,14 @@ function SettingsOverlay({
               <div className="settings-form">
                 <label>
                   <span>Model</span>
-                  <select value={draft.llm_model} onChange={(event) => update({ llm_model: event.target.value })}>
+                  <select
+                    aria-label="LLM model"
+                    value={draft.llm_model}
+                    onChange={(event) => update({ llm_model: event.target.value })}
+                  >
                     {config.allowlists.llm_models.map((model) => (
                       <option value={model} key={model}>
-                        {model}
+                        {model} · {config.native_fc.model_policies[model]?.recommended_role ?? "candidate"}
                       </option>
                     ))}
                   </select>
@@ -593,6 +623,34 @@ function SettingsOverlay({
                   onChange={(value) => update({ default_include_state_diff: value })}
                 />
                 <Toggle label="Replay debug trace" checked={draft.replay_debug_trace} onChange={(value) => update({ replay_debug_trace: value })} />
+              </div>
+            </section>
+
+            <section className="settings-section">
+              <h3>Native FC Policy</h3>
+              <StatusGrid
+                rows={[
+                  ["Default model", config.native_fc.default_model],
+                  ["Memory runtime", config.memory_runtime.mode],
+                  ["Memory tools", config.memory_runtime.tools.join(", ")],
+                  ["Effective role", config.native_fc.effective_model_policy.recommended_role ?? "unknown"],
+                  ["Tool choices", (config.native_fc.effective_model_policy.tool_choice_modes ?? []).join(", ") || "unknown"],
+                  ["Temperature", String(config.native_fc.effective_model_policy.temperature ?? "default")],
+                  ["Thinking policy", config.native_fc.effective_model_policy.thinking_policy ?? "none"],
+                  ["JSON fallback", config.native_fc.json_simulated_tool_calls_fallback],
+                ]}
+              />
+              <div className="policy-list" aria-label="Native FC model policies">
+                {config.allowlists.llm_models.map((model) => {
+                  const policy = config.native_fc.model_policies[model];
+                  return (
+                    <article className="policy-item" key={model}>
+                      <strong>{model}</strong>
+                      <span>{policy?.recommended_role ?? "candidate"}</span>
+                      <small>{(policy?.tool_choice_modes ?? []).join(", ")}</small>
+                    </article>
+                  );
+                })}
               </div>
             </section>
 
@@ -750,6 +808,31 @@ function MessageTimeline({ session }: { session: V3SandboxSession | null }) {
   );
 }
 
+function CoreMemoryBlocks({ blocks }: { blocks: Record<string, CoreMemoryBlock> | null }) {
+  const ordered = ["persona", "human", "product", "sales_strategy", "customer_intelligence"]
+    .map((label) => blocks?.[label])
+    .filter((block): block is CoreMemoryBlock => Boolean(block));
+  if (!ordered.length) {
+    return <EmptyState text="No core memory blocks loaded." />;
+  }
+  return (
+    <div className="core-memory-list">
+      {ordered.map((block) => (
+        <article className="core-memory-block" key={block.label}>
+          <div className="row-between">
+            <strong>{block.label}</strong>
+            <span>
+              {block.value.length}/{block.limit}
+            </span>
+          </div>
+          <small>{block.description}</small>
+          {block.value ? <p>{block.value}</p> : <span className="empty-state">Empty</span>}
+        </article>
+      ))}
+    </div>
+  );
+}
+
 function MemoryList({ items }: { items: MemoryItem[] }) {
   if (!items.length) {
     return <EmptyState text="No memory items yet." />;
@@ -843,11 +926,11 @@ function TraceList({
         .map((event) => (
           <article className="trace-event" key={event.id}>
             <div className="row-between">
-              <strong>{event.event_type}</strong>
-              <span>{formatTime(event.created_at)}</span>
-            </div>
-            {event.error ? <p className="trace-error">{event.error.code}</p> : null}
-            <p>{event.actions.map((action) => action.type).join(", ") || "no actions"}</p>
+                  <strong>{event.event_type}</strong>
+                  <span>{formatTime(event.created_at)}</span>
+                </div>
+                {event.error ? <p className="trace-error">{event.error.code}</p> : null}
+            <p>{event.tool_events.map((tool) => tool.tool_name).join(", ") || event.actions.map((action) => action.type).join(", ") || "no actions"}</p>
             {event.debug_trace ? <p>{event.debug_trace.graph.nodes.join(" -> ")}</p> : null}
             <button type="button" className="secondary-button" onClick={() => onOpenInspector(event.id)}>
               Inspect turn
@@ -905,7 +988,7 @@ function TraceInspector({
                 >
                   <strong>{event.event_type}</strong>
                   <span>{formatTime(event.created_at)}</span>
-                  <span>{event.actions.length} actions</span>
+                  <span>{event.tool_events.length || event.actions.length} events</span>
                   {event.error ? <span>{event.error.code}</span> : null}
                 </button>
               ))}
@@ -948,6 +1031,7 @@ function TraceInspector({
                 {selectedTrace ? (
                   <>
                     <DebugSection title="Runtime metadata" value={selectedTrace.runtime_metadata} />
+                    {selectedTrace.tool_events.length ? <ToolEventsList events={selectedTrace.tool_events} /> : null}
                     {selectedTrace.parsed_output ? <DebugSection title="Parsed output" value={selectedTrace.parsed_output} /> : null}
                   </>
                 ) : null}
@@ -970,12 +1054,15 @@ function TraceInspector({
                 ) : null}
                 {selectedDebugEvent.parsed_output ? <DebugSection title="Validated parsed output" value={selectedDebugEvent.parsed_output} /> : null}
                 {selectedDebugEvent.action_results ? <DebugSection title="Action apply results" value={selectedDebugEvent.action_results} /> : null}
+                {selectedDebugEvent.tool_results ? <DebugSection title="Tool results" value={selectedDebugEvent.tool_results} /> : null}
                 {selectedDebugEvent.state_diff ? <DebugSection title="State diff" value={selectedDebugEvent.state_diff} /> : null}
                 {selectedDebugEvent.error ? <DebugSection title="Error" value={selectedDebugEvent.error} /> : null}
+                {selectedTrace?.tool_events.length ? <ToolEventsList events={selectedTrace.tool_events} /> : null}
               </>
             ) : selectedTrace ? (
               <>
                 <DebugSection title="Runtime metadata" value={selectedTrace.runtime_metadata} />
+                {selectedTrace.tool_events.length ? <ToolEventsList events={selectedTrace.tool_events} /> : null}
                 {selectedTrace.parsed_output ? <DebugSection title="Parsed output" value={selectedTrace.parsed_output} /> : null}
               </>
             ) : (
@@ -1026,10 +1113,32 @@ function DebugTraceNode({ event }: { event: V3SandboxDebugTraceEvent }) {
         {event.repair_attempts ? <DebugSection title="Repair attempts" value={event.repair_attempts} defaultOpen={false} /> : null}
         {event.parsed_output ? <DebugSection title="Validated parsed output" value={event.parsed_output} /> : null}
         {event.action_results ? <DebugSection title="Action apply results" value={event.action_results} /> : null}
+        {event.tool_results ? <DebugSection title="Tool results" value={event.tool_results} /> : null}
         {event.state_diff ? <DebugSection title="State diff" value={event.state_diff} /> : null}
         {event.error ? <DebugSection title="Error" value={event.error} /> : null}
       </div>
     </details>
+  );
+}
+
+function ToolEventsList({ events }: { events: V3SandboxTraceEvent["tool_events"] }) {
+  return (
+    <section className="tool-events-list" aria-label="Native tool events">
+      <h3>Native tool events</h3>
+      {events.map((event) => (
+        <article className={`tool-event tool-${event.status}`} key={event.id}>
+          <div className="row-between">
+            <strong>{event.tool_name}</strong>
+            <span>{event.status}</span>
+          </div>
+          <small>{event.block_label ?? "no block"} / {event.tool_call_id}</small>
+          {event.tool_name === "send_message" ? <p>final reply source</p> : null}
+          {event.error ? <p className="trace-error">{event.error.message}</p> : null}
+          <DebugSection title="Arguments" value={event.arguments} defaultOpen={false} />
+          <DebugSection title="Result" value={event.result} defaultOpen={false} />
+        </article>
+      ))}
+    </section>
   );
 }
 
@@ -1089,6 +1198,46 @@ function MemoryTransitions({ inspection }: { inspection: V3SandboxMemoryTransiti
             <small>
               {transition.trace_event_id ?? "no trace"} / {transition.turn_id ?? "no turn"} / action{" "}
               {transition.action_index ?? "-"}
+            </small>
+          </article>
+        ))}
+    </div>
+  );
+}
+
+function CoreMemoryTransitions({ inspection }: { inspection: V3SandboxCoreMemoryTransitionsResponse | null }) {
+  if (!inspection) {
+    return <EmptyState text="No core memory transition inspection loaded." />;
+  }
+  if (!inspection.available) {
+    return <EmptyState text="Core memory DB inspection unavailable in current store mode." />;
+  }
+  if (!inspection.transitions.length) {
+    return <EmptyState text="No core memory transition events yet." />;
+  }
+  return (
+    <div className="transition-list">
+      <div className="inspection-counts">
+        <span>{inspection.counts.core_memory_block_transitions ?? 0} transitions</span>
+        <span>{inspection.counts.traces ?? 0} traces</span>
+      </div>
+      {inspection.transitions
+        .slice()
+        .reverse()
+        .map((transition) => (
+          <article className="transition-event" key={transition.id}>
+            <div className="row-between">
+              <strong>{transition.transition_type}</strong>
+              <span>{formatTime(transition.created_at)}</span>
+            </div>
+            <p>{transition.block_label}</p>
+            <div className="transition-status-row">
+              <span>{transition.before_value ? `${transition.before_value.length} chars` : "new"}</span>
+              <span>→</span>
+              <span>{transition.after_value ? `${transition.after_value.length} chars` : transition.status}</span>
+            </div>
+            <small>
+              {transition.trace_event_id ?? "no trace"} / {transition.turn_id ?? "no turn"} / {transition.tool_event_id ?? "no tool"}
             </small>
           </article>
         ))}

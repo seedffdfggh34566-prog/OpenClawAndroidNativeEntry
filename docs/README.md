@@ -12,7 +12,7 @@ V3 的一句话方向：
 
 > Product Sales Agent 先在 sandbox working state 中自主维护 memory、workspace state 和 customer intelligence；backend 初期只作为 runtime host、storage、trace 和 API 基础设施。
 
-当前 V3 已有 backend-only sandbox runtime POC、`/lab` 内部测试入口、seed/reset/replay 控制、opt-in sandbox DB persistence、`/lab` full trace inspection，以及 Settings + fullscreen Trace Inspector。本文档只提供当前入口，不代表 V3 product implementation、MVP 或 production-ready 已完成。
+当前 V3 已有 backend-only sandbox runtime POC、session-scoped core memory blocks + native memory tool loop、`/lab` 内部测试入口、seed/reset/replay 控制、opt-in sandbox DB persistence、`/lab` full trace inspection，以及 Settings + fullscreen Trace Inspector。本文档只提供当前入口，不代表 V3 product implementation、MVP 或 production-ready 已完成。
 
 ---
 

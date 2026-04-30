@@ -15,21 +15,27 @@
 ## 当前状态
 
 - Current delivery package：暂无。
-- Current task：`tasks/task_2026_04_30_v3_lab_settings_trace_inspector.md`。
+- Current task：`tasks/task_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`。
 - Auto-continue：`no`。
 - Next queued task：暂无 implementation task 自动开放。
 
-当前是 V3 `/lab` Settings + fullscreen Trace Inspector 完成状态。该能力用于观察 backend status、有限 runtime config overrides、LangGraph workflow、prompt/raw output、actions、state diff 和 memory transition events，不代表 `/workspace`、Android、正式 CRM、V3 product implementation、MVP 或 production-ready 完成。
+当前最新记录是 V3 Letta-inspired Core Memory Tool Loop POC。该记录只代表 `/v3/sandbox` session-scoped core memory blocks、native memory tools 和 `/lab` inspection 能力完成，不代表 Letta server、archival memory、跨 session memory、V3 product implementation、MVP 或 production-ready 完成。
 
 ---
 
 ## 当前任务入口
 
-- `tasks/task_2026_04_30_v3_lab_settings_trace_inspector.md`
-- `handoffs/handoff_2026_04_30_v3_lab_settings_trace_inspector.md`
+- `tasks/task_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`
+- `handoffs/handoff_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`
 
 近期记录：
 
+- `tasks/task_2026_04_30_v3_tokenhub_native_tool_calling_adapter_poc.md`
+- `handoffs/handoff_2026_04_30_v3_tokenhub_native_tool_calling_adapter_poc.md`
+- `tasks/task_2026_04_30_tencent_tokenhub_native_fc_model_probe.md`
+- `handoffs/handoff_2026_04_30_tencent_tokenhub_native_fc_model_probe.md`
+- `tasks/task_2026_04_30_v3_lab_settings_trace_inspector.md`
+- `handoffs/handoff_2026_04_30_v3_lab_settings_trace_inspector.md`
 - `tasks/task_2026_04_30_v3_lab_full_trace_visualization.md`
 - `handoffs/handoff_2026_04_30_v3_lab_full_trace_visualization.md`
 - `tasks/task_2026_04_30_v3_lab_db_persistence_inspection.md`

@@ -270,8 +270,10 @@ button:disabled {
 
 .message-list,
 .memory-list,
+.core-memory-list,
 .trace-list,
 .transition-list,
+.tool-events-list,
 .state-grid,
 .customer-block {
   display: grid;
@@ -287,8 +289,10 @@ button:disabled {
 
 .message,
 .memory-item,
+.core-memory-block,
 .trace-event,
 .transition-event,
+.tool-event,
 .candidate,
 .field-list {
   border: 1px solid #dde4d6;
@@ -304,14 +308,50 @@ button:disabled {
 
 .message p,
 .memory-item p,
+.core-memory-block p,
 .trace-event p,
 .transition-event p,
+.tool-event p,
 .candidate p,
 .field-list li {
   color: #3c4c3e;
   font-size: 13px;
   line-height: 1.45;
   overflow-wrap: anywhere;
+}
+
+.core-memory-block {
+  display: grid;
+  gap: 8px;
+}
+
+.core-memory-block small,
+.tool-event small {
+  color: #66745e;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.core-memory-block p {
+  white-space: pre-wrap;
+}
+
+.tool-events-list h3 {
+  margin-bottom: 8px;
+}
+
+.tool-event {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tool-applied {
+  border-left: 4px solid #4b7a58;
+}
+
+.tool-error {
+  border-left: 4px solid #a33a2b;
 }
 
 .message-user {
@@ -719,6 +759,40 @@ textarea {
   overflow-wrap: anywhere;
   color: #162018;
   font-size: 13px;
+}
+
+.policy-list {
+  display: grid;
+  gap: 8px;
+}
+
+.policy-item {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(90px, auto);
+  gap: 4px 10px;
+  border: 1px solid #eef2ea;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fbfcf8;
+}
+
+.policy-item strong,
+.policy-item span,
+.policy-item small {
+  overflow-wrap: anywhere;
+}
+
+.policy-item span {
+  color: #355743;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.policy-item small {
+  grid-column: 1 / -1;
+  color: #66745e;
+  font-size: 12px;
 }
 
 .settings-form {

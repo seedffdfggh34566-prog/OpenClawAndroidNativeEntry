@@ -13,10 +13,10 @@
 | Area | Status | Notes |
 |---|---|---|
 | V3 direction | `accepted / backend sandbox POC completed` | 当前主线已定为 Agent Sandbox-first Memory-native Sales Agent。 |
-| V3 runtime / memory implementation | `poc_with_opt_in_persistence` | 已有 backend-only `/v3/sandbox` LangGraph + memory/action POC，并支持 opt-in DB persistence；正式跨 session memory / CRM schema 仍未冻结。 |
+| V3 runtime / memory implementation | `core_memory_tool_loop_poc_completed` | `/v3/sandbox` 默认 turn path 已推进为 session-scoped core memory blocks + native memory tool loop；跨 session memory / archival memory / CRM schema 仍未冻结。 |
 | V3 sandbox / working state | `poc_with_opt_in_persistence` | POC 中所有 agent 写入仍是 sandbox working state；DB store 保存 session-scoped snapshot/events，不冻结正式对象。 |
 | Agent-maintained customer intelligence | `poc_draft_only / future direction` | POC 只维护 customer intelligence draft；自动建档、正式排序和打分仍未实现、不冻结 schema。 |
-| V3 Web dual-entry direction | `lab_settings_trace_inspector_completed / workspace_not_started` | `/lab` 已有内部测试入口，支持 seed/reset/replay、Settings runtime config、fullscreen Trace Inspector，可观察 DB store、memory transitions 和完整 LangGraph debug trace；`/workspace` 用户雏形未实现，App 仍是长期主要入口。 |
+| V3 Web dual-entry direction | `lab_core_memory_inspection_completed / workspace_not_started` | `/lab` 已有内部测试入口，支持 seed/reset/replay、Settings runtime config、fullscreen Trace Inspector，可观察 core memory blocks、native tool events、DB transitions 和完整 LangGraph debug trace；`/workspace` 用户雏形未实现，App 仍是长期主要入口。 |
 | V2 workspace/kernel assets | `historical validated prototype` | Sales Workspace Kernel、Draft Review、Postgres persistence、chat-first prototype 可复用。 |
 | V2.1 / V2.2 product direction | `superseded by V3 direction` | V2 文档保留为 historical / reference only。 |
 | V1 demo baseline | `frozen` | V1 已冻结为 demo-ready release candidate / learning milestone。 |
@@ -33,11 +33,11 @@
 | Capability | Status | Evidence | Next Need |
 |---|---|---|---|
 | V3 Sandbox-first Memory-native Sales Agent direction | `accepted` | ADR-009、V3 PRD、V3 architecture entry。 | 单独开放后续 Web / persistence / product tasks。 |
-| Self-editable cognitive memory | `poc_with_opt_in_persistence` | `task_2026_04_30_v3_sandbox_memory_persistence.md`。 | 继续观察 transition events，再决定 archival/cross-session memory。 |
+| Self-editable cognitive memory | `core_memory_tool_loop_poc_completed` | `task_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`。 | 继续观察 core memory tool events，再决定 compaction、archival/cross-session memory。 |
 | Sandbox workspace working state | `poc_with_opt_in_persistence` | `/v3/sandbox` POC + opt-in DB store。 | 不冻结 formal schema。 |
 | Customer intelligence working state | `draft_poc_completed` | `/v3/sandbox` POC。 | 后续如需正式建档/排序/打分，另开 task。 |
-| LangGraph / LangChain runtime | `poc_completed` | `/v3/sandbox` LangGraph loop + TokenHub smoke。 | 后续决定是否扩展 graph lifecycle。 |
-| V3 Web Lab / Workspace prototype | `lab_settings_trace_inspector_completed` | `task_2026_04_30_v3_lab_settings_trace_inspector.md`。 | 后续可开放 `/workspace` task、trace playback 或 LangGraph Studio adapter spike。 |
+| LangGraph / LangChain runtime | `native_core_memory_tool_loop_poc_completed` | `/v3/sandbox` LangGraph native tool loop + real TokenHub smoke。 | 后续可开放 compaction、archival memory 或 LangGraph Studio adapter spike。 |
+| V3 Web Lab / Workspace prototype | `lab_core_memory_inspection_completed` | `task_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`。 | 后续可开放 `/workspace` task、trace playback 或 LangGraph Studio adapter spike。 |
 | Backend infrastructure | `partial_poc_completed` | `/v3/sandbox` opt-in DB store 保存 session snapshot、trace/action events 和 memory transition events。 | 后续如需 production persistence / tenant / auth，另开 task。 |
 | V2 Sales Workspace Kernel | `historical validated prototype` | Kernel docs、tests、API contract、Postgres chain。 | 仅作为历史资产，不是 V3 初期默认路径。 |
 | V2 LLM runtime prototype | `historical reference` | explicit dev flag、fake-client tests、live eval。 | 不作为 V3 runtime contract。 |
@@ -51,7 +51,7 @@
 当前口径：
 
 - Current delivery package：暂无。
-- Current task：`docs/delivery/tasks/task_2026_04_30_v3_lab_settings_trace_inspector.md`。
+- Current task：`docs/delivery/tasks/task_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`。
 - Auto-continue：`no`。
 - Next queued task：暂无 implementation task 自动开放。
 

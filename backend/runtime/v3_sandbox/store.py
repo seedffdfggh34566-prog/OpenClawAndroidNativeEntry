@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from backend.api.database import get_session_factory
 from backend.api.models import (
     V3SandboxActionEventRecord,
+    V3SandboxCoreMemoryBlockTransitionEventRecord,
     V3SandboxMemoryItemRecord,
     V3SandboxMemoryTransitionEventRecord,
     V3SandboxMessageRecord,
@@ -175,10 +176,47 @@ class DatabaseV3SandboxStore:
                 "actions": db.query(V3SandboxActionEventRecord).filter_by(session_id=session_id).count(),
                 "memory_items": db.query(V3SandboxMemoryItemRecord).filter_by(session_id=session_id).count(),
                 "transitions": db.query(V3SandboxMemoryTransitionEventRecord).filter_by(session_id=session_id).count(),
+                "core_memory_block_transitions": db.query(
+                    V3SandboxCoreMemoryBlockTransitionEventRecord
+                ).filter_by(session_id=session_id).count(),
             }
+
+    def core_memory_transitions(self, session_id: str) -> list[dict[str, Any]]:
+        with self._session_factory() as db:
+            if db.get(V3SandboxSessionRecord, session_id) is None:
+                raise V3SandboxSessionNotFound(session_id)
+            records = (
+                db.scalars(
+                    select(V3SandboxCoreMemoryBlockTransitionEventRecord)
+                    .where(V3SandboxCoreMemoryBlockTransitionEventRecord.session_id == session_id)
+                    .order_by(
+                        V3SandboxCoreMemoryBlockTransitionEventRecord.created_at,
+                        V3SandboxCoreMemoryBlockTransitionEventRecord.transition_event_id,
+                    )
+                )
+                .all()
+            )
+            return [
+                {
+                    "id": item.transition_event_id,
+                    "transition_type": item.tool_name,
+                    "block_label": item.block_label,
+                    "status": item.status,
+                    "trace_event_id": item.trace_event_id,
+                    "turn_id": item.turn_id,
+                    "tool_event_id": item.tool_event_id,
+                    "tool_call_id": item.tool_call_id,
+                    "before_value": item.before_value,
+                    "after_value": item.after_value,
+                    "payload": item.payload_json,
+                    "created_at": item.created_at,
+                }
+                for item in records
+            ]
 
     def _replace_normalized_rows(self, db: Session, session: V3SandboxSession) -> None:
         for table in (
+            V3SandboxCoreMemoryBlockTransitionEventRecord,
             V3SandboxMemoryTransitionEventRecord,
             V3SandboxActionEventRecord,
             V3SandboxTraceEventRecord,
@@ -246,6 +284,9 @@ class DatabaseV3SandboxStore:
 
         for transition in _memory_transition_events(session):
             db.add(V3SandboxMemoryTransitionEventRecord(**transition))
+
+        for transition in _core_memory_block_transition_events(session):
+            db.add(V3SandboxCoreMemoryBlockTransitionEventRecord(**transition))
 
 
 def _memory_transition_events(session: V3SandboxSession) -> list[dict[str, Any]]:
@@ -354,3 +395,31 @@ def _action_payload(action: AgentAction) -> dict[str, Any]:
     if isinstance(nested, dict):
         return nested
     return action.payload
+
+
+def _core_memory_block_transition_events(session: V3SandboxSession) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for trace_event in session.trace:
+        for index, tool_event in enumerate(trace_event.tool_events):
+            if tool_event.block_label is None:
+                continue
+            if tool_event.tool_name not in {"core_memory_append", "memory_insert", "memory_replace"}:
+                continue
+            events.append(
+                {
+                    "session_id": session.id,
+                    "transition_event_id": f"{trace_event.id}:{index}:{tool_event.tool_name}:{tool_event.block_label}",
+                    "trace_event_id": trace_event.id,
+                    "turn_id": trace_event.turn_id,
+                    "tool_event_id": tool_event.id,
+                    "tool_call_id": tool_event.tool_call_id,
+                    "tool_name": tool_event.tool_name,
+                    "block_label": tool_event.block_label,
+                    "status": tool_event.status,
+                    "before_value": tool_event.before_value,
+                    "after_value": tool_event.after_value,
+                    "payload_json": tool_event.model_dump(mode="json"),
+                    "created_at": tool_event.created_at or trace_event.created_at or utc_now(),
+                }
+            )
+    return events

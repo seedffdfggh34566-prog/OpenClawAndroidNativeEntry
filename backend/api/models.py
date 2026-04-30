@@ -177,3 +177,21 @@ class V3SandboxMemoryTransitionEventRecord(Base):
     superseded_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
     payload_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class V3SandboxCoreMemoryBlockTransitionEventRecord(Base):
+    __tablename__ = "v3_sandbox_core_memory_block_transition_events"
+
+    session_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    transition_event_id: Mapped[str] = mapped_column(String(192), primary_key=True)
+    trace_event_id: Mapped[str | None] = mapped_column(String(96), nullable=True, index=True)
+    turn_id: Mapped[str | None] = mapped_column(String(96), nullable=True, index=True)
+    tool_event_id: Mapped[str | None] = mapped_column(String(96), nullable=True, index=True)
+    tool_call_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    tool_name: Mapped[str] = mapped_column(String(64), index=True)
+    block_label: Mapped[str] = mapped_column(String(64), index=True)
+    status: Mapped[str] = mapped_column(String(32), index=True)
+    before_value: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    after_value: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)

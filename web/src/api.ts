@@ -48,6 +48,29 @@ export type AgentAction = {
   payload: Record<string, unknown>;
 };
 
+export type CoreMemoryBlock = {
+  label: "persona" | "human" | "product" | "sales_strategy" | "customer_intelligence";
+  description: string;
+  value: string;
+  limit: number;
+  read_only: boolean;
+  updated_at: string;
+};
+
+export type CoreMemoryToolEvent = {
+  id: string;
+  tool_call_id: string;
+  tool_name: string;
+  arguments: Record<string, unknown>;
+  status: "applied" | "error";
+  result: Record<string, unknown>;
+  error: { code: string; message: string } | null;
+  block_label: string | null;
+  before_value: string | null;
+  after_value: string | null;
+  created_at: string;
+};
+
 export type V3SandboxDebugTraceOptions = {
   verbose: boolean;
   include_prompt: boolean;
@@ -69,6 +92,7 @@ export type V3SandboxDebugTraceEvent = {
   repair_attempts?: unknown;
   parsed_output?: unknown;
   action_results?: unknown;
+  tool_results?: unknown;
   state_diff?: unknown;
   error?: unknown;
 };
@@ -98,6 +122,7 @@ export type V3SandboxTraceEvent = {
   event_type: string;
   runtime_metadata: Record<string, unknown>;
   actions: AgentAction[];
+  tool_events: CoreMemoryToolEvent[];
   parsed_output: Record<string, unknown> | null;
   debug_trace: V3SandboxDebugTrace | null;
   error: { code: string; message: string } | null;
@@ -107,6 +132,7 @@ export type V3SandboxTraceEvent = {
 export type V3SandboxSession = {
   id: string;
   title: string;
+  core_memory_blocks: Record<string, CoreMemoryBlock>;
   memory_items: Record<string, MemoryItem>;
   working_state: SandboxWorkingState;
   customer_intelligence: CustomerIntelligenceDraft;
@@ -155,6 +181,30 @@ export type V3SandboxMemoryTransitionsResponse = {
   transitions: V3SandboxMemoryTransition[];
 };
 
+export type V3SandboxCoreMemoryTransition = {
+  id: string;
+  transition_type: string;
+  block_label: string;
+  status: "applied" | "error" | string;
+  trace_event_id: string | null;
+  turn_id: string | null;
+  tool_event_id: string | null;
+  tool_call_id: string | null;
+  before_value: string | null;
+  after_value: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+};
+
+export type V3SandboxCoreMemoryTransitionsResponse = {
+  session_id: string;
+  available: boolean;
+  reason: string | null;
+  store: V3SandboxStoreStatus;
+  counts: Record<string, number>;
+  transitions: V3SandboxCoreMemoryTransition[];
+};
+
 export type V3SandboxRuntimeConfig = {
   backend_status: {
     store: V3SandboxStoreStatus;
@@ -162,6 +212,10 @@ export type V3SandboxRuntimeConfig = {
     llm_model: string;
     llm_api_key_status: "configured" | "missing";
     llm_timeout_seconds: number;
+    native_fc_supported: boolean;
+    native_fc_recommended_role: string;
+    memory_runtime: string;
+    native_function_calling: boolean;
     langfuse_enabled: boolean;
     dev_llm_trace_enabled: boolean;
   };
@@ -186,9 +240,30 @@ export type V3SandboxRuntimeConfig = {
     llm_timeout_seconds: number[];
     trace_max_bytes: number[];
   };
+  native_fc: {
+    default_model: string;
+    effective_model_policy: V3SandboxNativeFcModelPolicy;
+    model_policies: Record<string, V3SandboxNativeFcModelPolicy>;
+    json_simulated_tool_calls_fallback: string;
+  };
+  memory_runtime: {
+    mode: string;
+    core_memory_blocks: string[];
+    tools: string[];
+    legacy_json_action_loop: string;
+  };
 };
 
 export type V3SandboxRuntimeConfigPatch = Partial<V3SandboxRuntimeConfig["runtime_config"]>;
+
+export type V3SandboxNativeFcModelPolicy = {
+  native_tool_calling?: boolean;
+  recommended_role?: string;
+  temperature?: number | string;
+  thinking_policy?: string;
+  tool_choice_modes?: string[];
+  notes?: string;
+};
 
 type ApiErrorPayload = {
   error: {
@@ -287,6 +362,10 @@ export async function getTrace(sessionId: string): Promise<V3SandboxTraceEvent[]
 
 export async function getMemoryTransitions(sessionId: string): Promise<V3SandboxMemoryTransitionsResponse> {
   return requestJson(`/api/v3/sandbox/sessions/${sessionId}/memory-transitions`);
+}
+
+export async function getCoreMemoryTransitions(sessionId: string): Promise<V3SandboxCoreMemoryTransitionsResponse> {
+  return requestJson(`/api/v3/sandbox/sessions/${sessionId}/core-memory-transitions`);
 }
 
 async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {

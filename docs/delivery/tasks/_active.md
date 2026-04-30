@@ -18,7 +18,7 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_2026_04_30_v3_lab_settings_trace_inspector.md`
+`docs/delivery/tasks/task_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`
 
 ### Current task status
 
@@ -53,6 +53,12 @@
 
 ## 4. Recently completed
 
+- `docs/delivery/tasks/task_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_tokenhub_native_tool_calling_adapter_poc.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_tokenhub_native_tool_calling_adapter_poc.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_tencent_tokenhub_native_fc_model_probe.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_tencent_tokenhub_native_fc_model_probe.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_v3_lab_settings_trace_inspector.md`（done）
 - `docs/delivery/handoffs/handoff_2026_04_30_v3_lab_settings_trace_inspector.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_v3_lab_full_trace_visualization.md`（done）

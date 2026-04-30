@@ -12,7 +12,7 @@ V3 的一句话方向：
 
 > Product Sales Agent 先在 sandbox working state 中自主维护 memory、workspace state 和 customer intelligence；backend 初期只作为 runtime host、storage、trace 和 API 基础设施。
 
-当前 V3 是 accepted direction / implementation not started。本文档只提供当前入口，不代表 V3 implementation、MVP 或 production-ready 已完成。
+当前 V3 已有 backend-only sandbox runtime POC。本文档只提供当前入口，不代表 V3 product implementation、MVP 或 production-ready 已完成。
 
 ---
 
@@ -79,8 +79,8 @@ V2：
 
 ## 6. 当前边界
 
-- 不自动启动 V3 implementation。
-- 不自动接入 LangGraph / LangChain 代码。
+- 不自动扩展 V3 product implementation。
+- 不自动扩展 LangGraph / LangChain runtime 到 POC 之外。
 - 不自动新增 DB schema / migration。
 - 不自动改 Android UI。
 - 不自动 scaffold Web 工程或启动 production Web SaaS。

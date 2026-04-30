@@ -18,7 +18,7 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`
+`docs/delivery/tasks/task_2026_04_30_v3_sandbox_runtime_poc.md`
 
 ### Current task status
 
@@ -40,7 +40,7 @@
 
 > **V3 Agent Sandbox-first Memory-native Sales Agent**
 
-当前 V3 是 accepted direction / implementation not started。
+当前 V3 已有 backend-only sandbox runtime POC；更完整的 V3 product implementation、Web、Android 和 production SaaS 仍未开放。
 
 最新入口：
 
@@ -53,6 +53,8 @@
 
 ## 4. Recently completed
 
+- `docs/delivery/tasks/task_2026_04_30_v3_sandbox_runtime_poc.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_sandbox_runtime_poc.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`（done）
 - `docs/delivery/handoffs/handoff_2026_04_30_v3_sandbox_first_docs_rebaseline.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_agents_product_neutral_entry.md`（done）
@@ -75,10 +77,10 @@
 
 除非后续 task 明确开放，不得自动实现：
 
-- LangGraph / LangChain runtime。
+- 超出 V3 sandbox runtime POC 的 LangGraph / LangChain runtime。
 - Letta server 接入。
 - memory DB schema / migration。
-- customer intelligence schema / 自动建档 / 候选客户排序或打分实现。
+- 正式 customer intelligence schema / 自动建档 / 候选客户排序或打分实现。
 - Web scaffold / Web UI implementation。
 - Android UI 重写。
 - V2.2 search / ContactPoint。
@@ -91,8 +93,8 @@
 
 以下仅为候选，不代表已开放：
 
-1. `V3 sandbox runtime POC planning`
-2. `V3 Web dual-entry scaffold planning`
-3. `V3 memory / working state minimal design`
+1. `V3 Web /lab scaffold planning`
+2. `V3 sandbox memory persistence design`
+3. `V3 workspace user prototype planning`
 
 执行 agent 不得自行从候选项中开工。

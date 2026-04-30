@@ -12,7 +12,7 @@ V3 不是 V2.1 的小修补。它将产品方向从 “Sales Workspace + PatchDr
 
 > **Product Sales Agent 先在 sandbox working state 中自主维护 memory、workspace state 和 customer intelligence；backend 初期只作为 runtime host、storage、trace 和 API 基础设施。**
 
-当前 V3 处于 accepted direction / implementation not started。
+当前 V3 已有 backend-only sandbox runtime POC；更完整的 V3 product implementation、Web、Android 和 production SaaS 仍未开放。
 
 ---
 
@@ -55,7 +55,7 @@ V3 的核心是：
 
 当前不做：
 
-- V3 implementation。
+- POC 之外的 V3 product implementation。
 - MVP / production SaaS。
 - production Web SaaS / 登录 / 多租户 / 正式部署。
 - 完整 CRM。

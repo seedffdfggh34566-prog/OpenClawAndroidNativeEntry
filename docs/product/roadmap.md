@@ -6,7 +6,7 @@
 
 当前路线已切换为：
 
-> **V3 Agent Sandbox-first Memory-native Sales Agent direction accepted；implementation not started**
+> **V3 Agent Sandbox-first Memory-native Sales Agent direction accepted；backend sandbox runtime POC completed**
 
 V1 是 frozen demo baseline。V2 是 historical validated prototype asset。V3 是当前产品方向。
 
@@ -30,11 +30,10 @@ V3 的目标是验证：
 
 1. 完成 V3 docs rebaseline。
 2. 单独讨论并精简 `AGENTS.md`。
-3. 开放 V3 runtime POC planning task。
-4. 验证 LangChain / 腾讯云 API 调用路径。
-5. 验证 Product Sales Agent memory tools、self-edit memory 和 sandbox working state。
-6. 开放 V3 Web dual-entry scaffold task，建立 `/lab`、`/workspace` 和 Playwright 验证链路。
-7. 再讨论 schema、migration、Android UI 和 V2.2 search/contact 是否进入实现。
+3. 已完成 backend-only V3 sandbox runtime POC。
+4. 开放 V3 Web `/lab` scaffold task，观察 memory、working state、customer intelligence draft 和 trace。
+5. 讨论 V3 sandbox memory persistence design 是否进入正式 schema。
+6. 再讨论 `/workspace` 用户雏形、Android UI 和 V2.2 search/contact 是否进入实现。
 
 ---
 
@@ -49,5 +48,5 @@ V3 的目标是验证：
 - 批量联系人抓取或导出。
 - backend formal governance / Sales Workspace Kernel 作为 V3 默认实现路径。
 - 正式 search / ContactPoint implementation。
-- 未定义 POC 前的大规模 Android UI 改造。
-- 未定义最小 memory POC 前的完整 DB schema。
+- 未定义 V3 用户体验前的大规模 Android UI 改造。
+- 未完成 V3 memory persistence design 前的完整 DB schema。

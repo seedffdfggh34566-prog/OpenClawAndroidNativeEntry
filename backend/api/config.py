@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     dev_sales_workspace_diagnostics_enabled: bool = False
     sales_workspace_store_backend: str | None = None
     sales_workspace_store_dir: str | None = None
+    v3_sandbox_store_dir: str | None = None
 
     model_config = SettingsConfigDict(
         env_prefix="OPENCLAW_BACKEND_",
@@ -63,6 +64,15 @@ class Settings(BaseSettings):
         if not self.sales_workspace_store_dir:
             return None
         path = Path(self.sales_workspace_store_dir)
+        if path.is_absolute():
+            return path
+        return BACKEND_ROOT / path
+
+    @property
+    def v3_sandbox_store_path(self) -> Path | None:
+        if not self.v3_sandbox_store_dir:
+            return None
+        path = Path(self.v3_sandbox_store_dir)
         if path.is_absolute():
             return path
         return BACKEND_ROOT / path

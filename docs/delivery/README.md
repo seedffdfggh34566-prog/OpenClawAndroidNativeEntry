@@ -15,21 +15,23 @@
 ## 当前状态
 
 - Current delivery package：暂无。
-- Current task：`tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`。
+- Current task：`tasks/task_2026_04_30_v3_sandbox_runtime_poc.md`。
 - Auto-continue：`no`。
 - Next queued task：暂无 implementation task 自动开放。
 
-当前是 V3 sandbox-first 文档重基线完成状态，不是 implementation started。Web 双入口方向已沉淀，但 Web implementation 未开放。
+当前是 V3 sandbox runtime POC 完成状态。该 POC 是 backend-only sandbox 验证，不代表 V3 product implementation、MVP 或 production-ready 完成。Web 双入口方向已沉淀，但 Web implementation 未开放。
 
 ---
 
 ## 当前任务入口
 
-- `tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`
-- `handoffs/handoff_2026_04_30_v3_sandbox_first_docs_rebaseline.md`
+- `tasks/task_2026_04_30_v3_sandbox_runtime_poc.md`
+- `handoffs/handoff_2026_04_30_v3_sandbox_runtime_poc.md`
 
 近期记录：
 
+- `tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`
+- `handoffs/handoff_2026_04_30_v3_sandbox_first_docs_rebaseline.md`
 - `tasks/task_2026_04_30_agents_product_neutral_entry.md`
 - `handoffs/handoff_2026_04_30_agents_product_neutral_entry.md`
 - `tasks/task_2026_04_29_v3_repo_skill_guardrail_refresh.md`

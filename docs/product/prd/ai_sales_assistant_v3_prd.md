@@ -2,7 +2,7 @@
 
 - 文档状态：Draft v0.1 / direction baseline
 - 更新日期：2026-04-30
-- 阶段定位：V3 Agent Sandbox-first / Memory-native Sales Agent 方向定义；implementation not started
+- 阶段定位：V3 Agent Sandbox-first / Memory-native Sales Agent 方向定义；backend sandbox runtime POC completed，正式产品实现未完成
 - 关联文档：
   - `docs/adr/ADR-009-v3-memory-native-sales-agent-direction.md`
   - `docs/architecture/v3/memory-native-sales-agent.md`
@@ -41,7 +41,7 @@ V3 首批只定义方向能力，不冻结 schema 或 API：
 
 V3 当前不代表：
 
-- 已实现 LangGraph runtime。
+- 已实现完整 LangGraph production runtime。
 - 已接入 Letta server。
 - 已冻结 memory database schema。
 - 已冻结 customer intelligence schema、候选客户 scoring schema 或自动建档模型。

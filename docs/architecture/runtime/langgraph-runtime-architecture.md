@@ -2,6 +2,8 @@
 
 更新时间：2026-04-25
 
+> 2026-04-29 scope note：本文档是 V1 / V2.1 draft-runtime 背景文档。当前 V3 Memory-native Sales Agent runtime 方向以 `docs/adr/ADR-009-v3-memory-native-sales-agent-direction.md` 和 `docs/architecture/v3/memory-native-sales-agent.md` 为准。不要把本文的 `WorkspacePatchDraft` output-only graph 设计当成 V3 memory runtime contract。
+
 ## 1. 文档定位
 
 本文档用于定义当前 LangGraph runtime 接入方式，并记录 V2 对话式销售 agent 的后续扩展边界。

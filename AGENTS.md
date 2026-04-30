@@ -4,458 +4,179 @@
 
 This repository is developed in an agent-assisted workflow.
 
-The primary execution environment is:
+Primary environment:
 
-- **Single source workspace:** `jianglab`
-- **Primary control surface:** Codex app (remote project over SSH)
-- **Auxiliary terminal:** FinalShell
-- **Canonical repository:** the Git repository on `jianglab`
+- Single source workspace: `jianglab`
+- Primary control surface: Codex app over SSH
+- Auxiliary terminal: FinalShell
+- Canonical repository: this Git repository on `jianglab`
 
-Agents working in this repository must follow the rules in this file before making changes.
-
----
-
-## 2. Current Project Status
-
-This project is no longer centered on a generic OpenClaw native entry experiment.
-
-### Current primary direction
-The **AI Sales Assistant App V1** has been closed out as a demo-ready release candidate / learning milestone.
-
-The repository is now in **V2 planning baseline**:
-
-- define V2 product direction before implementation
-- align docs, ADRs, data model drafts, and task entrypoints
-- keep V1 assets as the validated baseline
-- do not start V2 implementation unless a formal task is created under `docs/delivery/tasks/` and queued in `_active.md`
-
-### V1 completed baseline
-V1 validated the following core flow:
-
-1. **Product learning**
-2. **Lead analysis**
-3. **Structured sales analysis output / report**
-
-V1 is no longer the active implementation track. Agents may fix severe demo reproduction bugs if explicitly tasked, but must not continue adding V1 features by default.
-
-### V2 planning baseline
-V2 currently explores:
-
-1. **Workspace-native Product Sales Agent prototype**
-2. **Sales Workspace Kernel as the V2 technical backbone**
-3. **AI-guided product learning through chat-first workspace interaction**
-4. **Conversation-based lead direction analysis and iteration**
-5. **Lightweight evidence-based research as a later V2.2 capability**
-6. **Chinese public-web search with source evidence**
-7. **Concrete company / organization candidates**
-8. **Traceable contact points with manual verification boundaries**
-
-V2 is not yet an MVP, schema baseline, API contract, or broad implementation queue. Only the task explicitly queued in `docs/delivery/tasks/_active.md` may be implemented.
-
-### Out of scope unless explicitly approved
-Do **not** proactively expand V2 into:
-
-- full CRM
-- Web frontend
-- automatic outreach
-- bulk contact scraping
-- bulk contact export
-- large-scale crawler infrastructure
-- phone bot / auto-calling
-- enterprise workflow platform
-- complete native chat client rewrite
-- large architecture rewrite without explicit approval
-
-### V2 guardrails
-
-- Web / search output must preserve source evidence before a candidate enters formal results.
-- Company candidates without sources must remain runtime drafts, not formal lead research results.
-- Contact points must be traceable to public sources and default to manual verification.
-- Personal contact points are high-risk and must be explicitly marked, sourced, and never auto-contacted.
-- Android remains the control entry; backend remains the formal truth layer.
-- Runtime / Product Sales Agent execution layer may produce draft payloads and tool outputs, but backend services own formal object writeback.
-- Product Sales Agent memory must be persisted as structured backend objects, not only in prompts, Markdown files, SDK sessions, or LangGraph checkpoints.
-
-Agents must treat scope control as a top-level rule.
+This file is a stable repository operating contract. It is not a product spec, roadmap, PRD, ADR, API contract, or architecture document.
 
 ---
 
-## 3. Source of Truth
+## 2. Product And Task Routing
 
-### Repository source of truth
+Do not treat `AGENTS.md` as product truth.
+
+For current product direction, status, architecture, and task authorization, start from:
+
+1. `docs/README.md`
+2. `docs/product/project_status.md`
+3. `docs/delivery/tasks/_active.md`
+4. The current task and matching handoff, if any
+
+Then follow links from those documents to the relevant PRD, ADR, architecture, API, or reference docs.
+
+Historical documents under `docs/` may contain useful evidence, but they are not current direction unless the current task explicitly reopens them.
+
+---
+
+## 3. Source Of Truth
+
 All formal code, docs, and task outputs must live in this repository.
 
-### Workspace source of truth
-The only authoritative working copy is the repository on `jianglab`.
+The authoritative working copy is this repository on `jianglab`. Do not assume a Windows-local checkout is canonical.
 
-Do not assume a Windows-local working copy is authoritative.
-
----
-
-## 4. Document Ownership
-
-### Human-owned documents
-Agents may suggest edits, but must **not silently redefine** intent in these files:
-
-- `docs/product/overview.md`
-- `docs/product/*`
-- `docs/adr/*`
-
-These files define product direction, version scope, and key decisions.  
-Changes to meaning or scope must be explicit.
-
-### Agent-maintained documents
-Agents are expected to create and update these when relevant:
-
-- `docs/README.md`
-- `docs/architecture/*`
-- `docs/reference/*`
-- `docs/delivery/tasks/*`
-- `docs/how-to/*`
-- `docs/delivery/handoffs/*`
-
-Agents should keep these documents aligned with the current code and workflow reality.
+Repository docs under `docs/` are the source of truth for product direction, ADRs, architecture boundaries, API contracts, task status, and handoffs. Skills may support repeatable workflows, but skills are not the source of truth for product meaning, priority, schema, API, or ADR-level decisions.
 
 ---
 
-## 5. Required Working Style
+## 4. Startup Checklist
 
-### Terminology boundary
+Before non-trivial implementation work:
 
-This repository uses the word "agent" in multiple layers. Keep these meanings separate:
+1. Read this `AGENTS.md`.
+2. Read `docs/README.md`.
+3. Read `docs/delivery/tasks/_active.md`.
+4. Read the current task and relevant handoff/spec files.
+5. Read subtree rules if touching a scoped area.
+6. Confirm the work is authorized by the user or current task.
 
-- **Dev Agent / Execution Agent**: Codex, Claude Code, or another development assistant operating on this repository.
-- **Product Sales Agent / Sales Agent**: the AI sales assistant inside the product experience.
-- **Runtime / LangGraph Runtime**: backend LLM / tool orchestration that may produce draft payloads such as `WorkspacePatchDraft`.
-
-When writing docs, tasks, prompts, or handoffs, prefer the most specific term. Do not imply that a Dev Agent is the Product Sales Agent, and do not treat Runtime / LangGraph as the product's formal truth layer.
-
-Within this file, unqualified "agent" usually means Dev Agent / Execution Agent because `AGENTS.md` is a repository workflow rule file. When discussing product behavior, user-facing intelligence, memory, runtime drafts, or workspace writeback, use `Product Sales Agent`, `Runtime / LangGraph Runtime`, or `Sales Workspace Kernel` explicitly.
-
-### Agent roles
-
-This repository uses a layered agent workflow, but the rules are written against
-**responsibilities**, not tool identities.
-
-There are 3 default roles:
-
-- **Execution agent**: implements the current task, runs the lightest meaningful
-  validation, updates task status, writes handoff notes, and creates atomic commits
-- **Planning layer**: maintains direction, priorities, task queue, boundary rules,
-  and stop conditions in repo docs
-- **Human decision layer**: resolves product direction changes, major architecture
-  changes, deployment/release decisions, and other high-risk final calls
-
-Any agent may act as the execution agent if it follows these rules.
-Do not assume the workflow depends on a specific tool name.
-
-### Before starting any implementation task
-An agent should first:
-
-1. read this `AGENTS.md`
-2. read `docs/README.md`
-3. inspect relevant files under `docs/`
-4. identify the active task from `docs/delivery/tasks/_active.md`
-5. confirm current scope and non-goals
-6. avoid editing unrelated areas
-
-### Preferred execution order
-For non-trivial work, use this sequence:
-
-1. clarify task boundary
-2. update or create task/spec doc if needed
-3. implement the smallest viable code change
-4. validate locally
-5. update affected docs
-6. produce a concise handoff summary
-
-### Default execution model
-
-The default execution model is **lightly-governed autonomy**:
-
-- the planning layer defines boundaries, priorities, task queue, and stop conditions
-- the execution agent may continue through the already-documented task queue without
-  asking for per-task approval
-- the execution agent must not invent new product goals or jump to undocumented
-  large tasks
-
-The next task must come from repository docs such as:
-
-- `docs/delivery/tasks/_active.md`
-- the current task's "next step" section
-- another already-created follow-up task explicitly referenced from current delivery docs
-
-When the queue is exhausted or unclear, stop and hand control back to the planning layer.
-
-### Milestone acceptance and PRD traceability
-
-Task files are execution entrypoints, not product completion standards.
-
-In Chinese: **task 是执行入口，不是产品完成标准**.
-
-For version-level or milestone-level closeout, Dev Agents must treat the following
-documents as higher-level sources than task or handoff summaries:
-
-- PRD
-- roadmap
-- ADRs
-- architecture baseline documents
-
-In short: **PRD / roadmap / ADR / architecture baseline** are higher-level
-milestone acceptance sources than task closeouts.
-
-Any milestone closeout must include a `PRD Acceptance Traceability` table. Each
-PRD success criterion must be marked as one of:
-
-- `done`
-- `partial`
-- `missing`
-- `out of scope`
-
-Use exactly this status set in milestone tables: **done / partial / missing / out of scope**.
-
-Do not declare a version, milestone, or product experience complete only because
-tasks are marked done, tests pass, or a demo flow works.
-
-If a task closeout, handoff, README, or `_active.md` status conflicts with PRD,
-roadmap, ADR, or architecture baseline success criteria, the Dev Agent must stop,
-surface the mismatch, and avoid upgrading the result into version completion.
-
-### Milestone Completion Claims
-
-Ordinary task files and handoffs must not declare a product version, milestone,
-product experience, or phase complete.
-
-They may only state that the task is done, that a validation path passed, or that
-the result provides evidence toward a milestone.
-
-Milestone completion claims require an explicit milestone closeout or acceptance
-review, must reference PRD / roadmap / ADR / architecture baseline sources, and
-must include PRD Acceptance Traceability.
-
-Prototype, demo, smoke, or backend acceptance evidence must be labeled as such
-and must not be broadened into product-stage completion.
-
-### Multi-Agent Responsibility Split
-
-When multiple Dev Agent threads are used, keep responsibilities separate:
-
-- Status / Planning Agent, Execution Agent, and Review Agent are Dev Agent
-  workflow roles, not product agents or fixed tool identities.
-- Status / Planning agents maintain project status, capability matrices, gap backlog, and package recommendations.
-- Execution agents implement only the current `_active.md` package / task.
-- Review agents inspect diffs, risks, validation, scope drift, and milestone-claim drift.
-
-Opening `_active.md` current delivery package requires an explicit authorization
-source, such as human instruction, an accepted Status / Planning Agent
-recommendation, an `_active.md` auto-continue rule, or a documented current
-package next-package rule.
-
-Execution agents must not invent new packages or upgrade task / handoff evidence
-into milestone completion.
+When the next task is unclear, stop and ask instead of inventing a queue.
 
 ---
 
-## 6. Scope Discipline
+## 5. Task Authorization And Scope
 
-Agents must not:
+Implementation work must come from:
 
-- expand the current milestone without explicit instruction
+- explicit user instruction in the current thread, or
+- the current task in `docs/delivery/tasks/_active.md`, or
+- a follow-up task explicitly referenced by current delivery docs.
+
+Do not:
+
+- expand the current scope without explicit instruction
 - convert a small task into a broad refactor
-- rewrite unrelated architecture “for cleanliness”
-- replace current runtime assumptions unless explicitly requested
 - silently introduce new product requirements
+- replace runtime, API, persistence, platform, or deployment assumptions unless asked
+- start implementation only because direction docs exist
+- continue work from historical task or handoff files unless reopened by current authorization
 
-When uncertain, prefer the **smaller change**.
-
----
-
-## 7. Current Runtime / Environment Assumptions
-
-The repository is currently developed around the following environment assumptions:
-
-- main development host: `jianglab`
-- Git operations run on `jianglab`
-- Android build environment runs on `jianglab`
-- `adb` and device deployment run on `jianglab`
-- Codex works against the remote repository on `jianglab`
-
-Agents should not assume a local Windows build environment is canonical.
+When uncertain, prefer the smallest reversible step that preserves product learning and future optionality.
 
 ---
 
-## 8. Git Rules
+## 6. Task, Handoff, And Completion Wording
 
-### Branching
+Task files and handoffs are execution records. They may state:
+
+- what task was completed
+- what changed
+- what was validated
+- known limits
+- recommended next step
+
+Ordinary task files and handoffs must not casually declare a version, milestone, product phase, product experience, or production readiness complete. If the user explicitly asks for a milestone or release review, create a dedicated review document and keep evidence tied to the relevant PRD, ADR, architecture, and validation results.
+
+---
+
+## 7. Git Rules
+
 Do not treat `main` as a scratchpad.
 
-Preferred branch naming:
+Preferred branch names:
 
-- `codex/...` for Codex / Dev Agent execution branches
+- `codex/...` for Codex / Dev Agent branches
 - `feat/...`
 - `fix/...`
 - `docs/...`
 - `chore/...`
 
-The canonical checkout at `/home/yulin/projects/OpenClawAndroidNativeEntry` should normally stay on clean `main`.
-Use a separate branch or worktree for implementation tasks.
-If the main checkout has uncommitted changes, first classify them as current-task work, separate follow-up work, or local-only state before starting another task.
+Do not push, merge, reset, delete branches, or remove worktrees unless explicitly asked.
 
-### Worktree and branch hygiene
+Before starting unrelated work, inspect `git status --short`. Existing changes may belong to the user or another task; do not revert them unless explicitly requested.
 
-Keep local worktrees short-lived:
+Use short conventional commit messages when commits are requested, for example:
 
-- Default to one clean `main` worktree plus currently open PR worktrees.
-- Do not keep merged task worktrees after their PR is merged.
-- If local worktrees exceed three, clean merged and unused worktrees before starting new work.
-- Only remove a worktree after confirming it is clean with `git status --short`.
-- Never delete or reset a worktree with uncommitted changes unless the human explicitly approves that exact cleanup.
-
-After a PR is merged:
-
-1. Fetch and prune remotes.
-2. Remove the merged PR worktree.
-3. Delete the merged local branch.
-4. Delete or prune the merged remote branch when it has no open PR.
-5. Return the canonical checkout to clean `main`.
-
-If `gh pr merge --delete-branch` reports a local cleanup failure because the branch is checked out in a worktree, first confirm whether the PR was merged, then remove the clean worktree and delete the local branch. Do not retry merge blindly.
-
-### Commit style
-Use short, conventional, descriptive commit messages, for example:
-
-- `docs: add initial AGENTS and project overview`
-- `feat: add product profile data model`
-- `fix: correct gateway status handling`
-
-### Push behavior
-Do not push automatically unless explicitly requested.
-
-### Default autonomous Git model
-
-For long-running autonomous development:
-
-- do not use `main` as the default execution branch
-- it is acceptable to continue multiple already-queued tasks on the same working branch
-- each completed task must still be closed out separately with:
-  - the lightest meaningful validation
-  - task status update
-  - handoff update
-  - one atomic commit
-
-Do not merge multiple tasks into one commit just because they were executed in one continuous run.
+- `docs: rebaseline agent workflow`
+- `feat: add sales memory prototype`
+- `fix: correct runtime status handling`
 
 ---
 
-## 9. File Change Rules
+## 8. Secret And File Safety
 
-### Secret handling
+Never read, print, copy, summarize, or paste contents from:
 
-Agents must treat local secrets as high-risk even when they are ignored by Git.
+- `backend/.env`
+- `backend/.env.*`
 
-- Never read, print, copy, summarize, or paste `backend/.env` or `backend/.env.*` contents.
-- Never write API keys, Bearer tokens, Authorization headers, private keys, console metric IDs treated as secret, or other credentials into docs, task files, handoffs, PR descriptions, logs, or final answers.
-- Never use `git add -f` to add ignored secret files.
-- To verify local secret setup, only check presence or ignore status, for example `test -f backend/.env` or `git check-ignore -v backend/.env`.
-- If a secret or secret-like identifier may have been committed or pushed, stop normal work and surface the exposure so the human can decide whether to rotate/revoke it and whether history cleanup is required.
+Never write API keys, bearer tokens, authorization headers, private keys, console metric IDs treated as secret, or other credentials into docs, task files, handoffs, PR descriptions, logs, or final answers.
 
-### Safe areas for agent-led drafting
-These are generally safe for structured drafting and iteration:
+To verify local secret setup, only check presence or ignore status, for example:
 
-- `docs/architecture/*`
-- `docs/reference/*`
-- `docs/delivery/tasks/*`
-- `docs/how-to/*`
-- `docs/delivery/handoffs/*`
+- `test -f backend/.env`
+- `git check-ignore -v backend/.env`
 
-### Higher-risk areas
-Be more conservative when editing:
-
-- app entry/navigation
-- build configuration
-- Gradle files
-- runtime integration code
-- environment-sensitive scripts
-
-Avoid touching these unless the task clearly requires it.
+If a secret or secret-like value may have been committed or pushed, stop normal work and surface the exposure.
 
 ---
 
-## 10. Documentation Update Rules
+## 9. Documentation Rules
 
-When a task changes behavior, structure, or workflow, the agent must update the relevant docs.
+Documentation updates should be proportional to the change.
 
-Documentation updates should be proportional to the change:
+Update the current task and handoff for meaningful work. Update higher-level docs only when the change affects product direction, architecture, API/schema contracts, execution authorization, navigation, or project status.
 
-- Small implementation steps inside an already-open package usually update only
-  the task outcome and handoff, unless they change public docs, contracts, or
-  project status.
-- Update `docs/product/project_status.md`, root / docs README files, or milestone
-  reviews only when the package closeout, milestone evidence, navigation, or
-  project status actually changes.
-- Update `_active.md` only when execution authorization, current package / task,
-  queue state, auto-continue, or stop conditions change.
+Do not leave:
 
-### Product-First Execution Mode
-
-When the current task is Android UI, demo path, product polish, or
-user-visible experience recovery, default to product work and device validation
-over documentation expansion.
-
-Allowed by default:
-
-- edit Android UI / state / navigation files within the current task scope
-- run build, install, launch, and device smoke checks
-- update only the current task outcome and one short handoff
-
-Do not update by default:
-
-- `docs/README.md`
-- `docs/delivery/README.md`
-- `docs/product/project_status.md`
-- milestone review documents
-- multi-agent workflow docs
-- package closeout
-
-Escalate to heavier docs only when the work changes public API / schema /
-migrations, PRD / ADR meaning, V2.2 search/contact/privacy scope, milestone
-status, release/deployment assumptions, or secrets handling.
-
-### At minimum, update:
-- the active task file in `docs/delivery/tasks/`
-- a handoff note in `docs/delivery/handoffs/` for non-trivial work
-- a spec/runbook file if the change affects architecture or execution flow
-- `docs/delivery/tasks/_active.md` if task priority or active status changes
-
-### Do not leave:
-- code updated but docs stale
+- code changed but relevant docs stale
 - task completed without recording actual outcome
 - new assumptions undocumented
+- historical wording presented as current direction
+
+Human-owned direction documents require care:
+
+- `docs/product/overview.md`
+- `docs/product/*`
+- `docs/adr/*`
+
+Agents may edit them when explicitly asked, but must not silently redefine product intent.
 
 ---
 
-## 11. Validation Rules
+## 10. Validation Rules
 
-Before declaring a task complete, the agent should run the lightest meaningful validation available.
+Before declaring work complete, run the lightest meaningful validation available.
 
-Typical commands may include:
+Examples:
 
 ```bash
-git status
-./gradlew tasks
+git diff --check
+git status --short
 ./gradlew assembleDebug
-adb devices
+backend/.venv/bin/python -m pytest backend/tests
 ```
 
-Use only the subset relevant to the task.
-
-Do not claim success without checking the result.
+Use only the subset relevant to the task. Do not claim validation passed without checking command results.
 
 ---
 
-## 12. Handoff Requirements
+## 11. Handoff Requirements
 
-For meaningful tasks, create or update a handoff file under:
+For meaningful tasks, create or update a handoff under:
 
 ```text
 docs/delivery/handoffs/
@@ -463,8 +184,8 @@ docs/delivery/handoffs/
 
 A handoff should include:
 
-- what was changed
-- which files were touched
+- what changed
+- files or areas touched
 - what was validated
 - known limitations
 - recommended next step
@@ -473,182 +194,39 @@ Keep handoffs concise and factual.
 
 ---
 
-## 13. Task File Expectations
+## 12. Scoped Rules
 
-Each active task file under `docs/delivery/tasks/` should ideally include:
+This is a product-level monorepo. The root file carries repository-wide rules only.
 
-- objective
-- scope
-- out of scope
-- files likely involved
-- validation criteria
-- current status
+When touching a scoped area, read and follow both this file and the local rule file:
 
-Agents should update task status as work progresses.
+- `app/AGENTS.md` for Android work
+- `backend/AGENTS.md` for backend work
 
-Suggested status values:
-
-- `planned`
-- `in_progress`
-- `blocked`
-- `done`
-
-In addition, the current delivery entrypoint should preferably record:
-
-- current task
-- next queued tasks
-- auto-continue allowed conditions
-- stop conditions
-
-This is the minimum structure that allows an execution agent to continue safely
-without per-task manual scheduling.
-
-### Task Granularity
-
-Task files should usually represent reviewable delivery units, not every small
-execution step. Small execution steps may stay inside one task when they share
-the same objective, scope boundary, validation path, and handoff.
-
-Split work into separate tasks when combining it would blur ownership, review,
-validation, product intent, or stop conditions.
-
-Keep detailed task-type and auto-continuation guidance in
-`docs/delivery/tasks/_template.md` and the developer workflow playbook.
+If scoped rules and root rules appear to conflict, follow the stricter safety rule and surface the conflict.
 
 ---
 
-## 14. Stop Conditions For Autonomous Execution
+## 13. Skills And MCP
 
-The execution agent should stop and return control to the planning layer when:
+Use skills for reusable procedures and focused validation flows. Skills augment repo docs; they do not replace source-of-truth documents.
 
-- a product direction change is needed
-- the next task is not already defined in repository docs
-- docs, contract, and implementation disagree in a way that changes task meaning
-- a new infrastructure dependency, migration, deployment change, or environment assumption is required
-- repeated validation failures suggest the task boundary is wrong
-- the work would cross a documented architecture or scope boundary
-- a release, push, merge, or other high-risk irreversible action is required
+Current common skills:
 
-The execution agent may continue without re-approval only while none of the stop conditions above are met.
+- `repo-task-bootstrap`: structure non-backend task scope before implementation.
+- `backend-task-bootstrap`: structure backend task scope before implementation.
+- `task-handoff-sync`: check task, handoff, docs navigation, validation notes, and completion wording before closeout.
+- `android-build-verify`, `android-logcat-triage`, `android-runtime-integration-guard`: Android validation and risk checks.
+- `backend-local-verify`, `backend-api-change-check`, `backend-db-risk-check`, `backend-runtime-boundary-guard`, `backend-contract-sync`: backend validation and boundary checks.
 
----
+When working with OpenAI APIs, Codex, Agents SDK, Apps SDK, or other OpenAI products, use the `openai-docs` skill and official OpenAI documentation.
 
-## 14. Current Priority for Agents
-
-At the current stage, the highest priority is **V2 planning baseline clarity**, not aggressive feature expansion.
-
-Agents should prefer tasks that improve:
-
-- repository clarity
-- documentation structure
-- task discipline
-- handoff quality
-- small, reviewable changes
-
-Before large feature work, ensure the repository operating model is stable.
-
-### Current execution emphasis
-
-After V1 closeout, the next recommended engineering priority is:
-
-> **V2 direction, search/contact boundaries, data model, ADR, and backend contract definition before implementation**
-
-Agents should treat:
-
-- backend-first repo alignment
-- active task clarity
-- V2 planning baseline consistency
-- source-evidence and contact-boundary guardrails
-
-as higher priority than Android UI expansion or backend feature implementation.
+If a skill and repository docs diverge, repository docs and the current task context win.
 
 ---
 
-## 15. Default Decision Rule
+## 14. Default Decision Rule
 
-When multiple implementation options exist:
+Prefer small, reviewable, reversible changes.
 
-- choose the option with **smaller blast radius**
-- preserve current working infrastructure
-- prefer explicit docs over implicit assumptions
-- prefer incremental progress over ambitious rewrites
-
-This repository values controllability and maintainability over unnecessary speed.
-
----
-
-## 16. Scoped Rules And Platform-Specific Instructions
-
-This repository is now a product-level mono-repo rather than an Android-only repo.
-
-Use this root `AGENTS.md` for:
-
-- repository-wide workflow rules
-- source-of-truth rules
-- Git and validation expectations
-- documentation and handoff requirements
-- cross-cutting escalation rules
-
-When a task touches a platform or subsystem with its own local rule file, agents must obey both:
-
-- this root `AGENTS.md`
-- the more specific `AGENTS.md` inside the relevant subtree
-
-Current scoped rule files:
-
-- `app/AGENTS.md`
-
-Therefore:
-
-- when editing `app/`, read and follow `app/AGENTS.md`
-- if future `backend/` or `ios/` local rule files are added, use the same layered rule model
-
-This root file should not carry detailed Android implementation defaults unless they are truly repository-wide concerns.
-
----
-
-## 17. Docs And Skills Boundary
-
-This repository remains **docs-driven first**.
-
-### 17.1 What stays in `AGENTS.md`
-
-Keep repository-wide, stable instructions here, such as:
-
-- workspace and environment assumptions
-- validation rules
-- escalation rules
-- high-risk file categories
-- subtree rule entry points
-
-### 17.2 What stays in `docs/`
-
-Keep source-of-truth project content in `docs/`, including:
-
-- product direction and non-goals
-- architecture boundaries
-- API / schema references
-- task status
-- handoffs
-- runbooks
-
-### 17.3 What belongs in Skills
-
-Skills are appropriate for **reusable procedures**, especially when they bundle:
-
-- repeatable instructions
-- resource references
-- scripts or command sequences
-- recurring evidence collection workflows
-
-Skills should **augment** the repository workflow, not replace it.
-
-Do **not** treat Skills as the source of truth for:
-
-- version scope
-- active task priority
-- product meaning
-- ADR-level decisions
-- canonical API or schema definitions
-
-If a Skill and repository docs diverge, the repository docs and current task context win.
+Use `docs/` and the current task to decide product meaning. Use this file only to decide how to operate safely in the repository.

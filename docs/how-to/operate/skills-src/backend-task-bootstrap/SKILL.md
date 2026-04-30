@@ -1,11 +1,11 @@
 ---
 name: backend-task-bootstrap
-description: Use when a backend thread needs a task file, validation plan, or handoff structure before implementation so the work stays scoped to repo docs, backend rules, and a clear done definition.
+description: Use when a backend thread needs task scope, validation, or handoff structure before implementation, especially for V3 runtime, memory, API, persistence, or governance work.
 ---
 
 # Backend Task Bootstrap
 
-Use this skill before implementation whenever backend work does not already have a well-scoped task, or when the current thread needs a follow-up task instead of silently expanding an existing one.
+Use this skill before backend implementation whenever work lacks a clear task, validation level, or handoff boundary.
 
 Read these repo files first:
 
@@ -17,67 +17,38 @@ Read these repo files first:
 
 ## When to use it
 
-Trigger this skill when any of these are true:
+Trigger this skill when:
 
-- the backend change is non-trivial and no task file exists yet
-- the requested work is a follow-up, not a clean extension of the current task
-- the work touches API contract, runtime boundary, persistence, migration, observability, or environment assumptions
-- the implementation needs a clear validation ladder and handoff before coding starts
+- backend work is non-trivial and no task clearly fits it
+- the user request is a follow-up rather than a clean extension of the current task
+- work touches API contract, runtime boundary, memory, persistence, migration, observability, or environment assumptions
+- implementation needs a clear validation ladder and handoff before coding
 
-Do not use this skill for tiny typo fixes or docs-only edits that already fit an existing task without changing scope.
-
-## What to produce
-
-Create or update a backend task so it includes:
-
-- objective
-- in scope
-- out of scope
-- likely files
-- validation criteria
-- current status
-- explicit risks or follow-up triggers
-
-Also prepare a matching handoff outline with:
-
-- what changed
-- what was validated
-- known limits
-- next recommended step
+Do not use this skill for tiny typo fixes or docs-only edits that already fit an existing task.
 
 ## Workflow
 
-1. Confirm whether the current backend request belongs to an existing task or needs a new follow-up task.
-2. If the current task would be stretched by new scope, split a new backend follow-up task instead of appending hidden requirements.
-3. Draft the smallest task that is decision-complete for the intended change.
-4. Choose the minimum validation level using `backend/AGENTS.md`.
-5. Record the expected handoff points before implementation starts.
+1. Confirm the authorization source: user request, `_active.md`, or an existing task.
+2. Decide whether a new follow-up task is required.
+3. Define objective, in scope, out of scope, likely files, and validation.
+4. Split work if it bundles runtime, memory schema, API, and migration into one broad task.
+5. Select follow-up guard skills such as `backend-runtime-boundary-guard`, `backend-api-change-check`, or `backend-db-risk-check`.
+6. Record handoff expectations before implementation starts.
 
 ## Validation template
 
-Pick the lightest meaningful validation:
-
 - docs-only: `git diff --check`
-- low-risk backend logic: `backend/.venv/bin/python -m pytest backend/tests`
-- API or persistence wiring: tests + `backend/.venv/bin/alembic upgrade head` + backend startup + `/health`
-- runtime boundary work: tests + backend startup + one manual API flow check
+- backend logic: backend tests
+- API / persistence: tests + migration + backend startup + `/health`
+- runtime / memory boundary: tests + backend startup + one relevant API/manual flow
 - storage, observability, MCP, or environment changes: dedicated task and explicit risk notes
-
-## Output checklist
-
-Your bootstrap result should explicitly answer:
-
-- why this work belongs in the chosen task
-- what is deliberately out of scope
-- which backend skill should be used next
-- what validation must run before the task can be called done
-- what the handoff must mention
 
 ## Stop conditions
 
 Stop and escalate if the task would:
 
-- redefine product direction or object semantics
-- silently broaden V1 scope
-- change database baseline, observability vendor, runtime framework, or MCP boundary without a dedicated task
-- bundle multiple high-risk backend changes into one thread
+- redefine product direction or formal object semantics
+- start V3 runtime / memory implementation without explicit task authorization
+- silently bundle LangGraph, memory schema, API contract, and persistence migration
+- switch database, observability, MCP, or deployment assumptions without a dedicated task
+- require secrets or irreversible Git operations

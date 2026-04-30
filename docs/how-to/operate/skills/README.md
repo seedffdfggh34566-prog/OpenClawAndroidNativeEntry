@@ -1,6 +1,6 @@
 # Android / Backend / Workflow Skill Specs
 
-更新时间：2026-04-23
+更新时间：2026-04-29
 
 ## 1. 文档定位
 
@@ -27,22 +27,23 @@
 
 当前 repo 内 Skill 规格层分为两组：
 
-### Android / workflow 组
+### Workflow / Android 组
 
-1. `android-build-verify`
-2. `android-logcat-triage`
-3. `task-handoff-sync`
-4. `android-ui-change-check`
-5. `android-runtime-integration-guard`
+1. `repo-task-bootstrap`
+2. `task-handoff-sync`
+3. `android-build-verify`
+4. `android-logcat-triage`
+5. `android-ui-change-check`
+6. `android-runtime-integration-guard`
 
 ### Backend 组
 
-6. `backend-task-bootstrap`
-7. `backend-local-verify`
-8. `backend-api-change-check`
-9. `backend-runtime-boundary-guard`
-10. `backend-db-risk-check`
-11. `backend-contract-sync`
+7. `backend-task-bootstrap`
+8. `backend-local-verify`
+9. `backend-api-change-check`
+10. `backend-runtime-boundary-guard`
+11. `backend-db-risk-check`
+12. `backend-contract-sync`
 
 这些 Skills 都应被理解为：
 
@@ -55,21 +56,22 @@
 
 ## 3. 当前优先级与成熟度
 
-### Android / workflow：P0
+### Workflow / Android：P0
 
-1. `android-build-verify`
+1. `repo-task-bootstrap`
 2. `task-handoff-sync`
-3. `android-runtime-integration-guard`
+3. `android-build-verify`
+4. `android-runtime-integration-guard`
 
 原因：
 
-- 当前仓库规则已经足够明确
+- 当前根 `AGENTS.md` 已压缩，通用 task/bootstrap 与 closeout 检查适合迁入真实 Skill
 - 当前环境已具备 `adb`、真机和相关 Gradle 任务
 - 最容易直接提升 Android thread 的稳定性与收口质量
 
 ### Android / workflow：P1
 
-4. `android-logcat-triage`
+5. `android-logcat-triage`
 
 原因：
 
@@ -78,7 +80,7 @@
 
 ### P1：先做轻量版
 
-5. `android-ui-change-check`
+6. `android-ui-change-check`
 
 原因：
 
@@ -137,6 +139,7 @@
 
 - `rollout-order.md`
 - `backend-rollout-order.md`
+- `repo-task-bootstrap.md`
 - `android-build-verify.md`
 - `android-logcat-triage.md`
 - `task-handoff-sync.md`
@@ -168,6 +171,7 @@
 - `docs/how-to/operate/skills-src/android-build-verify/`
 - `docs/how-to/operate/skills-src/android-runtime-integration-guard/`
 - `docs/how-to/operate/skills-src/android-logcat-triage/`
+- `docs/how-to/operate/skills-src/repo-task-bootstrap/`
 - `docs/how-to/operate/skills-src/task-handoff-sync/`
 - `docs/how-to/operate/skills-src/backend-task-bootstrap/`
 - `docs/how-to/operate/skills-src/backend-local-verify/`

@@ -2,6 +2,8 @@
 
 更新时间：2026-04-28
 
+> 2026-04-29 scope note：本文档只约束 V2.1 Tencent TokenHub explicit-flag LLM prototype。它不是 V3 Memory-native Sales Agent runtime contract。V3 runtime 可以维护开放认知 memory，但 formal business object writeback 仍必须经过 backend governance。
+
 ## 1. Purpose
 
 V2.1 允许真实 LLM 参与 chat-first Product Sales Agent turn。

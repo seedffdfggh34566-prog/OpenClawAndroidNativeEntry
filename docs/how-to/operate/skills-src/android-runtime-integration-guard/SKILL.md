@@ -14,6 +14,8 @@ Read these repo files first:
 3. `docs/architecture/clients/android-client-implementation-constraints.md`
 4. the current task and handoff
 
+V3 direction does not automatically open Android UI or control-entry rewrites. Treat OpenClaw, Termux, and Dashboard paths as historical/control-entry risk areas unless the current task explicitly reopens them.
+
 If the decision depends on current Manifest, permission, deep-link, or platform behavior, consult official Android docs or Android Knowledge Base before giving the final guard conclusion.
 
 ## High-risk areas
@@ -26,6 +28,7 @@ Trigger when changes touch:
 - `navigation/*`
 - `termux/*`
 - OpenClaw startup or Dashboard URL handling
+- V3 runtime API or backend URL handling from Android
 - permissions, exported components, intents, or deep links
 
 ## Workflow
@@ -54,3 +57,4 @@ Stop and escalate if:
 - Manifest or permission boundaries are being redefined
 - backend/API contract meaning changes from Android code
 - Android is being expanded beyond control-entry responsibilities
+- V3 Android implementation is being started without an opened task

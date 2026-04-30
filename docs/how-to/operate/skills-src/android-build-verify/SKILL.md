@@ -14,6 +14,8 @@ Read these repo files first:
 3. `docs/README.md`
 4. the current task and handoff
 
+V3 direction does not automatically open Android implementation. Use this skill only when the current task explicitly touches `app/` or asks for Android validation.
+
 If the change touches Manifest, navigation, Termux/OpenClaw, runtime integration, permissions, deep links, or device behavior, run `android-runtime-integration-guard` first.
 
 ## Commands

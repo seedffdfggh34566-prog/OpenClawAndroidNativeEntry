@@ -1,22 +1,23 @@
 # ADR Docs
 
-更新时间：2026-04-27
+更新时间：2026-04-29
 
-当前目录用于承载关键架构与部署决策记录。
+ADR 目录承载关键产品和架构决策。
 
-建议命名方式：
+## 当前决策入口
 
-- `ADR-001-...`
-- `ADR-002-...`
-- `ADR-003-...`
+- `ADR-009-v3-memory-native-sales-agent-direction.md`：当前 V3 方向决策。正式将新方向命名为 V3 Memory-native Sales Agent。
+- `ADR-008-v2-langgraph-letta-style-memory-direction.md`：V2 到 V3 的过渡记录。保留为背景，不作为最终 V3 命名入口。
 
-当前 V2 planning baseline 决策入口：
+## 历史 V2 决策
 
-- `ADR-007-v2-sales-workspace-persistence-decision.md`：当前 persistence decision。V2 MVP persistence baseline 已冻结为 Postgres / Alembic；JSON file store 仍是 prototype continuity；下一项只开放 Postgres dev environment baseline，不直接实现 Sales Workspace schema migration 或 persistence-backed API。
-- `ADR-006-v2-conversational-sales-agent-baseline.md`：当前 V2 workspace-native sales agent baseline。文件名保留 historical slug，但正文已升级为 Sales Workspace / Sales Workspace Kernel 方向。
-- `ADR-005-v2-lead-research-scope-and-search-boundary.md`：V2.2 search、source evidence、contact boundary guardrail。其搜索和联系方式边界继续有效，但具体对象应后续对齐 `ResearchRound`、`CompanyCandidate`、`CandidateRankingBoard`。
+- `ADR-007-v2-sales-workspace-persistence-decision.md`
+- `ADR-006-v2-conversational-sales-agent-baseline.md`
+- `ADR-005-v2-lead-research-scope-and-search-boundary.md`
 
-当前 V1 baseline 决策入口：
+这些文档是 historical validated prototype / reference only。若与 ADR-009 冲突，以 ADR-009 为当前方向。
+
+## V1 决策
 
 - `ADR-001-backend-deployment-baseline.md`
 - `ADR-002-v1-runtime-and-product-learning-baseline.md`

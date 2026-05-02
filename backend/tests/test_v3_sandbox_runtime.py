@@ -5,19 +5,20 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from pydantic import ValidationError
 
 from backend.api.config import reset_settings_cache
 from backend.api.database import get_session_factory, init_db, reset_database_state
 from backend.api.models import (
-    V3SandboxActionEventRecord,
     V3SandboxCoreMemoryBlockTransitionEventRecord,
-    V3SandboxMemoryItemRecord,
-    V3SandboxMemoryTransitionEventRecord,
     V3SandboxMessageRecord,
     V3SandboxTraceEventRecord,
 )
-from backend.runtime.llm_client import TokenHubClientError, TokenHubCompletion, TokenHubToolCall, TokenHubToolCallFunction
+from backend.runtime.llm_client import (
+    TokenHubClientError,
+    TokenHubCompletion,
+    TokenHubToolCall,
+    TokenHubToolCallFunction,
+)
 from backend.runtime.v3_sandbox import (
     DatabaseV3SandboxStore,
     InMemoryV3SandboxStore,
@@ -25,33 +26,26 @@ from backend.runtime.v3_sandbox import (
     V3SandboxStoreConfigError,
     run_v3_sandbox_turn,
 )
-from backend.runtime.v3_sandbox.schemas import MemoryItem, V3SandboxMessage, V3SandboxSession
-
-
-def test_memory_item_rejects_unknown_status() -> None:
-    with pytest.raises(ValidationError):
-        MemoryItem(id="mem_bad", status="draft", content="bad status")
+from backend.runtime.v3_sandbox.graph import _build_tool_loop_messages
+from backend.runtime.v3_sandbox.schemas import (
+    CoreMemoryBlock,
+    V3SandboxMessage,
+    V3SandboxSession,
+    default_core_memory_blocks,
+)
 
 
 def test_json_store_round_trips_session(tmp_path: Path) -> None:
     store = JsonFileV3SandboxStore(tmp_path)
-    session = V3SandboxSession(
-        id="v3s_json",
-        memory_items={
-            "mem_product": MemoryItem(
-                id="mem_product",
-                status="observed",
-                content="产品是销售助手。",
-                source="user",
-            )
-        },
-    )
+    blocks = default_core_memory_blocks()
+    blocks["product"] = blocks["product"].model_copy(update={"value": "产品是销售助手。"})
+    session = V3SandboxSession(id="v3s_json", core_memory_blocks=blocks)
 
     store.create_session(session)
     reloaded = JsonFileV3SandboxStore(tmp_path).get_session("v3s_json")
 
     assert reloaded.id == session.id
-    assert reloaded.memory_items["mem_product"].content == "产品是销售助手。"
+    assert reloaded.core_memory_blocks["product"].value == "产品是销售助手。"
 
 
 def test_database_store_round_trips_session_and_normalized_events(tmp_path, monkeypatch) -> None:
@@ -67,19 +61,19 @@ def test_database_store_round_trips_session_and_normalized_events(tmp_path, monk
         settings=get_settings(),
         session=V3SandboxSession(id="v3s_db_store"),
         user_message=V3SandboxMessage(id="msg_user_1", role="user", content="我们做中小企业财税 SaaS。"),
-        client=_SequenceLlmClient([_product_turn_output()]),
+        client=_SequenceLlmClient([_product_turn_calls()]),
     )
     second = run_v3_sandbox_turn(
         settings=get_settings(),
         session=first.session,
         user_message=V3SandboxMessage(id="msg_user_2", role="user", content="我的客户是谁？"),
-        client=_SequenceLlmClient([_hypothesis_turn_output()]),
+        client=_SequenceLlmClient([_hypothesis_turn_calls()]),
     )
     third = run_v3_sandbox_turn(
         settings=get_settings(),
         session=second.session,
         user_message=V3SandboxMessage(id="msg_user_3", role="user", content="纠正一下，不是财务负责人，是老板本人。"),
-        client=_SequenceLlmClient([_correction_turn_output()]),
+        client=_SequenceLlmClient([_correction_turn_calls()]),
     )
 
     store = DatabaseV3SandboxStore()
@@ -93,10 +87,6 @@ def test_database_store_round_trips_session_and_normalized_events(tmp_path, monk
     with get_session_factory()() as db:
         assert db.query(V3SandboxMessageRecord).filter_by(session_id="v3s_db_store").count() == 6
         assert db.query(V3SandboxTraceEventRecord).filter_by(session_id="v3s_db_store").count() == 3
-        assert db.query(V3SandboxActionEventRecord).filter_by(session_id="v3s_db_store").count() == 0
-        assert db.query(V3SandboxMemoryItemRecord).filter_by(session_id="v3s_db_store").count() == 0
-        transitions = db.query(V3SandboxMemoryTransitionEventRecord).filter_by(session_id="v3s_db_store").all()
-        assert len(transitions) == 0
         core_transitions = db.query(V3SandboxCoreMemoryBlockTransitionEventRecord).filter_by(session_id="v3s_db_store").all()
         assert len(core_transitions) >= 3
         assert {item.tool_name for item in core_transitions} >= {"core_memory_append"}
@@ -175,29 +165,6 @@ def test_v3_sandbox_store_inspection_api_is_safe_across_backends(tmp_path, monke
     assert db_payload["backend"] == "database"
     assert db_payload["database_enabled"] is True
     assert db_url not in json.dumps(db_payload)
-
-    reset_database_state()
-    reset_settings_cache()
-
-
-def test_v3_sandbox_memory_transitions_api_requires_database_store(tmp_path, monkeypatch) -> None:
-    monkeypatch.setenv("OPENCLAW_BACKEND_DATABASE_URL", f"sqlite:///{tmp_path / 'test.db'}")
-    monkeypatch.delenv("OPENCLAW_BACKEND_V3_SANDBOX_STORE_BACKEND", raising=False)
-    reset_settings_cache()
-    reset_database_state()
-
-    from backend.api.main import create_app
-
-    with TestClient(create_app()) as client:
-        seed = client.post("/v3/sandbox/demo-seeds", json={"scenario": "sales_training_correction"}).json()["session"]
-        response = client.get(f"/v3/sandbox/sessions/{seed['id']}/memory-transitions")
-
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["available"] is False
-    assert payload["reason"] == "database_store_required"
-    assert payload["transitions"] == []
-    assert payload["store"]["backend"] == "memory"
 
     reset_database_state()
     reset_settings_cache()
@@ -292,7 +259,7 @@ def test_v3_sandbox_runtime_config_defaults_debug_trace_for_turns(tmp_path, monk
     reset_database_state()
     monkeypatch.setattr(
         "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
-        _SequenceLlmClient([_product_turn_output()]).complete_with_tools,
+        _SequenceLlmClient([_product_turn_calls()]).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -336,7 +303,7 @@ def test_v3_sandbox_runtime_config_can_trace_replay(tmp_path, monkeypatch) -> No
     reset_database_state()
     monkeypatch.setattr(
         "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
-        _SequenceLlmClient([_product_turn_output(), _correction_turn_output()]).complete_with_tools,
+        _SequenceLlmClient([_product_turn_calls(), _correction_turn_calls()]).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -365,12 +332,12 @@ def test_v3_sandbox_runtime_config_can_trace_replay(tmp_path, monkeypatch) -> No
     reset_settings_cache()
 
 
-def test_langgraph_runtime_applies_actions_with_mocked_llm(backend_env, monkeypatch) -> None:
+def test_langgraph_runtime_executes_core_memory_tools_with_mocked_llm(backend_env, monkeypatch) -> None:
     from backend.api.config import get_settings
 
     monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
     reset_settings_cache()
-    client = _SequenceLlmClient([_product_turn_output()])
+    client = _SequenceLlmClient([_product_turn_calls()])
     result = run_v3_sandbox_turn(
         settings=get_settings(),
         session=V3SandboxSession(id="v3s_runtime"),
@@ -393,7 +360,7 @@ def test_langgraph_runtime_records_verbose_debug_trace_with_prompt_and_raw_outpu
         settings=get_settings(),
         session=V3SandboxSession(id="v3s_runtime_debug"),
         user_message=V3SandboxMessage(id="msg_user_1", role="user", content="我们做中小企业财税 SaaS。"),
-        client=_SequenceLlmClient([_product_turn_output()]),
+        client=_SequenceLlmClient([_product_turn_calls()]),
         debug_options={
             "verbose": True,
             "include_prompt": True,
@@ -450,39 +417,21 @@ def test_langgraph_runtime_records_repair_attempt_in_debug_trace(backend_env, mo
     assert "产品是中小企业财税 SaaS" in result.session.core_memory_blocks["product"].value
 
 
-def test_langgraph_runtime_accepts_action_type_nested_payload(backend_env, monkeypatch) -> None:
-    from backend.api.config import get_settings
-
-    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
-    reset_settings_cache()
-    output = _product_turn_output()
-    output["actions"][0]["payload"] = {"write_memory": output["actions"][0]["payload"]}
-    client = _SequenceLlmClient([output])
-    result = run_v3_sandbox_turn(
-        settings=get_settings(),
-        session=V3SandboxSession(id="v3s_runtime_nested"),
-        user_message=V3SandboxMessage(id="msg_user_1", role="user", content="我们做中小企业财税 SaaS。"),
-        client=client,
-    )
-
-    assert "产品是中小企业财税 SaaS" in result.session.core_memory_blocks["product"].value
-
-
 def test_v3_sandbox_api_runs_memory_correction_loop(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("OPENCLAW_BACKEND_DATABASE_URL", f"sqlite:///{tmp_path / 'test.db'}")
     monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
     monkeypatch.delenv("OPENCLAW_BACKEND_V3_SANDBOX_STORE_DIR", raising=False)
     reset_settings_cache()
     reset_database_state()
-    outputs = [
-        _product_turn_output(),
-        _hypothesis_turn_output(),
-        _correction_turn_output(),
-        _followup_turn_output(),
+    turns = [
+        _product_turn_calls(),
+        _hypothesis_turn_calls(),
+        _correction_turn_calls(),
+        _followup_turn_calls(),
     ]
     monkeypatch.setattr(
         "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
-        _SequenceLlmClient(outputs).complete_with_tools,
+        _SequenceLlmClient(turns).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -532,10 +481,10 @@ def test_v3_sandbox_api_uses_database_store_when_configured(tmp_path, monkeypatc
     monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
     reset_settings_cache()
     reset_database_state()
-    outputs = [_product_turn_output(), _hypothesis_turn_output(), _correction_turn_output()]
+    turns = [_product_turn_calls(), _hypothesis_turn_calls(), _correction_turn_calls()]
     monkeypatch.setattr(
         "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
-        _SequenceLlmClient(outputs).complete_with_tools,
+        _SequenceLlmClient(turns).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -572,14 +521,21 @@ def test_v3_sandbox_demo_seed_returns_deterministic_correction_state(tmp_path, m
         payload = response.json()
         session = payload["session"]
         assert payload["scenario"] == "sales_training_correction"
-        assert session["memory_items"]["mem_seed_product"]["status"] == "observed"
-        assert session["memory_items"]["mem_seed_target_hypothesis"]["status"] == "superseded"
-        assert session["memory_items"]["mem_seed_target_confirmed"]["status"] == "confirmed"
-        assert session["customer_intelligence"]["candidates"][0]["id"] == "cand_seed_owner"
+        assert "面向苏州小企业老板" in session["core_memory_blocks"]["product"]["value"]
+        assert "应优先找小企业老板本人" in session["core_memory_blocks"]["customer_intelligence"]["value"]
+        assert "围绕老板本人" in session["core_memory_blocks"]["sales_strategy"]["value"]
         assert len(session["trace"]) == 2
+        tool_names_per_turn = [
+            [event["tool_name"] for event in trace["tool_events"]]
+            for trace in session["trace"]
+        ]
+        assert tool_names_per_turn == [
+            ["core_memory_append", "core_memory_append", "send_message"],
+            ["memory_replace", "core_memory_append", "send_message"],
+        ]
 
         stored = client.get(f"/v3/sandbox/sessions/{session['id']}").json()["session"]
-        assert stored["working_state"]["correction_summary"] == ["目标联系人已从 HR/培训负责人纠正为老板本人"]
+        assert "围绕老板本人" in stored["core_memory_blocks"]["sales_strategy"]["value"]
 
     reset_database_state()
     reset_settings_cache()
@@ -601,17 +557,22 @@ def test_v3_sandbox_demo_seed_database_store_survives_app_restart(tmp_path, monk
 
     assert response.status_code == 200
     stored = response.json()["session"]
-    assert stored["memory_items"]["mem_seed_target_confirmed"]["status"] == "confirmed"
+    assert "应优先找小企业老板本人" in stored["core_memory_blocks"]["customer_intelligence"]["value"]
     with get_session_factory()() as db:
-        assert db.query(V3SandboxActionEventRecord).filter_by(session_id=seed["id"]).count() == 5
-        transitions = db.query(V3SandboxMemoryTransitionEventRecord).filter_by(session_id=seed["id"]).all()
-        assert {item.transition_type for item in transitions} >= {"write_memory", "update_memory_status"}
+        transitions = (
+            db.query(V3SandboxCoreMemoryBlockTransitionEventRecord)
+            .filter_by(session_id=seed["id"])
+            .all()
+        )
+        assert len(transitions) >= 4
+        assert {item.tool_name for item in transitions} >= {"core_memory_append", "memory_replace"}
+        assert {item.block_label for item in transitions} >= {"product", "customer_intelligence", "sales_strategy"}
 
     reset_database_state()
     reset_settings_cache()
 
 
-def test_v3_sandbox_memory_transitions_api_returns_database_events(tmp_path, monkeypatch) -> None:
+def test_v3_sandbox_core_memory_transitions_api_returns_database_events(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("OPENCLAW_BACKEND_DATABASE_URL", f"sqlite:///{tmp_path / 'test.db'}")
     monkeypatch.setenv("OPENCLAW_BACKEND_V3_SANDBOX_STORE_BACKEND", "database")
     reset_settings_cache()
@@ -621,20 +582,21 @@ def test_v3_sandbox_memory_transitions_api_returns_database_events(tmp_path, mon
 
     with TestClient(create_app()) as client:
         seed = client.post("/v3/sandbox/demo-seeds", json={"scenario": "sales_training_correction"}).json()["session"]
-        response = client.get(f"/v3/sandbox/sessions/{seed['id']}/memory-transitions")
+        response = client.get(f"/v3/sandbox/sessions/{seed['id']}/core-memory-transitions")
 
     assert response.status_code == 200
     payload = response.json()
     assert payload["available"] is True
     assert payload["store"]["backend"] == "database"
-    assert payload["counts"]["transitions"] == len(payload["transitions"])
+    assert payload["counts"]["core_memory_block_transitions"] == len(payload["transitions"])
     assert {item["transition_type"] for item in payload["transitions"]} >= {
-        "write_memory",
-        "update_memory_status",
+        "core_memory_append",
+        "memory_replace",
     }
-    assert {item["memory_id"] for item in payload["transitions"]} >= {
-        "mem_seed_product",
-        "mem_seed_target_confirmed",
+    assert {item["block_label"] for item in payload["transitions"]} >= {
+        "product",
+        "customer_intelligence",
+        "sales_strategy",
     }
     assert "sqlite:///" not in json.dumps(payload)
 
@@ -647,10 +609,10 @@ def test_v3_sandbox_replay_runs_user_turns_into_new_session(tmp_path, monkeypatc
     monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
     reset_settings_cache()
     reset_database_state()
-    outputs = [_product_turn_output(), _correction_turn_output()]
+    turns = [_product_turn_calls(), _correction_turn_calls()]
     monkeypatch.setattr(
         "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
-        _SequenceLlmClient(outputs).complete_with_tools,
+        _SequenceLlmClient(turns).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -678,10 +640,10 @@ def test_v3_sandbox_replay_success_persists_database_store(tmp_path, monkeypatch
     monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
     reset_settings_cache()
     reset_database_state()
-    outputs = [_product_turn_output(), _correction_turn_output()]
+    turns = [_product_turn_calls(), _correction_turn_calls()]
     monkeypatch.setattr(
         "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
-        _SequenceLlmClient(outputs).complete_with_tools,
+        _SequenceLlmClient(turns).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -783,30 +745,6 @@ def test_v3_sandbox_api_returns_unavailable_when_llm_missing(tmp_path, monkeypat
     reset_settings_cache()
 
 
-def test_v3_sandbox_api_returns_structured_error_for_bad_llm_json(tmp_path, monkeypatch) -> None:
-    monkeypatch.setenv("OPENCLAW_BACKEND_DATABASE_URL", f"sqlite:///{tmp_path / 'test.db'}")
-    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
-    reset_settings_cache()
-    reset_database_state()
-    monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
-        lambda *args, **kwargs: TokenHubCompletion(content="not json", usage={}),
-    )
-
-    from backend.api.main import create_app
-
-    with TestClient(create_app()) as client:
-        assert client.post("/v3/sandbox/sessions", json={"session_id": "v3s_bad_json"}).status_code == 201
-        response = client.post("/v3/sandbox/sessions/v3s_bad_json/turns", json={"content": "你好"})
-        trace = client.get("/v3/sandbox/sessions/v3s_bad_json/trace").json()["trace"]
-
-    assert response.status_code == 422
-    assert response.json()["error"]["code"] == "llm_structured_output_invalid"
-    assert trace[0]["error"]["code"] == "llm_structured_output_invalid"
-    reset_database_state()
-    reset_settings_cache()
-
-
 def test_v3_sandbox_api_debug_trace_is_opt_in_and_persists_in_database_store(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("OPENCLAW_BACKEND_DATABASE_URL", f"sqlite:///{tmp_path / 'test.db'}")
     monkeypatch.setenv("OPENCLAW_BACKEND_V3_SANDBOX_STORE_BACKEND", "database")
@@ -815,7 +753,7 @@ def test_v3_sandbox_api_debug_trace_is_opt_in_and_persists_in_database_store(tmp
     reset_database_state()
     monkeypatch.setattr(
         "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
-        _SequenceLlmClient([_product_turn_output(), _hypothesis_turn_output()]).complete_with_tools,
+        _SequenceLlmClient([_product_turn_calls(), _hypothesis_turn_calls()]).complete_with_tools,
     )
 
     from backend.api.main import create_app
@@ -854,75 +792,152 @@ def test_v3_sandbox_api_debug_trace_is_opt_in_and_persists_in_database_store(tmp
     reset_settings_cache()
 
 
-def test_v3_sandbox_api_failed_debug_trace_records_parse_error(tmp_path, monkeypatch) -> None:
-    monkeypatch.setenv("OPENCLAW_BACKEND_DATABASE_URL", f"sqlite:///{tmp_path / 'test.db'}")
+def test_memory_replace_unique_or_raise_lists_per_line_numbers(backend_env, monkeypatch) -> None:
+    """When ``old_content`` matches multiple positions in the block, the tool error must list the
+    1-indexed line numbers of all matches so the LLM can disambiguate by expanding context."""
+    from backend.api.config import get_settings
+
     monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
     reset_settings_cache()
-    reset_database_state()
-    monkeypatch.setattr(
-        "backend.runtime.llm_client.TokenHubClient.complete_with_tools",
-        lambda *args, **kwargs: TokenHubCompletion(content="not json", usage={}),
+
+    blocks = default_core_memory_blocks()
+    blocks["product"] = blocks["product"].model_copy(
+        update={
+            "value": "产品要点 A\n产品要点 X\n产品要点 B\n产品要点 X\n产品要点 C",
+        }
+    )
+    session = V3SandboxSession(id="v3s_memreplace_dup", core_memory_blocks=blocks)
+
+    duplicate_replace = _tool_call(
+        "call_replace_dup",
+        "memory_replace",
+        {"label": "product", "old_content": "产品要点 X", "new_content": "产品要点 X(更新)"},
+    )
+    send_after = _tool_call(
+        "call_send_after",
+        "send_message",
+        {"message": "尝试更新失败，已上报。"},
+    )
+    client = _SequenceLlmClient([[duplicate_replace, send_after]])
+
+    result = run_v3_sandbox_turn(
+        settings=get_settings(),
+        session=session,
+        user_message=V3SandboxMessage(id="msg_user_1", role="user", content="把产品要点 X 全部更新一下。"),
+        client=client,
     )
 
-    from backend.api.main import create_app
+    replace_events = [
+        event
+        for event in result.trace_event.tool_events
+        if event.tool_name == "memory_replace"
+    ]
+    assert len(replace_events) == 1
+    failed = replace_events[0]
+    assert failed.status == "error"
+    error_message = failed.error["message"]
+    assert "v3_memory_replace_old_content_not_unique" in error_message
+    assert "matches at line(s) [2, 4]" in error_message
+    assert "expand 'old_content' with more surrounding context" in error_message
 
-    with TestClient(create_app()) as client:
-        assert client.post("/v3/sandbox/sessions", json={"session_id": "v3s_bad_json_debug"}).status_code == 201
-        response = client.post(
-            "/v3/sandbox/sessions/v3s_bad_json_debug/turns",
-            json={
-                "content": "你好",
-                "debug_trace": {
-                    "verbose": True,
-                    "include_raw_llm_output": True,
-                    "include_repair_attempts": True,
-                    "include_node_io": True,
-                },
+    assert result.session.core_memory_blocks["product"].value == blocks["product"].value
+
+
+def test_compose_context_renders_block_description_in_system_prompt() -> None:
+    """The system prompt must surface each block's description (Letta-style block header), not a
+    raw JSON dump, so the model can reason about what to write into which block."""
+    blocks = default_core_memory_blocks()
+    session = V3SandboxSession(id="v3s_prompt_desc", core_memory_blocks=blocks)
+    user_message = V3SandboxMessage(id="msg_user_1", role="user", content="把产品理解告诉我一下。")
+
+    messages = _build_tool_loop_messages(session, user_message)
+
+    assert messages[0]["role"] == "system"
+    system_prompt = messages[0]["content"]
+    assert "[persona] description: Sales Agent 自身的工作风格、语气与边界" in system_prompt
+    assert "[product] description:" in system_prompt
+    assert "Agent 对所销售产品的理解" in system_prompt
+    assert "[customer_intelligence] description:" in system_prompt
+    assert "正在跟进的潜在客户/线索的草稿信息" in system_prompt
+    assert "limit: 10000 chars" in system_prompt
+    assert "limit: 20000 chars" in system_prompt
+    assert "used: 0 chars" in system_prompt
+
+
+def _tool_call(call_id: str, name: str, arguments: dict[str, object]) -> TokenHubToolCall:
+    return TokenHubToolCall(
+        id=call_id,
+        type="function",
+        function=TokenHubToolCallFunction(name=name, arguments=json.dumps(arguments, ensure_ascii=False)),
+    )
+
+
+def _product_turn_calls() -> list[TokenHubToolCall]:
+    return [
+        _tool_call(
+            "call_product_append",
+            "core_memory_append",
+            {"label": "product", "content": "产品是中小企业财税 SaaS"},
+        ),
+        _tool_call(
+            "call_product_send",
+            "send_message",
+            {"message": "我已记录产品理解：你们做中小企业财税 SaaS。"},
+        ),
+    ]
+
+
+def _hypothesis_turn_calls() -> list[TokenHubToolCall]:
+    return [
+        _tool_call(
+            "call_hypothesis_append",
+            "core_memory_append",
+            {"label": "customer_intelligence", "content": "可能优先找中小企业老板和财务负责人"},
+        ),
+        _tool_call(
+            "call_hypothesis_send",
+            "send_message",
+            {"message": "当前假设是先找中小企业老板和财务负责人验证需求。"},
+        ),
+    ]
+
+
+def _correction_turn_calls() -> list[TokenHubToolCall]:
+    return [
+        _tool_call(
+            "call_correction_append",
+            "core_memory_append",
+            {
+                "label": "customer_intelligence",
+                "content": "目标联系人是老板本人",
             },
-        )
-        trace = client.get("/v3/sandbox/sessions/v3s_bad_json_debug/trace").json()["trace"]
+        ),
+        _tool_call(
+            "call_correction_send",
+            "send_message",
+            {"message": "收到，目标联系人改为老板本人，旧的假设已废弃。"},
+        ),
+    ]
 
-    assert response.status_code == 422
-    debug_trace = trace[0]["debug_trace"]
-    assert debug_trace is not None
-    assert any(event["node"] == "call_agent_with_tools" and event["status"] == "error" for event in debug_trace["events"])
-    call_llm = next(event for event in debug_trace["events"] if event["node"] == "call_agent_with_tools")
-    assert call_llm["output"]["tool_call_count"] == 0
 
-    reset_database_state()
-    reset_settings_cache()
+def _followup_turn_calls() -> list[TokenHubToolCall]:
+    return [
+        _tool_call(
+            "call_followup_send",
+            "send_message",
+            {"message": "下一步建议只围绕老板本人设计首轮访谈，先验证采购触发点和预算判断。"},
+        ),
+    ]
 
 
 class _SequenceLlmClient:
-    def __init__(self, outputs: list[dict[str, object]]) -> None:
-        self.outputs = list(outputs)
-
-    def complete(self, messages) -> TokenHubCompletion:
-        if not self.outputs:
-            raise TokenHubClientError("no_more_mock_outputs")
-        return TokenHubCompletion(
-            content=json.dumps(self.outputs.pop(0), ensure_ascii=False),
-            usage={"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
-        )
+    def __init__(self, turn_calls: list[list[TokenHubToolCall]]) -> None:
+        self.turn_calls = list(turn_calls)
 
     def complete_with_tools(self, messages, *, tools, tool_choice="auto", model_policy=None) -> TokenHubCompletion:
-        if not self.outputs:
+        if not self.turn_calls:
             raise TokenHubClientError("no_more_mock_outputs")
-        output = self.outputs.pop(0)
-        if "tool_calls" in output:
-            tool_calls = [
-                TokenHubToolCall(
-                    id=item["id"],
-                    type="function",
-                    function=TokenHubToolCallFunction(
-                        name=item["name"],
-                        arguments=json.dumps(item.get("arguments", {}), ensure_ascii=False),
-                    ),
-                )
-                for item in output["tool_calls"]  # type: ignore[index]
-            ]
-        else:
-            tool_calls = _legacy_output_to_tool_calls(output)
+        tool_calls = self.turn_calls.pop(0)
         return TokenHubCompletion(
             content="",
             usage={"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
@@ -947,35 +962,26 @@ class _FailSecondTurnClient:
     def __init__(self) -> None:
         self.calls = 0
 
-    def complete(self, messages) -> TokenHubCompletion:
-        self.calls += 1
-        if self.calls == 1:
-            return TokenHubCompletion(
-                content=json.dumps(_product_turn_output(), ensure_ascii=False),
-                usage={"total_tokens": 30},
-            )
-        raise TokenHubClientError("test_replay_failure")
-
     def complete_with_tools(self, messages, *, tools, tool_choice="auto", model_policy=None) -> TokenHubCompletion:
         self.calls += 1
         if self.calls == 1:
-            tool_calls = _legacy_output_to_tool_calls(_product_turn_output())
-            return TokenHubCompletion(content="", usage={"total_tokens": 30}, tool_calls=tool_calls, finish_reason="tool_calls")
+            tool_calls = _product_turn_calls()
+            return TokenHubCompletion(
+                content="",
+                usage={"total_tokens": 30},
+                tool_calls=tool_calls,
+                finish_reason="tool_calls",
+            )
         raise TokenHubClientError("test_replay_failure")
 
 
 class _RepairLlmClient:
+    """First call returns a doomed memory_replace (block is empty so nothing matches); second call
+    succeeds with a normal product append + send_message. Verifies the runtime captures the failed
+    tool_event and lets the loop retry until send_message terminates."""
+
     def __init__(self) -> None:
         self.calls = 0
-
-    def complete(self, messages) -> TokenHubCompletion:
-        self.calls += 1
-        if self.calls == 1:
-            return TokenHubCompletion(content="not json", usage={"total_tokens": 4})
-        return TokenHubCompletion(
-            content=json.dumps(_product_turn_output(), ensure_ascii=False),
-            usage={"prompt_tokens": 11, "completion_tokens": 12, "total_tokens": 23},
-        )
 
     def complete_with_tools(self, messages, *, tools, tool_choice="auto", model_policy=None) -> TokenHubCompletion:
         self.calls += 1
@@ -984,176 +990,18 @@ class _RepairLlmClient:
                 content="",
                 usage={"total_tokens": 4},
                 tool_calls=[
-                    TokenHubToolCall(
-                        id="call_bad_replace",
-                        type="function",
-                        function=TokenHubToolCallFunction(
-                            name="memory_replace",
-                            arguments=json.dumps(
-                                {"label": "product", "old_content": "missing", "new_content": "产品是中小企业财税 SaaS"},
-                                ensure_ascii=False,
-                            ),
-                        ),
+                    _tool_call(
+                        "call_bad_replace",
+                        "memory_replace",
+                        {"label": "product", "old_content": "missing", "new_content": "产品是中小企业财税 SaaS"},
                     )
                 ],
                 finish_reason="tool_calls",
             )
-        tool_calls = _legacy_output_to_tool_calls(_product_turn_output())
+        tool_calls = _product_turn_calls()
         return TokenHubCompletion(
             content="",
             usage={"prompt_tokens": 11, "completion_tokens": 12, "total_tokens": 23},
             tool_calls=tool_calls,
             finish_reason="tool_calls",
         )
-
-
-def _legacy_output_to_tool_calls(output: dict[str, object]) -> list[TokenHubToolCall]:
-    calls: list[TokenHubToolCall] = []
-    for index, action in enumerate(output.get("actions", [])):  # type: ignore[union-attr]
-        if not isinstance(action, dict):
-            continue
-        action_type = action.get("type")
-        payload = action.get("payload")
-        if not isinstance(payload, dict):
-            continue
-        nested = payload.get(action_type)
-        if isinstance(nested, dict):
-            payload = nested
-        if action_type == "write_memory":
-            content = str(payload.get("content", ""))
-            tags = payload.get("tags") if isinstance(payload.get("tags"), list) else []
-            label = "customer_intelligence" if "customer_intelligence" in tags else "product"
-            calls.append(_tool_call(f"call_{index}", "core_memory_append", {"label": label, "content": content}))
-        elif action_type == "update_working_state":
-            text = "；".join(str(item) for values in payload.values() if isinstance(values, list) for item in values)
-            if text:
-                calls.append(_tool_call(f"call_{index}", "core_memory_append", {"label": "sales_strategy", "content": text}))
-        elif action_type == "update_customer_intelligence":
-            text = json.dumps(payload, ensure_ascii=False)
-            calls.append(_tool_call(f"call_{index}", "core_memory_append", {"label": "customer_intelligence", "content": text}))
-    calls.append(_tool_call("call_send_message", "send_message", {"message": str(output.get("assistant_message", "OK"))}))
-    return calls
-
-
-def _tool_call(call_id: str, name: str, arguments: dict[str, object]) -> TokenHubToolCall:
-    return TokenHubToolCall(
-        id=call_id,
-        type="function",
-        function=TokenHubToolCallFunction(name=name, arguments=json.dumps(arguments, ensure_ascii=False)),
-    )
-
-
-def _product_turn_output() -> dict[str, object]:
-    return {
-        "assistant_message": "我已记录产品理解：你们做中小企业财税 SaaS。",
-        "actions": [
-            {
-                "type": "write_memory",
-                "payload": {
-                    "id": "mem_product",
-                    "status": "observed",
-                    "content": "产品是中小企业财税 SaaS",
-                    "source": "user",
-                    "evidence": ["我们做中小企业财税 SaaS。"],
-                    "confidence": 0.95,
-                    "tags": ["product"],
-                },
-            },
-            {
-                "type": "update_working_state",
-                "payload": {"product_understanding": ["产品是中小企业财税 SaaS"]},
-            },
-        ],
-        "reasoning_summary": "用户给出产品信息。",
-        "confidence": 0.95,
-    }
-
-
-def _hypothesis_turn_output() -> dict[str, object]:
-    return {
-        "assistant_message": "当前假设是先找中小企业老板和财务负责人验证需求。",
-        "actions": [
-            {
-                "type": "write_memory",
-                "payload": {
-                    "id": "mem_target_hypothesis",
-                    "status": "hypothesis",
-                    "content": "可能优先找中小企业老板和财务负责人",
-                    "source": "agent",
-                    "confidence": 0.62,
-                    "tags": ["customer_intelligence"],
-                },
-            },
-            {
-                "type": "update_working_state",
-                "payload": {"current_hypotheses": ["可能优先找中小企业老板和财务负责人"]},
-            },
-            {
-                "type": "update_customer_intelligence",
-                "payload": {
-                    "target_industries": ["中小企业服务"],
-                    "target_roles": ["老板", "财务负责人"],
-                    "candidates": [
-                        {
-                            "id": "cand_sme_owner",
-                            "name": "华东中小企业老板",
-                            "segment": "中小企业",
-                            "target_roles": ["老板", "财务负责人"],
-                            "ranking_reason": "直接感知财税 SaaS 的经营价值",
-                            "score": 70,
-                            "validation_signals": ["是否有财税合规压力"],
-                        }
-                    ],
-                    "ranking_reasons": ["老板和财务负责人可能共同参与财税软件决策"],
-                    "scoring_draft": {"cand_sme_owner": 70},
-                    "validation_signals": ["是否有财税合规压力"],
-                },
-            },
-        ],
-        "reasoning_summary": "形成客户情报假设。",
-        "confidence": 0.7,
-    }
-
-
-def _correction_turn_output() -> dict[str, object]:
-    return {
-        "assistant_message": "收到，目标联系人改为老板本人，旧的财务负责人假设已废弃。",
-        "actions": [
-            {
-                "type": "write_memory",
-                "payload": {
-                    "id": "mem_target_corrected",
-                    "status": "confirmed",
-                    "content": "目标联系人是老板本人，不是财务负责人",
-                    "source": "user",
-                    "evidence": ["纠正一下，不是财务负责人，是老板本人。"],
-                    "confidence": 0.98,
-                    "supersedes": ["mem_target_hypothesis"],
-                    "tags": ["correction", "customer_intelligence"],
-                },
-            },
-            {
-                "type": "update_working_state",
-                "payload": {"correction_summary": ["目标联系人已从财务负责人纠正为老板本人"]},
-            },
-            {
-                "type": "update_customer_intelligence",
-                "payload": {
-                    "target_roles": ["老板本人"],
-                    "ranking_reasons": ["用户纠正后优先围绕老板本人验证"],
-                    "validation_signals": ["老板是否直接负责财税 SaaS 采购"],
-                },
-            },
-        ],
-        "reasoning_summary": "用户纠正目标联系人。",
-        "confidence": 0.98,
-    }
-
-
-def _followup_turn_output() -> dict[str, object]:
-    return {
-        "assistant_message": "下一步建议只围绕老板本人设计首轮访谈，先验证采购触发点和预算判断。",
-        "actions": [{"type": "no_op", "payload": {}}],
-        "reasoning_summary": "根据纠错后的 active memory 给出建议。",
-        "confidence": 0.86,
-    }

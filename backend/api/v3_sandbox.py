@@ -26,13 +26,7 @@ from backend.runtime.tokenhub_native_fc import (
     V3_TOKENHUB_NATIVE_FC_MODEL_POLICIES,
 )
 from backend.runtime.v3_sandbox.schemas import (
-    AgentAction,
-    CoreMemoryBlock,
     CoreMemoryToolEvent,
-    CustomerCandidateDraft,
-    CustomerIntelligenceDraft,
-    MemoryItem,
-    SandboxWorkingState,
     V3SandboxMessage,
     V3SandboxSession,
     V3SandboxTraceEvent,
@@ -229,7 +223,6 @@ def _runtime_config_response(request: Request) -> dict[str, Any]:
             "mode": "native_tool_loop",
             "core_memory_blocks": ["persona", "human", "product", "sales_strategy", "customer_intelligence"],
             "tools": ["core_memory_append", "memory_insert", "memory_replace", "send_message"],
-            "legacy_json_action_loop": "reserved_not_default",
         },
     }
 
@@ -356,37 +349,6 @@ def get_session_trace(session_id: str, request: Request):
     return {"session_id": session.id, "trace": session.trace}
 
 
-@router.get("/sessions/{session_id}/memory-transitions")
-def get_session_memory_transitions(session_id: str, request: Request):
-    store = _store(request)
-    try:
-        store.get_session(session_id)
-    except V3SandboxSessionNotFound:
-        return _error_response(
-            status_code=404,
-            code="not_found",
-            message="v3 sandbox session not found",
-            details={"session_id": session_id},
-        )
-    if not isinstance(store, DatabaseV3SandboxStore):
-        return {
-            "session_id": session_id,
-            "available": False,
-            "reason": "database_store_required",
-            "store": _store_status(store),
-            "counts": {},
-            "transitions": [],
-        }
-    return {
-        "session_id": session_id,
-        "available": True,
-        "reason": None,
-        "store": _store_status(store),
-        "counts": store.inspection_counts(session_id),
-        "transitions": store.memory_transitions(session_id),
-    }
-
-
 @router.get("/sessions/{session_id}/core-memory-transitions")
 def get_session_core_memory_transitions(session_id: str, request: Request):
     store = _store(request)
@@ -459,7 +421,6 @@ def create_turn(session_id: str, request: Request, payload: Any = Body(...)):
     return {
         "session": result.session,
         "assistant_message": result.assistant_message,
-        "actions": result.actions,
         "trace_event": result.trace_event,
     }
 
@@ -525,34 +486,6 @@ def replay_session(session_id: str, request: Request):
 
 def _sales_training_correction_seed() -> V3SandboxSession:
     session_id = f"v3s_seed_{uuid4().hex[:12]}"
-    mem_product = MemoryItem(
-        id="mem_seed_product",
-        status="observed",
-        content="产品是面向苏州小企业老板的线下销售管理培训",
-        source="user",
-        evidence=["我们做面向苏州小企业老板的销售管理培训，主要是线下课。"],
-        confidence=0.96,
-        tags=["product", "observed"],
-    )
-    mem_target_old = MemoryItem(
-        id="mem_seed_target_hypothesis",
-        status="superseded",
-        content="可能优先找 HR 或培训负责人验证培训需求",
-        source="agent",
-        confidence=0.58,
-        superseded_by="mem_seed_target_confirmed",
-        tags=["customer_intelligence", "hypothesis"],
-    )
-    mem_target_new = MemoryItem(
-        id="mem_seed_target_confirmed",
-        status="confirmed",
-        content="第一批客户应优先找小企业老板本人，而不是 HR 或培训负责人",
-        source="user",
-        evidence=["纠正一下，不是找 HR 或培训负责人，是找老板本人。"],
-        confidence=0.98,
-        supersedes=["mem_seed_target_hypothesis"],
-        tags=["customer_intelligence", "correction"],
-    )
     user_one = V3SandboxMessage(
         id="msg_user_seed_1",
         role="user",
@@ -571,7 +504,7 @@ def _sales_training_correction_seed() -> V3SandboxSession:
     assistant_two = V3SandboxMessage(
         id="msg_assistant_seed_2",
         role="assistant",
-        content="已将旧目标联系人假设标为 superseded，并确认老板本人是优先联系人。",
+        content="已将客户画像从 HR/培训负责人纠正为老板本人，并补充首轮访谈策略。",
     )
     core_blocks = default_core_memory_blocks()
     core_product_before = core_blocks["product"].value
@@ -581,7 +514,9 @@ def _sales_training_correction_seed() -> V3SandboxSession:
     core_ci_after_two = "确认：第一批客户应优先找小企业老板本人，而不是 HR 或培训负责人。"
     core_strategy_before = core_blocks["sales_strategy"].value
     core_strategy_after = "先围绕老板本人设计首轮访谈，验证业绩增长、团队管理和获客转化痛点。"
-    core_blocks["product"] = core_blocks["product"].model_copy(update={"value": core_product_after, "updated_at": utc_now()})
+    core_blocks["product"] = core_blocks["product"].model_copy(
+        update={"value": core_product_after, "updated_at": utc_now()}
+    )
     core_blocks["customer_intelligence"] = core_blocks["customer_intelligence"].model_copy(
         update={"value": core_ci_after_two, "updated_at": utc_now()}
     )
@@ -592,36 +527,6 @@ def _sales_training_correction_seed() -> V3SandboxSession:
         id=session_id,
         title="Seed: sales training correction",
         core_memory_blocks=core_blocks,
-        memory_items={
-            mem_product.id: mem_product,
-            mem_target_old.id: mem_target_old,
-            mem_target_new.id: mem_target_new,
-        },
-        working_state=SandboxWorkingState(
-            product_understanding=["面向苏州小企业老板的线下销售管理培训"],
-            sales_strategy=["先围绕老板本人设计首轮访谈"],
-            open_questions=["老板最关心业绩增长、团队管理还是获客转化？"],
-            current_hypotheses=["老板本人更接近采购和销售管理决策"],
-            correction_summary=["目标联系人已从 HR/培训负责人纠正为老板本人"],
-        ),
-        customer_intelligence=CustomerIntelligenceDraft(
-            target_industries=["苏州本地小企业", "线下培训可触达行业"],
-            target_roles=["老板本人"],
-            candidates=[
-                CustomerCandidateDraft(
-                    id="cand_seed_owner",
-                    name="苏州小企业老板",
-                    segment="本地小企业",
-                    target_roles=["老板本人"],
-                    ranking_reason="用户明确纠正第一批客户应找老板本人，老板直接负责采购和销售管理决策。",
-                    score=82,
-                    validation_signals=["是否亲自管理销售团队", "是否愿意为线下培训付费"],
-                )
-            ],
-            ranking_reasons=["老板本人拥有采购权，也直接感知销售管理痛点。"],
-            scoring_draft={"cand_seed_owner": 82},
-            validation_signals=["销售团队规模", "近期业绩压力", "老板是否亲自管销售"],
-        ),
         messages=[user_one, assistant_one, user_two, assistant_two],
         trace=[
             V3SandboxTraceEvent(
@@ -630,13 +535,6 @@ def _sales_training_correction_seed() -> V3SandboxSession:
                 turn_id="turn_seed_1",
                 event_type="v3_sandbox_demo_seed",
                 runtime_metadata={"mode": "deterministic_seed", "scenario": "sales_training_correction"},
-                actions=[
-                    AgentAction(type="write_memory", payload=mem_product.model_dump(mode="json")),
-                    AgentAction(
-                        type="write_memory",
-                        payload=mem_target_old.model_dump(mode="json"),
-                    ),
-                ],
                 tool_events=[
                     CoreMemoryToolEvent(
                         id="tool_seed_1_product",
@@ -677,24 +575,6 @@ def _sales_training_correction_seed() -> V3SandboxSession:
                 turn_id="turn_seed_2",
                 event_type="v3_sandbox_demo_seed",
                 runtime_metadata={"mode": "deterministic_seed", "scenario": "sales_training_correction"},
-                actions=[
-                    AgentAction(
-                        type="write_memory",
-                        payload=mem_target_new.model_dump(mode="json"),
-                    ),
-                    AgentAction(
-                        type="update_memory_status",
-                        payload={
-                            "memory_id": mem_target_old.id,
-                            "status": "superseded",
-                            "superseded_by": mem_target_new.id,
-                        },
-                    ),
-                    AgentAction(
-                        type="update_customer_intelligence",
-                        payload={"target_roles": ["老板本人"], "scoring_draft": {"cand_seed_owner": 82}},
-                    ),
-                ],
                 tool_events=[
                     CoreMemoryToolEvent(
                         id="tool_seed_2_customer_intelligence",

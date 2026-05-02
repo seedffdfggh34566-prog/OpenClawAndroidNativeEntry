@@ -9,15 +9,12 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from backend.api.database import get_session_factory
 from backend.api.models import (
-    V3SandboxActionEventRecord,
     V3SandboxCoreMemoryBlockTransitionEventRecord,
-    V3SandboxMemoryItemRecord,
-    V3SandboxMemoryTransitionEventRecord,
     V3SandboxMessageRecord,
     V3SandboxSessionRecord,
     V3SandboxTraceEventRecord,
 )
-from backend.runtime.v3_sandbox.schemas import AgentAction, MemoryItem, V3SandboxSession, utc_now
+from backend.runtime.v3_sandbox.schemas import V3SandboxSession, utc_now
 
 
 class V3SandboxSessionNotFound(KeyError):
@@ -134,38 +131,6 @@ class DatabaseV3SandboxStore:
             records = db.scalars(select(V3SandboxSessionRecord).order_by(V3SandboxSessionRecord.updated_at)).all()
             return [V3SandboxSession.model_validate(record.payload_json) for record in records]
 
-    def memory_transitions(self, session_id: str) -> list[dict[str, Any]]:
-        with self._session_factory() as db:
-            if db.get(V3SandboxSessionRecord, session_id) is None:
-                raise V3SandboxSessionNotFound(session_id)
-            records = (
-                db.scalars(
-                    select(V3SandboxMemoryTransitionEventRecord)
-                    .where(V3SandboxMemoryTransitionEventRecord.session_id == session_id)
-                    .order_by(
-                        V3SandboxMemoryTransitionEventRecord.created_at,
-                        V3SandboxMemoryTransitionEventRecord.transition_event_id,
-                    )
-                )
-                .all()
-            )
-            return [
-                {
-                    "id": item.transition_event_id,
-                    "transition_type": item.transition_type,
-                    "memory_id": item.memory_id,
-                    "before_status": item.before_status,
-                    "after_status": item.after_status,
-                    "superseded_by": item.superseded_by,
-                    "trace_event_id": item.trace_event_id,
-                    "turn_id": item.turn_id,
-                    "action_index": item.action_index,
-                    "payload": item.payload_json,
-                    "created_at": item.created_at,
-                }
-                for item in records
-            ]
-
     def inspection_counts(self, session_id: str) -> dict[str, int]:
         with self._session_factory() as db:
             if db.get(V3SandboxSessionRecord, session_id) is None:
@@ -173,9 +138,6 @@ class DatabaseV3SandboxStore:
             return {
                 "messages": db.query(V3SandboxMessageRecord).filter_by(session_id=session_id).count(),
                 "traces": db.query(V3SandboxTraceEventRecord).filter_by(session_id=session_id).count(),
-                "actions": db.query(V3SandboxActionEventRecord).filter_by(session_id=session_id).count(),
-                "memory_items": db.query(V3SandboxMemoryItemRecord).filter_by(session_id=session_id).count(),
-                "transitions": db.query(V3SandboxMemoryTransitionEventRecord).filter_by(session_id=session_id).count(),
                 "core_memory_block_transitions": db.query(
                     V3SandboxCoreMemoryBlockTransitionEventRecord
                 ).filter_by(session_id=session_id).count(),
@@ -217,11 +179,8 @@ class DatabaseV3SandboxStore:
     def _replace_normalized_rows(self, db: Session, session: V3SandboxSession) -> None:
         for table in (
             V3SandboxCoreMemoryBlockTransitionEventRecord,
-            V3SandboxMemoryTransitionEventRecord,
-            V3SandboxActionEventRecord,
             V3SandboxTraceEventRecord,
             V3SandboxMessageRecord,
-            V3SandboxMemoryItemRecord,
         ):
             db.execute(delete(table).where(table.session_id == session.id))
 
@@ -251,150 +210,9 @@ class DatabaseV3SandboxStore:
                     created_at=trace_event.created_at,
                 )
             )
-            for index, action in enumerate(trace_event.actions):
-                db.add(
-                    V3SandboxActionEventRecord(
-                        session_id=session.id,
-                        trace_event_id=trace_event.id,
-                        action_index=index,
-                        turn_id=trace_event.turn_id,
-                        action_type=action.type,
-                        payload_json=action.model_dump(mode="json"),
-                        created_at=trace_event.created_at,
-                    )
-                )
-
-        for memory in session.memory_items.values():
-            db.add(
-                V3SandboxMemoryItemRecord(
-                    session_id=session.id,
-                    memory_id=memory.id,
-                    status=memory.status,
-                    source=memory.source,
-                    content=memory.content,
-                    confidence=memory.confidence,
-                    superseded_by=memory.superseded_by,
-                    tags_json=memory.tags,
-                    evidence_json=memory.evidence,
-                    payload_json=memory.model_dump(mode="json"),
-                    created_at=memory.created_at,
-                    updated_at=memory.updated_at,
-                )
-            )
-
-        for transition in _memory_transition_events(session):
-            db.add(V3SandboxMemoryTransitionEventRecord(**transition))
 
         for transition in _core_memory_block_transition_events(session):
             db.add(V3SandboxCoreMemoryBlockTransitionEventRecord(**transition))
-
-
-def _memory_transition_events(session: V3SandboxSession) -> list[dict[str, Any]]:
-    events: list[dict[str, Any]] = []
-    memory_status: dict[str, str] = {}
-    for trace_event in session.trace:
-        for action_index, action in enumerate(trace_event.actions):
-            payload = _action_payload(action)
-            if action.type == "write_memory":
-                try:
-                    memory = MemoryItem.model_validate(payload)
-                except Exception:
-                    continue
-                before_status = memory_status.get(memory.id)
-                events.append(
-                    _transition_event(
-                        session_id=session.id,
-                        trace_event_id=trace_event.id,
-                        turn_id=trace_event.turn_id,
-                        action_index=action_index,
-                        transition_type="write_memory",
-                        memory_id=memory.id,
-                        before_status=before_status,
-                        after_status=memory.status,
-                        superseded_by=memory.superseded_by,
-                        payload=payload,
-                        created_at=trace_event.created_at,
-                    )
-                )
-                memory_status[memory.id] = memory.status
-                for old_id in memory.supersedes:
-                    before_old_status = memory_status.get(old_id)
-                    events.append(
-                        _transition_event(
-                            session_id=session.id,
-                            trace_event_id=trace_event.id,
-                            turn_id=trace_event.turn_id,
-                            action_index=action_index,
-                            transition_type="supersede_memory",
-                            memory_id=old_id,
-                            before_status=before_old_status,
-                            after_status="superseded",
-                            superseded_by=memory.id,
-                            payload={"superseded_by": memory.id, "source_memory_id": memory.id},
-                            created_at=trace_event.created_at,
-                        )
-                    )
-                    memory_status[old_id] = "superseded"
-            elif action.type == "update_memory_status":
-                memory_id = payload.get("memory_id")
-                status = payload.get("status")
-                if not isinstance(memory_id, str) or not isinstance(status, str):
-                    continue
-                events.append(
-                    _transition_event(
-                        session_id=session.id,
-                        trace_event_id=trace_event.id,
-                        turn_id=trace_event.turn_id,
-                        action_index=action_index,
-                        transition_type="update_memory_status",
-                        memory_id=memory_id,
-                        before_status=memory_status.get(memory_id),
-                        after_status=status,
-                        superseded_by=payload.get("superseded_by") if isinstance(payload.get("superseded_by"), str) else None,
-                        payload=payload,
-                        created_at=trace_event.created_at,
-                    )
-                )
-                memory_status[memory_id] = status
-    return events
-
-
-def _transition_event(
-    *,
-    session_id: str,
-    trace_event_id: str,
-    turn_id: str,
-    action_index: int,
-    transition_type: str,
-    memory_id: str,
-    before_status: str | None,
-    after_status: str | None,
-    superseded_by: str | None,
-    payload: dict[str, Any],
-    created_at,
-) -> dict[str, Any]:
-    transition_event_id = f"{trace_event_id}:{action_index}:{transition_type}:{memory_id}"
-    return {
-        "session_id": session_id,
-        "transition_event_id": transition_event_id,
-        "trace_event_id": trace_event_id,
-        "turn_id": turn_id,
-        "action_index": action_index,
-        "transition_type": transition_type,
-        "memory_id": memory_id,
-        "before_status": before_status,
-        "after_status": after_status,
-        "superseded_by": superseded_by,
-        "payload_json": payload,
-        "created_at": created_at or utc_now(),
-    }
-
-
-def _action_payload(action: AgentAction) -> dict[str, Any]:
-    nested = action.payload.get(action.type)
-    if isinstance(nested, dict):
-        return nested
-    return action.payload
 
 
 def _core_memory_block_transition_events(session: V3SandboxSession) -> list[dict[str, Any]]:

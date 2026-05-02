@@ -6,14 +6,6 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-MemoryStatus = Literal["observed", "inferred", "hypothesis", "confirmed", "rejected", "superseded"]
-AgentActionType = Literal[
-    "write_memory",
-    "update_memory_status",
-    "update_working_state",
-    "update_customer_intelligence",
-    "no_op",
-]
 CoreMemoryBlockLabel = Literal["persona", "human", "product", "sales_strategy", "customer_intelligence"]
 CoreMemoryToolName = Literal["core_memory_append", "memory_insert", "memory_replace", "send_message"]
 CoreMemoryToolEventStatus = Literal["applied", "error"]
@@ -24,76 +16,17 @@ def utc_now() -> datetime:
 
 
 class V3SandboxModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-
-class MemoryItem(V3SandboxModel):
-    id: str
-    status: MemoryStatus
-    content: str = Field(min_length=1)
-    source: str = Field(default="agent")
-    evidence: list[str] = Field(default_factory=list)
-    confidence: float = Field(default=0.5, ge=0, le=1)
-    supersedes: list[str] = Field(default_factory=list)
-    superseded_by: str | None = None
-    tags: list[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=utc_now)
-    updated_at: datetime = Field(default_factory=utc_now)
-
-    @field_validator("evidence", "supersedes", "tags")
-    @classmethod
-    def _compact_strings(cls, value: list[str]) -> list[str]:
-        seen: set[str] = set()
-        result: list[str] = []
-        for item in value:
-            text = item.strip()
-            if not text or text in seen:
-                continue
-            seen.add(text)
-            result.append(text)
-        return result
-
-
-class SandboxWorkingState(V3SandboxModel):
-    product_understanding: list[str] = Field(default_factory=list)
-    sales_strategy: list[str] = Field(default_factory=list)
-    open_questions: list[str] = Field(default_factory=list)
-    current_hypotheses: list[str] = Field(default_factory=list)
-    correction_summary: list[str] = Field(default_factory=list)
-    updated_at: datetime = Field(default_factory=utc_now)
-
-
-class CustomerCandidateDraft(V3SandboxModel):
-    id: str
-    name: str = Field(min_length=1)
-    segment: str = ""
-    target_roles: list[str] = Field(default_factory=list)
-    ranking_reason: str = ""
-    score: int = Field(default=0, ge=0, le=100)
-    validation_signals: list[str] = Field(default_factory=list)
-
-
-class CustomerIntelligenceDraft(V3SandboxModel):
-    target_industries: list[str] = Field(default_factory=list)
-    target_roles: list[str] = Field(default_factory=list)
-    candidates: list[CustomerCandidateDraft] = Field(default_factory=list)
-    ranking_reasons: list[str] = Field(default_factory=list)
-    scoring_draft: dict[str, int] = Field(default_factory=dict)
-    validation_signals: list[str] = Field(default_factory=list)
-    updated_at: datetime = Field(default_factory=utc_now)
-
-
-class AgentAction(V3SandboxModel):
-    type: AgentActionType
-    payload: dict[str, Any] = Field(default_factory=dict)
+    model_config = ConfigDict(extra="ignore")
 
 
 class CoreMemoryBlock(V3SandboxModel):
     label: CoreMemoryBlockLabel
     description: str
-    limit: int = Field(default=2000, ge=1, le=20000)
+    limit: int = Field(default=2000, ge=1, le=100000)
     value: str = ""
     read_only: bool = False
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    tags: list[str] = Field(default_factory=list)
     updated_at: datetime = Field(default_factory=utc_now)
 
     @field_validator("value")
@@ -111,7 +44,8 @@ def default_core_memory_blocks() -> dict[str, CoreMemoryBlock]:
     return {
         "persona": CoreMemoryBlock(
             label="persona",
-            description="Agent identity, behavior preferences, and standing instructions for this sales-agent session.",
+            description="Sales Agent 自身的工作风格、语气与边界。修改要保守，避免与用户冲突。",
+            limit=2000,
             value=(
                 "You are OpenClaw V3 Product Sales Agent. Maintain concise, editable core memory, "
                 "help the user clarify product positioning and sales strategy, and never claim CRM/outreach actions were executed."
@@ -119,22 +53,32 @@ def default_core_memory_blocks() -> dict[str, CoreMemoryBlock]:
         ),
         "human": CoreMemoryBlock(
             label="human",
-            description="What is known about the user, their preferences, constraints, and corrections in this session.",
+            description="当前对话用户的角色、所属公司、关注点、偏好与已知约束。用户主动纠正后必须更新。",
+            limit=5000,
             value="",
         ),
         "product": CoreMemoryBlock(
             label="product",
-            description="Current understanding of the user's product, market, delivery model, and constraints.",
+            description=(
+                "Agent 对所销售产品的理解：能力、定位、典型用户、限制与常见反对意见。"
+                "基于用户输入和 agent 推断同时维护，写明状态（observed / inferred）。"
+            ),
+            limit=10000,
             value="",
         ),
         "sales_strategy": CoreMemoryBlock(
             label="sales_strategy",
-            description="Current sales strategy, positioning, outreach hypotheses, and open sales questions.",
+            description="针对当前对话和客户画像的销售策略：当前阶段、下一步动作、需要验证的假设。",
+            limit=5000,
             value="",
         ),
         "customer_intelligence": CoreMemoryBlock(
             label="customer_intelligence",
-            description="Draft target customer, buyer role, ranking reason, score, and validation signal memory.",
+            description=(
+                "正在跟进的潜在客户/线索的草稿信息：行业、角色、关键信号、排序理由。"
+                "仅 sandbox 草稿，不代表已写入 CRM 或对外触达。"
+            ),
+            limit=20000,
             value="",
         ),
     }
@@ -177,7 +121,6 @@ class V3SandboxTraceEvent(V3SandboxModel):
     turn_id: str
     event_type: str
     runtime_metadata: dict[str, Any] = Field(default_factory=dict)
-    actions: list[AgentAction] = Field(default_factory=list)
     tool_events: list[CoreMemoryToolEvent] = Field(default_factory=list)
     parsed_output: dict[str, Any] | None = None
     debug_trace: dict[str, Any] | None = None
@@ -189,26 +132,15 @@ class V3SandboxSession(V3SandboxModel):
     id: str
     title: str = "V3 Sandbox Session"
     core_memory_blocks: dict[str, CoreMemoryBlock] = Field(default_factory=default_core_memory_blocks)
-    memory_items: dict[str, MemoryItem] = Field(default_factory=dict)
-    working_state: SandboxWorkingState = Field(default_factory=SandboxWorkingState)
-    customer_intelligence: CustomerIntelligenceDraft = Field(default_factory=CustomerIntelligenceDraft)
     messages: list[V3SandboxMessage] = Field(default_factory=list)
     trace: list[V3SandboxTraceEvent] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 
 
-class V3SandboxTurnOutput(V3SandboxModel):
-    assistant_message: str = Field(min_length=1)
-    actions: list[AgentAction] = Field(default_factory=list)
-    reasoning_summary: str = ""
-    confidence: float = Field(default=0.5, ge=0, le=1)
-
-
 class V3SandboxTurnResult(V3SandboxModel):
     session: V3SandboxSession
     assistant_message: V3SandboxMessage
-    actions: list[AgentAction]
     trace_event: V3SandboxTraceEvent
 
 

@@ -1,6 +1,6 @@
 # 当前活跃任务
 
-更新时间：2026-04-30
+更新时间：2026-05-02
 
 ## 1. 使用说明
 
@@ -18,11 +18,11 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`
+暂无。
 
 ### Current task status
 
-`done`
+无。
 
 ### Next queued task
 
@@ -46,13 +46,19 @@
 
 - `docs/product/prd/ai_sales_assistant_v3_prd.md`
 - `docs/adr/ADR-009-v3-memory-native-sales-agent-direction.md`
+- `docs/adr/ADR-010-letta-as-reference-architecture.md`
 - `docs/architecture/v3/memory-native-sales-agent.md`
+- `docs/architecture/v3/letta-comparison.md`
 - `docs/architecture/v3/web-dual-entry-prototype.md`
 
 ---
 
 ## 4. Recently completed
 
+- `docs/delivery/tasks/task_2026_05_02_v3_block_schema_and_legacy_cleanup.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_02_v3_block_schema_and_legacy_cleanup.md`（done）
+- `docs/delivery/tasks/task_2026_05_02_v3_letta_reference_study.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_02_v3_letta_reference_study.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`（done）
 - `docs/delivery/handoffs/handoff_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_v3_tokenhub_native_tool_calling_adapter_poc.md`（done）

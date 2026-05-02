@@ -6,11 +6,8 @@ test("lab creates a session and renders v3 sandbox state", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Sales Agent Lab" })).toBeVisible();
   await expect(page.getByText("Backend online")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Core Memory Blocks" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Memory", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Working State" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Customer Intelligence" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Trace / Actions" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Memory Transitions", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Core Memory Transitions", exact: true })).toBeVisible();
   await expect(page.getByTestId("store-backend")).not.toHaveText("unknown");
 
   await page.getByRole("button", { name: "Settings" }).click();
@@ -90,30 +87,21 @@ test("lab supports deterministic seed, safe reset, and replay report", async ({ 
   await expect(page.getByTestId("session-id")).not.toHaveText("None");
   const seededSessionId = await page.getByTestId("session-id").textContent();
 
-  await expect(page.getByText("observed").first()).toBeVisible();
-  await expect(page.getByText("superseded").first()).toBeVisible();
-  await expect(page.getByText("confirmed").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Core Memory Blocks" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Core Memory Transitions", exact: true })).toBeVisible();
   await expect(page.getByText("customer_intelligence").first()).toBeVisible();
-  await expect(page.getByText("苏州小企业老板").first()).toBeVisible();
-  await expect(page.getByText("cand_seed_owner")).toBeVisible();
   await expect(page.getByText("v3_sandbox_demo_seed").first()).toBeVisible();
 
   const storeBackend = await page.getByTestId("store-backend").textContent();
   if (storeBackend === "database") {
-    await expect(page.getByText("write_memory").first()).toBeVisible();
-    await expect(page.getByText("update_memory_status").first()).toBeVisible();
     await expect(page.getByText("core_memory_append").first()).toBeVisible();
     await expect(page.getByText("memory_replace").first()).toBeVisible();
   } else {
-    await expect(page.getByText("DB inspection unavailable in current store mode.")).toBeVisible();
     await expect(page.getByText("Core memory DB inspection unavailable in current store mode.")).toBeVisible();
   }
 
   await page.getByRole("button", { name: "Reset session" }).click();
   await expect(page.getByTestId("session-id")).not.toHaveText(seededSessionId ?? "");
-  await expect(page.getByText("No memory items yet.")).toBeVisible();
   await expect(page.getByText(/No core memory transition events yet\.|Core memory DB inspection unavailable/)).toBeVisible();
   await expect(page.getByText("No trace events yet.")).toBeVisible();
 
@@ -124,7 +112,7 @@ test("lab supports deterministic seed, safe reset, and replay report", async ({ 
   await expect(page.getByRole("status")).toContainText(/v3s_replay_/);
 });
 
-test("lab shows database-backed memory transition inspection when backend is in database mode", async ({ page }) => {
+test("lab shows database-backed core memory transition inspection when backend is in database mode", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/lab");
   await expect(page.getByText("Backend online")).toBeVisible();
@@ -133,18 +121,13 @@ test("lab shows database-backed memory transition inspection when backend is in 
   const storeBackend = await page.getByTestId("store-backend").textContent();
   test.skip(storeBackend !== "database", "requires OPENCLAW_BACKEND_V3_SANDBOX_STORE_BACKEND=database backend");
 
-  await expect(page.getByRole("heading", { name: "Memory Transitions", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Core Memory Transitions", exact: true })).toBeVisible();
-  await expect(page.getByText("write_memory").first()).toBeVisible();
-  await expect(page.getByText("update_memory_status").first()).toBeVisible();
   await expect(page.getByText("core_memory_append").first()).toBeVisible();
   await expect(page.getByText("memory_replace").first()).toBeVisible();
-  await expect(page.getByText("mem_seed_product").first()).toBeVisible();
 
   await page.getByRole("button", { name: "Replay user turns" }).click();
   await expect(page.getByRole("status")).toContainText(/v3s_replay_/, { timeout: 100_000 });
   await page.getByRole("button", { name: "Refresh" }).click();
-  await expect(page.getByRole("heading", { name: "Memory Transitions", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Core Memory Transitions", exact: true })).toBeVisible();
   await expect(page.getByTestId("store-backend")).toHaveText("database");
 });

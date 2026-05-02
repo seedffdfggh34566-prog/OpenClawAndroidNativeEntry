@@ -1,53 +1,3 @@
-export type MemoryStatus = "observed" | "inferred" | "hypothesis" | "confirmed" | "rejected" | "superseded";
-
-export type MemoryItem = {
-  id: string;
-  status: MemoryStatus;
-  content: string;
-  source: string;
-  evidence: string[];
-  confidence: number;
-  supersedes: string[];
-  superseded_by: string | null;
-  tags: string[];
-  created_at: string;
-  updated_at: string;
-};
-
-export type SandboxWorkingState = {
-  product_understanding: string[];
-  sales_strategy: string[];
-  open_questions: string[];
-  current_hypotheses: string[];
-  correction_summary: string[];
-  updated_at: string;
-};
-
-export type CustomerCandidateDraft = {
-  id: string;
-  name: string;
-  segment: string;
-  target_roles: string[];
-  ranking_reason: string;
-  score: number;
-  validation_signals: string[];
-};
-
-export type CustomerIntelligenceDraft = {
-  target_industries: string[];
-  target_roles: string[];
-  candidates: CustomerCandidateDraft[];
-  ranking_reasons: string[];
-  scoring_draft: Record<string, number>;
-  validation_signals: string[];
-  updated_at: string;
-};
-
-export type AgentAction = {
-  type: "write_memory" | "update_memory_status" | "update_working_state" | "update_customer_intelligence" | "no_op";
-  payload: Record<string, unknown>;
-};
-
 export type CoreMemoryBlock = {
   label: "persona" | "human" | "product" | "sales_strategy" | "customer_intelligence";
   description: string;
@@ -121,7 +71,6 @@ export type V3SandboxTraceEvent = {
   turn_id: string;
   event_type: string;
   runtime_metadata: Record<string, unknown>;
-  actions: AgentAction[];
   tool_events: CoreMemoryToolEvent[];
   parsed_output: Record<string, unknown> | null;
   debug_trace: V3SandboxDebugTrace | null;
@@ -133,9 +82,6 @@ export type V3SandboxSession = {
   id: string;
   title: string;
   core_memory_blocks: Record<string, CoreMemoryBlock>;
-  memory_items: Record<string, MemoryItem>;
-  working_state: SandboxWorkingState;
-  customer_intelligence: CustomerIntelligenceDraft;
   messages: V3SandboxMessage[];
   trace: V3SandboxTraceEvent[];
   created_at: string;
@@ -156,29 +102,6 @@ export type V3SandboxStoreStatus = {
   database_enabled: boolean;
   json_enabled: boolean;
   transition_events_supported: boolean;
-};
-
-export type V3SandboxMemoryTransition = {
-  id: string;
-  transition_type: "write_memory" | "update_memory_status" | "supersede_memory" | string;
-  memory_id: string;
-  before_status: MemoryStatus | null;
-  after_status: MemoryStatus | null;
-  superseded_by: string | null;
-  trace_event_id: string | null;
-  turn_id: string | null;
-  action_index: number | null;
-  payload: Record<string, unknown>;
-  created_at: string;
-};
-
-export type V3SandboxMemoryTransitionsResponse = {
-  session_id: string;
-  available: boolean;
-  reason: string | null;
-  store: V3SandboxStoreStatus;
-  counts: Record<string, number>;
-  transitions: V3SandboxMemoryTransition[];
 };
 
 export type V3SandboxCoreMemoryTransition = {
@@ -250,7 +173,6 @@ export type V3SandboxRuntimeConfig = {
     mode: string;
     core_memory_blocks: string[];
     tools: string[];
-    legacy_json_action_loop: string;
   };
 };
 
@@ -358,10 +280,6 @@ export async function getSession(sessionId: string): Promise<V3SandboxSession> {
 export async function getTrace(sessionId: string): Promise<V3SandboxTraceEvent[]> {
   const payload = await requestJson<{ trace: V3SandboxTraceEvent[] }>(`/api/v3/sandbox/sessions/${sessionId}/trace`);
   return payload.trace;
-}
-
-export async function getMemoryTransitions(sessionId: string): Promise<V3SandboxMemoryTransitionsResponse> {
-  return requestJson(`/api/v3/sandbox/sessions/${sessionId}/memory-transitions`);
 }
 
 export async function getCoreMemoryTransitions(sessionId: string): Promise<V3SandboxCoreMemoryTransitionsResponse> {

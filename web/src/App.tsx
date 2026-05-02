@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   AlertTriangle,
@@ -15,7 +15,6 @@ import {
   Send,
   Server,
   Settings,
-  Sparkles,
   X,
 } from "lucide-react";
 import {
@@ -26,21 +25,16 @@ import {
   CoreMemoryBlock,
   getHealth,
   getCoreMemoryTransitions,
-  getMemoryTransitions,
   getRuntimeConfig,
   getSession,
   getStoreStatus,
   getTrace,
-  MemoryItem,
-  MemoryStatus,
   resetRuntimeConfig,
   updateRuntimeConfig,
-  V3SandboxDebugTraceEvent,
   V3SandboxDebugTraceOptions,
   V3SandboxCoreMemoryTransitionsResponse,
   V3SandboxRuntimeConfig,
   replaySession,
-  V3SandboxMemoryTransitionsResponse,
   V3SandboxReplayReport,
   V3SandboxSession,
   V3SandboxStoreStatus,
@@ -48,8 +42,6 @@ import {
 } from "./api";
 
 type BackendState = "checking" | "online" | "offline";
-
-const statusOrder: MemoryStatus[] = ["observed", "confirmed", "hypothesis", "inferred", "superseded", "rejected"];
 
 const defaultTraceOptions: V3SandboxDebugTraceOptions = {
   verbose: false,
@@ -80,7 +72,6 @@ export function App() {
   const [storeStatus, setStoreStatus] = useState<V3SandboxStoreStatus | null>(null);
   const [runtimeConfig, setRuntimeConfig] = useState<V3SandboxRuntimeConfig | null>(null);
   const [runtimeDraft, setRuntimeDraft] = useState<V3SandboxRuntimeConfig["runtime_config"] | null>(null);
-  const [transitionInspection, setTransitionInspection] = useState<V3SandboxMemoryTransitionsResponse | null>(null);
   const [coreTransitionInspection, setCoreTransitionInspection] = useState<V3SandboxCoreMemoryTransitionsResponse | null>(null);
   const [input, setInput] = useState("我们做面向苏州小企业老板的销售管理培训，主要是线下课。");
   const [error, setError] = useState<ApiError | Error | null>(null);
@@ -94,17 +85,6 @@ export function App() {
   useEffect(() => {
     void checkBackend();
   }, []);
-
-  const memoryItems = useMemo(() => {
-    const items = Object.values(session?.memory_items ?? {});
-    return items.sort((left, right) => {
-      const byStatus = statusOrder.indexOf(left.status) - statusOrder.indexOf(right.status);
-      if (byStatus !== 0) {
-        return byStatus;
-      }
-      return right.updated_at.localeCompare(left.updated_at);
-    });
-  }, [session]);
 
   async function checkBackend() {
     setBackendState("checking");
@@ -130,15 +110,10 @@ export function App() {
     setRuntimeDraft(config.runtime_config);
     setTraceOptions(traceOptionsFromRuntimeConfig(config.runtime_config));
     if (!sessionId) {
-      setTransitionInspection(null);
       setCoreTransitionInspection(null);
       return;
     }
-    const [memoryTransitions, coreMemoryTransitions] = await Promise.all([
-      getMemoryTransitions(sessionId),
-      getCoreMemoryTransitions(sessionId),
-    ]);
-    setTransitionInspection(memoryTransitions);
+    const coreMemoryTransitions = await getCoreMemoryTransitions(sessionId);
     setCoreTransitionInspection(coreMemoryTransitions);
   }
 
@@ -219,17 +194,15 @@ export function App() {
     setIsBusy(true);
     setError(null);
     try {
-      const [nextSession, nextTrace, nextTransitions, nextCoreTransitions, nextStore, nextConfig] = await Promise.all([
+      const [nextSession, nextTrace, nextCoreTransitions, nextStore, nextConfig] = await Promise.all([
         getSession(session.id),
         getTrace(session.id),
-        getMemoryTransitions(session.id),
         getCoreMemoryTransitions(session.id),
         getStoreStatus(),
         getRuntimeConfig(),
       ]);
       setSession(nextSession);
       setTrace(nextTrace);
-      setTransitionInspection(nextTransitions);
       setCoreTransitionInspection(nextCoreTransitions);
       setStoreStatus(nextStore);
       setRuntimeConfig(nextConfig);
@@ -308,16 +281,14 @@ export function App() {
     } catch (caught) {
       setError(caught instanceof Error ? caught : new Error("turn failed"));
       try {
-        const [nextSession, nextTrace, nextTransitions, nextCoreTransitions, nextStore] = await Promise.all([
+        const [nextSession, nextTrace, nextCoreTransitions, nextStore] = await Promise.all([
           getSession(session.id),
           getTrace(session.id),
-          getMemoryTransitions(session.id),
           getCoreMemoryTransitions(session.id),
           getStoreStatus(),
         ]);
         setSession(nextSession);
         setTrace(nextTrace);
-        setTransitionInspection(nextTransitions);
         setCoreTransitionInspection(nextCoreTransitions);
         setStoreStatus(nextStore);
       } catch {
@@ -359,10 +330,6 @@ export function App() {
         <div>
           <span className="muted-label">Messages</span>
           <strong>{session?.messages.length ?? 0}</strong>
-        </div>
-        <div>
-          <span className="muted-label">Memory</span>
-          <strong>{memoryItems.length}</strong>
         </div>
         <div>
           <span className="muted-label">Store</span>
@@ -418,26 +385,14 @@ export function App() {
           <Panel title="Core Memory Blocks" icon={<Brain size={18} />}>
             <CoreMemoryBlocks blocks={session?.core_memory_blocks ?? null} />
           </Panel>
-          <Panel title="Memory" icon={<Brain size={18} />}>
-            <MemoryList items={memoryItems} />
-          </Panel>
         </div>
 
         <div className="stacked-panels">
-          <Panel title="Working State" icon={<Sparkles size={18} />}>
-            <WorkingState session={session} />
-          </Panel>
-          <Panel title="Customer Intelligence" icon={<Database size={18} />}>
-            <CustomerIntelligence session={session} />
-          </Panel>
           <Panel title="Trace / Actions" icon={<Bot size={18} />}>
             <TraceList trace={trace} onOpenInspector={(traceId) => {
               setSelectedTraceId(traceId);
               setIsTraceInspectorOpen(true);
             }} />
-          </Panel>
-          <Panel title="Memory Transitions" icon={<Database size={18} />}>
-            <MemoryTransitions inspection={transitionInspection} />
           </Panel>
           <Panel title="Core Memory Transitions" icon={<Database size={18} />}>
             <CoreMemoryTransitions inspection={coreTransitionInspection} />
@@ -833,77 +788,6 @@ function CoreMemoryBlocks({ blocks }: { blocks: Record<string, CoreMemoryBlock> 
   );
 }
 
-function MemoryList({ items }: { items: MemoryItem[] }) {
-  if (!items.length) {
-    return <EmptyState text="No memory items yet." />;
-  }
-  return (
-    <div className="memory-list">
-      {items.map((item) => (
-        <article className="memory-item" key={item.id}>
-          <div className="row-between">
-            <span className={`memory-status memory-${item.status}`}>{item.status}</span>
-            <span>{Math.round(item.confidence * 100)}%</span>
-          </div>
-          <h3>{item.content}</h3>
-          <p>{item.id}</p>
-          <div className="tag-row">
-            {item.tags.map((tag) => (
-              <span className="tag" key={tag}>
-                {tag}
-              </span>
-            ))}
-          </div>
-          {item.superseded_by ? <small>superseded by {item.superseded_by}</small> : null}
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function WorkingState({ session }: { session: V3SandboxSession | null }) {
-  const state = session?.working_state;
-  if (!state) {
-    return <EmptyState text="No working state loaded." />;
-  }
-  return (
-    <div className="state-grid">
-      <FieldList title="Product" values={state.product_understanding} />
-      <FieldList title="Strategy" values={state.sales_strategy} />
-      <FieldList title="Hypotheses" values={state.current_hypotheses} />
-      <FieldList title="Corrections" values={state.correction_summary} />
-      <FieldList title="Open questions" values={state.open_questions} />
-    </div>
-  );
-}
-
-function CustomerIntelligence({ session }: { session: V3SandboxSession | null }) {
-  const draft = session?.customer_intelligence;
-  if (!draft) {
-    return <EmptyState text="No customer intelligence loaded." />;
-  }
-  return (
-    <div className="customer-block">
-      <FieldList title="Industries" values={draft.target_industries} />
-      <FieldList title="Roles" values={draft.target_roles} />
-      <FieldList title="Ranking reasons" values={draft.ranking_reasons} />
-      <FieldList title="Validation signals" values={draft.validation_signals} />
-      <div className="candidate-list">
-        {draft.candidates.map((candidate) => (
-          <article className="candidate" key={candidate.id}>
-            <div className="row-between">
-              <strong>{candidate.name}</strong>
-              <span>{candidate.score}</span>
-            </div>
-            <small>{candidate.id}</small>
-            <p>{candidate.ranking_reason || candidate.segment}</p>
-          </article>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function TraceList({
   trace,
   onOpenInspector,
@@ -930,7 +814,7 @@ function TraceList({
                   <span>{formatTime(event.created_at)}</span>
                 </div>
                 {event.error ? <p className="trace-error">{event.error.code}</p> : null}
-            <p>{event.tool_events.map((tool) => tool.tool_name).join(", ") || event.actions.map((action) => action.type).join(", ") || "no actions"}</p>
+            <p>{event.tool_events.map((tool) => tool.tool_name).join(", ") || "no tool events"}</p>
             {event.debug_trace ? <p>{event.debug_trace.graph.nodes.join(" -> ")}</p> : null}
             <button type="button" className="secondary-button" onClick={() => onOpenInspector(event.id)}>
               Inspect turn
@@ -988,7 +872,7 @@ function TraceInspector({
                 >
                   <strong>{event.event_type}</strong>
                   <span>{formatTime(event.created_at)}</span>
-                  <span>{event.tool_events.length || event.actions.length} events</span>
+                  <span>{event.tool_events.length} events</span>
                   {event.error ? <span>{event.error.code}</span> : null}
                 </button>
               ))}
@@ -1075,52 +959,6 @@ function TraceInspector({
   );
 }
 
-function DebugTrace({ trace }: { trace: NonNullable<V3SandboxTraceEvent["debug_trace"]> }) {
-  return (
-    <div className="debug-trace" data-testid="debug-trace">
-      <div className="graph-line" aria-label="LangGraph workflow">
-        {trace.graph.nodes.map((node, index) => (
-          <span key={node}>
-            <code>{node}</code>
-            {index < trace.graph.nodes.length - 1 ? <b>→</b> : null}
-          </span>
-        ))}
-      </div>
-      {trace.truncated ? <p className="trace-warning">Debug trace was truncated by size limit.</p> : null}
-      <div className="debug-node-list">
-        {trace.events.map((event, index) => (
-          <DebugTraceNode event={event} key={`${event.node}-${index}`} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DebugTraceNode({ event }: { event: V3SandboxDebugTraceEvent }) {
-  const statusClass = event.status === "completed" ? "node-completed" : event.status === "error" ? "node-error" : "node-idle";
-  return (
-    <details className={`debug-node ${statusClass}`} data-testid={`debug-node-${event.node}`}>
-      <summary>
-        <strong>{event.node}</strong>
-        <span>{event.status}</span>
-        {typeof event.duration_ms === "number" ? <span>{event.duration_ms} ms</span> : null}
-      </summary>
-      <div className="debug-node-body">
-        {event.input ? <DebugSection title="Input" value={event.input} /> : null}
-        {event.output ? <DebugSection title="Output" value={event.output} /> : null}
-        {event.messages ? <DebugSection title="LLM prompt / messages" value={event.messages} defaultOpen={false} /> : null}
-        {event.raw_output ? <DebugSection title="Raw LLM output" value={event.raw_output} defaultOpen={false} /> : null}
-        {event.repair_attempts ? <DebugSection title="Repair attempts" value={event.repair_attempts} defaultOpen={false} /> : null}
-        {event.parsed_output ? <DebugSection title="Validated parsed output" value={event.parsed_output} /> : null}
-        {event.action_results ? <DebugSection title="Action apply results" value={event.action_results} /> : null}
-        {event.tool_results ? <DebugSection title="Tool results" value={event.tool_results} /> : null}
-        {event.state_diff ? <DebugSection title="State diff" value={event.state_diff} /> : null}
-        {event.error ? <DebugSection title="Error" value={event.error} /> : null}
-      </div>
-    </details>
-  );
-}
-
 function ToolEventsList({ events }: { events: V3SandboxTraceEvent["tool_events"] }) {
   return (
     <section className="tool-events-list" aria-label="Native tool events">
@@ -1163,48 +1001,6 @@ function JsonBlock({ value }: { value: unknown }) {
   return <pre>{typeof value === "string" ? value : JSON.stringify(value, null, 2)}</pre>;
 }
 
-function MemoryTransitions({ inspection }: { inspection: V3SandboxMemoryTransitionsResponse | null }) {
-  if (!inspection) {
-    return <EmptyState text="No memory transition inspection loaded." />;
-  }
-  if (!inspection.available) {
-    return <EmptyState text="DB inspection unavailable in current store mode." />;
-  }
-  if (!inspection.transitions.length) {
-    return <EmptyState text="No memory transition events yet." />;
-  }
-  return (
-    <div className="transition-list">
-      <div className="inspection-counts">
-        <span>{inspection.counts.transitions ?? 0} transitions</span>
-        <span>{inspection.counts.actions ?? 0} actions</span>
-      </div>
-      {inspection.transitions
-        .slice()
-        .reverse()
-        .map((transition) => (
-          <article className="transition-event" key={transition.id}>
-            <div className="row-between">
-              <strong>{transition.transition_type}</strong>
-              <span>{formatTime(transition.created_at)}</span>
-            </div>
-            <p>{transition.memory_id}</p>
-            <div className="transition-status-row">
-              <span>{transition.before_status ?? "new"}</span>
-              <span>→</span>
-              <span>{transition.after_status ?? "unknown"}</span>
-            </div>
-            {transition.superseded_by ? <small>superseded by {transition.superseded_by}</small> : null}
-            <small>
-              {transition.trace_event_id ?? "no trace"} / {transition.turn_id ?? "no turn"} / action{" "}
-              {transition.action_index ?? "-"}
-            </small>
-          </article>
-        ))}
-    </div>
-  );
-}
-
 function CoreMemoryTransitions({ inspection }: { inspection: V3SandboxCoreMemoryTransitionsResponse | null }) {
   if (!inspection) {
     return <EmptyState text="No core memory transition inspection loaded." />;
@@ -1241,23 +1037,6 @@ function CoreMemoryTransitions({ inspection }: { inspection: V3SandboxCoreMemory
             </small>
           </article>
         ))}
-    </div>
-  );
-}
-
-function FieldList({ title, values }: { title: string; values: string[] }) {
-  return (
-    <div className="field-list">
-      <strong>{title}</strong>
-      {values.length ? (
-        <ul>
-          {values.map((value) => (
-            <li key={value}>{value}</li>
-          ))}
-        </ul>
-      ) : (
-        <span>Empty</span>
-      )}
     </div>
   );
 }

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import DateTime, Float, Integer, JSON, String, Text
+from sqlalchemy import DateTime, Integer, JSON, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -129,52 +129,6 @@ class V3SandboxTraceEventRecord(Base):
     runtime_metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     parsed_output_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     error_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
-    payload_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
-
-
-class V3SandboxActionEventRecord(Base):
-    __tablename__ = "v3_sandbox_action_events"
-
-    session_id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    trace_event_id: Mapped[str] = mapped_column(String(96), primary_key=True)
-    action_index: Mapped[int] = mapped_column(Integer, primary_key=True)
-    turn_id: Mapped[str] = mapped_column(String(96), index=True)
-    action_type: Mapped[str] = mapped_column(String(64), index=True)
-    payload_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
-
-
-class V3SandboxMemoryItemRecord(Base):
-    __tablename__ = "v3_sandbox_memory_items"
-
-    session_id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    memory_id: Mapped[str] = mapped_column(String(128), primary_key=True)
-    status: Mapped[str] = mapped_column(String(32), index=True)
-    source: Mapped[str] = mapped_column(String(64), index=True)
-    content: Mapped[str] = mapped_column(Text())
-    confidence: Mapped[float] = mapped_column(Float())
-    superseded_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    tags_json: Mapped[list[str]] = mapped_column(JSON, default=list)
-    evidence_json: Mapped[list[str]] = mapped_column(JSON, default=list)
-    payload_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
-
-
-class V3SandboxMemoryTransitionEventRecord(Base):
-    __tablename__ = "v3_sandbox_memory_transition_events"
-
-    session_id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    transition_event_id: Mapped[str] = mapped_column(String(192), primary_key=True)
-    trace_event_id: Mapped[str | None] = mapped_column(String(96), nullable=True, index=True)
-    turn_id: Mapped[str | None] = mapped_column(String(96), nullable=True, index=True)
-    action_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    transition_type: Mapped[str] = mapped_column(String(64), index=True)
-    memory_id: Mapped[str] = mapped_column(String(128), index=True)
-    before_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    after_status: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
-    superseded_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
     payload_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 

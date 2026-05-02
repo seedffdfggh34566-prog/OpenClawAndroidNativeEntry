@@ -24,6 +24,7 @@ captures/
 # Local tooling / agent workspace
 .codex/
 .claude/settings.json
+.claude/worktrees/
 .tmp/
 backend/.venv/
 backend/.env

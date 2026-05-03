@@ -145,6 +145,7 @@ export type V3SandboxRuntimeConfig = {
   runtime_config: {
     llm_model: string;
     llm_timeout_seconds: number;
+    max_steps: number;
     default_debug_trace: boolean;
     default_include_prompt: boolean;
     default_include_raw_llm_output: boolean;
@@ -161,6 +162,7 @@ export type V3SandboxRuntimeConfig = {
   allowlists: {
     llm_models: string[];
     llm_timeout_seconds: number[];
+    max_steps: { min: number; max: number; default: number };
     trace_max_bytes: number[];
   };
   native_fc: {

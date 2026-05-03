@@ -3,11 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 CoreMemoryBlockLabel = Literal["persona", "human", "product", "sales_strategy", "customer_intelligence"]
-CoreMemoryToolName = Literal["core_memory_append", "memory_insert", "memory_replace", "send_message"]
+CoreMemoryToolName = Literal["core_memory_append", "memory_insert", "memory_replace", "memory_rethink", "send_message"]
 CoreMemoryToolEventStatus = Literal["applied", "error"]
 
 
@@ -16,7 +16,7 @@ def utc_now() -> datetime:
 
 
 class V3SandboxModel(BaseModel):
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="forbid")
 
 
 class CoreMemoryBlock(V3SandboxModel):
@@ -29,15 +29,11 @@ class CoreMemoryBlock(V3SandboxModel):
     tags: list[str] = Field(default_factory=list)
     updated_at: datetime = Field(default_factory=utc_now)
 
-    @field_validator("value")
-    @classmethod
-    def _value_fits_limit(cls, value: str, info) -> str:
-        limit = 2000
-        if info.data and isinstance(info.data.get("limit"), int):
-            limit = info.data["limit"]
-        if len(value) > limit:
+    @model_validator(mode="after")
+    def _value_fits_limit(self) -> "CoreMemoryBlock":
+        if len(self.value) > self.limit:
             raise ValueError("core_memory_block_value_exceeds_limit")
-        return value
+        return self
 
 
 def default_core_memory_blocks() -> dict[str, CoreMemoryBlock]:
@@ -129,11 +125,16 @@ class V3SandboxTraceEvent(V3SandboxModel):
 
 
 class V3SandboxSession(V3SandboxModel):
+    model_config = ConfigDict(extra="ignore")
+
     id: str
     title: str = "V3 Sandbox Session"
     core_memory_blocks: dict[str, CoreMemoryBlock] = Field(default_factory=default_core_memory_blocks)
     messages: list[V3SandboxMessage] = Field(default_factory=list)
     trace: list[V3SandboxTraceEvent] = Field(default_factory=list)
+    context_summary: str | None = None
+    summary_cursor_message_id: str | None = None
+    summary_recursion_count: int = 0
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 

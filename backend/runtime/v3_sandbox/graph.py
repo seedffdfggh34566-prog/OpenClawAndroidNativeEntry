@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from time import perf_counter
 from typing import Any, TypedDict
 from uuid import uuid4
@@ -23,6 +24,28 @@ from backend.runtime.v3_sandbox.schemas import (
 
 
 CORE_MEMORY_LABELS: tuple[str, ...] = ("persona", "human", "product", "sales_strategy", "customer_intelligence")
+CORE_MEMORY_LINE_NUMBER_WARNING = (
+    "# NOTE: Line numbers shown below (with arrows like '1→') are to help during editing. "
+    "Do NOT include line number prefixes in your memory edit tool calls."
+)
+
+# Approximate context window sizes (in tokens) for models used via TokenHub.
+# Values reflect the upstream allowlist's published windows; unknown models
+# fall back to the conservative DEFAULT_CONTEXT_WINDOW.
+_MODEL_CONTEXT_WINDOWS: dict[str, int] = {
+    "minimax-m2.5": 200_000,
+    "minimax-m2.7": 200_000,
+    "deepseek-v4-flash": 1_000_000,
+    "deepseek-v3.1-terminus": 128_000,
+    "deepseek-v3.2": 128_000,
+    "kimi-k2.6": 256_000,
+    "glm-5.1": 200_000,
+}
+_DEFAULT_CONTEXT_WINDOW = 128_000
+# Summarize older messages once total in-context tokens cross this fraction
+# of the model context window (Letta uses ~0.9; we leave more headroom for
+# the assistant response and for tiktoken/model tokenizer mismatch).
+_CONTEXT_COMPRESSION_THRESHOLD_RATIO = 0.75
 
 
 class V3SandboxRuntimeError(RuntimeError):
@@ -35,6 +58,7 @@ class V3SandboxRuntimeError(RuntimeError):
 
 class V3SandboxGraphState(TypedDict, total=False):
     settings: Settings
+    max_steps: int
     session: V3SandboxSession
     user_message: V3SandboxMessage
     turn_id: str
@@ -51,6 +75,7 @@ class V3SandboxGraphState(TypedDict, total=False):
     started_perf: float
     debug_options: V3SandboxDebugTraceOptions
     debug_trace: dict[str, Any] | None
+    summary_info: dict[str, Any] | None
 
 
 def run_v3_sandbox_turn(
@@ -60,6 +85,7 @@ def run_v3_sandbox_turn(
     user_message: V3SandboxMessage,
     client: TokenHubClient | None = None,
     debug_options: V3SandboxDebugTraceOptions | dict[str, Any] | None = None,
+    max_steps: int = 16,
 ) -> V3SandboxTurnResult:
     graph = _build_graph(client=client)
     turn_id = f"turn_{uuid4().hex[:12]}"
@@ -71,6 +97,7 @@ def run_v3_sandbox_turn(
         state = graph.invoke(
             {
                 "settings": settings,
+                "max_steps": max(4, min(50, max_steps)),
                 "session": runtime_session,
                 "user_message": user_message,
                 "turn_id": turn_id,
@@ -172,7 +199,9 @@ def _load_state(state: V3SandboxGraphState) -> V3SandboxGraphState:
 
 def _compose_context(state: V3SandboxGraphState) -> V3SandboxGraphState:
     started = perf_counter()
-    messages = _build_tool_loop_messages(state["session"], state["user_message"])
+    messages, summary_info = _build_tool_loop_messages(
+        state["session"], state["user_message"], settings=state.get("settings")
+    )
     _append_debug_event(
         state.get("debug_trace"),
         state["debug_options"],
@@ -191,7 +220,7 @@ def _compose_context(state: V3SandboxGraphState) -> V3SandboxGraphState:
             "output": _maybe_node_io(state, {"tool_message_count": len(messages)}),
         },
     )
-    return {"tool_messages": messages}
+    return {"tool_messages": messages, "summary_info": summary_info}
 
 
 def _call_agent_with_tools(state: V3SandboxGraphState, *, client: TokenHubClient | None) -> V3SandboxGraphState:
@@ -349,15 +378,20 @@ def _continue_or_return(state: V3SandboxGraphState) -> str:
     if state.get("final_message"):
         return "return"
     tool_events = state.get("tool_events", [])
-    if len(tool_events) >= 16:
+    max_steps = state.get("max_steps", 16)
+    if len(tool_events) >= max_steps * 4:
         raise ValueError("v3_tool_loop_exhausted")
     call_count = sum(1 for message in state.get("tool_messages", []) if message.get("role") == "assistant")
-    if call_count >= 4:
+    if call_count >= max_steps:
         raise ValueError("v3_tool_loop_exhausted")
     return "continue"
 
 
-def _build_tool_loop_messages(session: V3SandboxSession, user_message: V3SandboxMessage) -> list[dict[str, Any]]:
+def _build_tool_loop_messages(
+    session: V3SandboxSession,
+    user_message: V3SandboxMessage,
+    settings: Settings | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     system_lines = [
         "You are OpenClaw V3 Product Sales Agent running in a sandbox.",
         "Use native tools to maintain session-scoped core memory blocks before replying.",
@@ -379,7 +413,34 @@ def _build_tool_loop_messages(session: V3SandboxSession, user_message: V3Sandbox
         )
         system_lines.append(block.value if block.value else "(empty)")
 
-    recent_history = session.messages[:-1][-8:]
+    max_context_messages = 32
+    system_prompt = "\n".join(system_lines)
+
+    # Endpoint-A-lite: persistent recursive summary with cursor.
+    # `historical` excludes the current user message (which is the last entry
+    # in session.messages, appended by _load_state).
+    historical = session.messages[:-1]
+    cursor_index = _find_cursor_index(historical, session.summary_cursor_message_id)
+    after_cursor = historical[cursor_index + 1:] if cursor_index is not None else historical
+
+    summary_info: dict[str, Any] | None = None
+    if settings:
+        summary_info = _maybe_run_summarization(
+            session=session,
+            settings=settings,
+            system_prompt=system_prompt,
+            current_user_content=user_message.content,
+            historical=historical,
+            after_cursor=after_cursor,
+            max_context_messages=max_context_messages,
+        )
+        # Re-derive after_cursor in case summarization advanced the cursor
+        cursor_index = _find_cursor_index(historical, session.summary_cursor_message_id)
+        after_cursor = historical[cursor_index + 1:] if cursor_index is not None else historical
+
+    summary_message = _summary_message_for_payload(session)
+    recent_history = after_cursor
+
     user_lines: list[str] = []
     if recent_history:
         user_lines.append("Recent conversation (oldest first):")
@@ -395,10 +456,160 @@ def _build_tool_loop_messages(session: V3SandboxSession, user_message: V3Sandbox
     user_lines.append("")
     user_lines.append(f"Current user message:\n{user_message.content}")
 
-    return [
-        {"role": "system", "content": "\n".join(system_lines)},
-        {"role": "user", "content": "\n".join(user_lines)},
+    messages: list[dict[str, Any]] = [
+        {"role": "system", "content": system_prompt},
     ]
+    if summary_message:
+        messages.append(summary_message)
+    messages.append({"role": "user", "content": "\n".join(user_lines)})
+    return messages, summary_info
+
+
+def _context_window_for_model(model: str) -> int:
+    return _MODEL_CONTEXT_WINDOWS.get(model, _DEFAULT_CONTEXT_WINDOW)
+
+
+def _find_cursor_index(historical: list[V3SandboxMessage], cursor_id: str | None) -> int | None:
+    """Return the index of cursor_id in historical, or None if not set or not
+    found. Defensive against deleted/renumbered messages."""
+    if cursor_id is None:
+        return None
+    for index, message in enumerate(historical):
+        if message.id == cursor_id:
+            return index
+    return None
+
+
+def _summary_message_for_payload(session: V3SandboxSession) -> dict[str, Any] | None:
+    """If a persistent summary exists, package it as a role=user message for
+    the LLM payload. Returns None if no summary has been generated yet."""
+    if not session.context_summary:
+        return None
+    cursor_id = session.summary_cursor_message_id
+    suffix = f" (cursor={cursor_id})" if cursor_id else ""
+    content = (
+        f"Note: earlier messages have been hidden from view due to conversation "
+        f"memory constraints.{suffix}\nSummary of older conversation:\n"
+        f"{session.context_summary}"
+    )
+    return {"role": "user", "content": content}
+
+
+def _maybe_run_summarization(
+    *,
+    session: V3SandboxSession,
+    settings: Settings,
+    system_prompt: str,
+    current_user_content: str,
+    historical: list[V3SandboxMessage],
+    after_cursor: list[V3SandboxMessage],
+    max_context_messages: int,
+) -> dict[str, Any] | None:
+    """Endpoint-A-lite: if total token count of the in-context payload
+    crosses the threshold, recursively summarize (existing summary + new
+    after-cursor messages beyond the recent window) and persist the result
+    onto session.context_summary, advancing summary_cursor_message_id so
+    that the recent window is exactly max_context_messages original
+    messages after the cursor.
+
+    Mutates session in place. Returns a dict with ``action`` and
+    ``llm_usage`` when summarization runs, or ``None`` when skipped.
+    """
+    try:
+        import tiktoken
+        encoding = tiktoken.get_encoding("cl100k_base")
+    except Exception:
+        return
+
+    # We need at least max_context_messages + 1 after-cursor messages before
+    # we can advance the cursor while keeping the recent window intact.
+    if len(after_cursor) <= max_context_messages:
+        return
+
+    # Compute approximate token count of what the LLM would see this turn
+    # if we DID NOT summarize: system prompt + existing summary banner +
+    # full after-cursor history + current user message.
+    existing_summary_msg = _summary_message_for_payload(session)
+    payload_parts: list[str] = [system_prompt]
+    if existing_summary_msg:
+        payload_parts.append(existing_summary_msg["content"])
+    payload_parts.extend(f"[{m.role}] {m.content}" for m in after_cursor)
+    if current_user_content:
+        payload_parts.append(current_user_content)
+    total_text = "\n".join(part for part in payload_parts if part)
+    token_count = len(encoding.encode(total_text))
+    threshold = int(_context_window_for_model(settings.llm_model) * _CONTEXT_COMPRESSION_THRESHOLD_RATIO)
+    if token_count < threshold:
+        return
+
+    # Messages to absorb into the summary this turn = everything in
+    # after_cursor EXCEPT the most recent max_context_messages entries.
+    to_absorb = after_cursor[:-max_context_messages]
+    if not to_absorb:
+        return
+
+    summary_input_lines: list[str] = []
+    if session.context_summary:
+        summary_input_lines.append("Previous summary (authoritative for content older than the new messages below):")
+        summary_input_lines.append(session.context_summary)
+        summary_input_lines.append("")
+    summary_input_lines.append("New messages to merge into the summary (oldest first):")
+    summary_input_lines.extend(f"[{m.role}] {m.content}" for m in to_absorb)
+    summary_input = "\n".join(summary_input_lines)
+
+    summary_prompt = (
+        "You are summarizing the older portion of a conversation between a "
+        "salesperson (the user — they sell a product/service via OpenClaw) "
+        "and the V3 sales-agent assistant. The seller is using the agent to "
+        "clarify their own product and identify candidate customer leads.\n\n"
+        "Compress conversational flow but PRESERVE VERBATIM:\n"
+        "- The seller's exact wording about what they sell (positioning, "
+        "capabilities, constraints, pricing tiers, units of measurement)\n"
+        "- Numbers the seller mentioned (prices, headcount, dates, market size, "
+        "deal sizes)\n"
+        "- Names the seller mentioned (competitors, partners, channels, "
+        "candidate leads)\n"
+        "- The seller's stated constraints, hesitations, and explicit corrections "
+        "to the agent's prior interpretations\n"
+        "- The seller's description of the ideal customer profile (industry, "
+        "role, geography, signals)\n\n"
+        "If a previous summary is provided, treat it as authoritative for content "
+        "older than the new messages, and merge the new messages into it.\n\n"
+        "Output: 1-3 sentences for narrative continuity, followed by a "
+        "\"Key facts:\" bullet list of preserved verbatim items.\n\n"
+        f"{summary_input}\n\nMerged summary:"
+    )
+    try:
+        client = TokenHubClient(
+            api_key=settings.llm_api_key,
+            base_url=settings.llm_base_url,
+            model=settings.llm_model,
+            timeout_seconds=max(settings.llm_timeout_seconds, 90.0),
+        )
+        completion = client.complete_with_tools(
+            messages=[{"role": "user", "content": summary_prompt}],
+            tools=[],
+            tool_choice="none",
+            model_policy=tokenhub_native_fc_request_policy(settings.llm_model, "auto"),
+        )
+        summary = completion.content.strip() if completion.content else ""
+        if not summary:
+            return None
+        usage = _normalize_usage(completion.usage)
+    except Exception:
+        return None
+
+    new_cursor_id = to_absorb[-1].id
+    action = "created" if session.summary_recursion_count == 0 else "refreshed"
+    session.context_summary = summary
+    session.summary_cursor_message_id = new_cursor_id
+    session.summary_recursion_count += 1
+
+    return {
+        "action": action,
+        "llm_usage": usage,
+        "new_cursor_id": new_cursor_id,
+    }
 
 
 def _core_memory_tools() -> list[dict[str, Any]]:
@@ -504,6 +715,35 @@ def _core_memory_tools() -> list[dict[str, Any]]:
         {
             "type": "function",
             "function": {
+                "name": "memory_rethink",
+                "description": (
+                    "Completely rewrite the contents of a core memory block. "
+                    "Use this tool to make large sweeping changes (e.g. when you want to condense, reorganize, "
+                    "or merge information into the memory block). Do NOT use this tool for small precise edits "
+                    "(e.g. add or remove a line, replace a specific string, etc). For small edits, use memory_replace.\n\n"
+                    "WARNING: When the block contents are shown to you, the block text is rendered raw. "
+                    "Do NOT include any line-number prefixes (e.g. 'Line 3:') or line-number warning banners "
+                    "in the `new_memory` argument. Pass only the raw text you want to store.\n\n"
+                    "Args:\n"
+                    "  label: Which core memory block to rewrite.\n"
+                    "  new_memory: The new complete contents of the block.\n\n"
+                    "Examples:\n"
+                    "  label='product', new_memory='Product: OpenClaw sales management training. Target: SMB owners in Suzhou. Pricing: offline courses, contact for quote.'"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "label": {"type": "string", "enum": labels},
+                        "new_memory": {"type": "string", "minLength": 1},
+                    },
+                    "required": ["label", "new_memory"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "send_message",
                 "description": (
                     "Send the final visible assistant reply to the user. "
@@ -572,6 +812,8 @@ def _execute_core_memory_tool(
             result, block_label, before, after = _tool_memory_insert(session, arguments)
         elif tool_name == "memory_replace":
             result, block_label, before, after = _tool_memory_replace(session, arguments)
+        elif tool_name == "memory_rethink":
+            result, block_label, before, after = _tool_memory_rethink(session, arguments)
         elif tool_name == "send_message":
             message = _require_arg_str(arguments, "message")
             result, block_label, before, after = {"ok": True, "message": message}, None, None, None
@@ -623,6 +865,16 @@ def _tool_core_memory_append(
 ) -> tuple[dict[str, Any], str, str, str]:
     label = _require_block_label(arguments)
     content = _require_arg_str(arguments, "content")
+    if bool(re.search(r"\nLine \d+: ", content)):
+        raise ValueError(
+            "content contains a line number prefix, which is not allowed. "
+            "Do not include line numbers when calling memory tools (line numbers are for display purposes only)."
+        )
+    if CORE_MEMORY_LINE_NUMBER_WARNING in content:
+        raise ValueError(
+            "content contains a line number warning, which is not allowed. "
+            "Do not include line number information when calling memory tools (line numbers are for display purposes only)."
+        )
     block = _editable_block(session, label)
     before = block.value
     separator = "\n" if before.strip() else ""
@@ -638,6 +890,16 @@ def _tool_memory_insert(
     label = _require_block_label(arguments)
     insert_after = _require_arg_str(arguments, "insert_after")
     content = _require_arg_str(arguments, "content")
+    if bool(re.search(r"\nLine \d+: ", content)):
+        raise ValueError(
+            "content contains a line number prefix, which is not allowed. "
+            "Do not include line numbers when calling memory tools (line numbers are for display purposes only)."
+        )
+    if CORE_MEMORY_LINE_NUMBER_WARNING in content:
+        raise ValueError(
+            "content contains a line number warning, which is not allowed. "
+            "Do not include line number information when calling memory tools (line numbers are for display purposes only)."
+        )
     block = _editable_block(session, label)
     before = block.value
     position = before.find(insert_after)
@@ -656,6 +918,16 @@ def _tool_memory_replace(
     label = _require_block_label(arguments)
     old_content = _require_arg_str(arguments, "old_content")
     new_content = _require_arg_str(arguments, "new_content", allow_empty=True)
+    if bool(re.search(r"\nLine \d+: ", new_content)):
+        raise ValueError(
+            "new_content contains a line number prefix, which is not allowed. "
+            "Do not include line numbers when calling memory tools (line numbers are for display purposes only)."
+        )
+    if CORE_MEMORY_LINE_NUMBER_WARNING in new_content:
+        raise ValueError(
+            "new_content contains a line number warning, which is not allowed. "
+            "Do not include line number information when calling memory tools (line numbers are for display purposes only)."
+        )
     block = _editable_block(session, label)
     before = block.value
     positions = _find_all_occurrences(before, old_content)
@@ -672,6 +944,29 @@ def _tool_memory_replace(
     after = before[:position] + new_content + before[position + len(old_content):]
     _set_core_memory_block(session, block, after)
     return {"ok": True, "label": label, "operation": "replace", "chars": len(after)}, label, before, after
+
+
+def _tool_memory_rethink(
+    session: V3SandboxSession,
+    arguments: dict[str, Any],
+) -> tuple[dict[str, Any], str, str, str]:
+    label = _require_block_label(arguments)
+    new_memory = _require_arg_str(arguments, "new_memory")
+    if bool(re.search(r"\nLine \d+: ", new_memory)):
+        raise ValueError(
+            "new_memory contains a line number prefix, which is not allowed. "
+            "Do not include line numbers when calling memory tools (line numbers are for display purposes only)."
+        )
+    if CORE_MEMORY_LINE_NUMBER_WARNING in new_memory:
+        raise ValueError(
+            "new_memory contains a line number warning, which is not allowed. "
+            "Do not include line number information when calling memory tools (line numbers are for display purposes only)."
+        )
+    block = _editable_block(session, label)
+    before = block.value
+    after = new_memory
+    _set_core_memory_block(session, block, after)
+    return {"ok": True, "label": label, "operation": "rethink", "chars": len(after)}, label, before, after
 
 
 def _find_all_occurrences(haystack: str, needle: str) -> list[int]:
@@ -747,6 +1042,7 @@ def _return_turn(state: V3SandboxGraphState) -> V3SandboxGraphState:
         "assistant_message": state["final_message"],
         "tool_event_count": len(state.get("tool_events", [])),
     }
+    summary_info = state.get("summary_info")
     trace_event = V3SandboxTraceEvent(
         id=f"trace_{state['turn_id']}",
         session_id=session.id,
@@ -757,6 +1053,12 @@ def _return_turn(state: V3SandboxGraphState) -> V3SandboxGraphState:
             "duration_ms": round((perf_counter() - state["started_perf"]) * 1000, 3),
             "llm_usage": state.get("usage_total", _normalize_usage(state.get("usage", {}))),
             "tool_event_count": len(state.get("tool_events", [])),
+            "context_summary_present": bool(session.context_summary),
+            "context_summary_chars": len(session.context_summary) if session.context_summary else 0,
+            "summary_cursor_message_id": session.summary_cursor_message_id,
+            "summary_recursion_count": session.summary_recursion_count,
+            "summary_action": summary_info["action"] if summary_info else "noop",
+            "summary_llm_usage": summary_info.get("llm_usage") if summary_info else None,
         },
         tool_events=state.get("tool_events", []),
         parsed_output=parsed_output,

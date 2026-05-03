@@ -565,6 +565,24 @@ function SettingsOverlay({
                     ))}
                   </select>
                 </label>
+                <label>
+                  <span>Max steps</span>
+                  <input
+                    type="number"
+                    min={config.allowlists.max_steps.min}
+                    max={config.allowlists.max_steps.max}
+                    value={draft.max_steps}
+                    onChange={(event) => {
+                      const value = Number(event.target.value);
+                      if (value >= config.allowlists.max_steps.min && value <= config.allowlists.max_steps.max) {
+                        update({ max_steps: value });
+                      }
+                    }}
+                  />
+                  <span className="field-hint">
+                    {config.allowlists.max_steps.min}–{config.allowlists.max_steps.max} (default {config.allowlists.max_steps.default})
+                  </span>
+                </label>
                 <Toggle label="Default verbose trace" checked={draft.default_debug_trace} onChange={(value) => update({ default_debug_trace: value })} />
                 <Toggle label="Default include prompt" checked={draft.default_include_prompt} onChange={(value) => update({ default_include_prompt: value })} />
                 <Toggle

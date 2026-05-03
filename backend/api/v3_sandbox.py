@@ -71,6 +71,7 @@ AllowedV3SandboxTraceMaxBytes = Literal[80_000, 200_000, 500_000]
 class V3SandboxRuntimeConfigPatch(ApiModel):
     llm_model: AllowedV3SandboxModel | None = None
     llm_timeout_seconds: AllowedV3SandboxTimeout | None = None
+    max_steps: int | None = Field(default=None, ge=4, le=50)
     default_debug_trace: bool | None = None
     default_include_prompt: bool | None = None
     default_include_raw_llm_output: bool | None = None
@@ -86,9 +87,13 @@ _MODEL_ALLOWLIST = V3_TOKENHUB_NATIVE_FC_MODEL_ALLOWLIST
 _NATIVE_FC_MODEL_POLICIES = V3_TOKENHUB_NATIVE_FC_MODEL_POLICIES
 _TIMEOUT_ALLOWLIST = [90, 120, 180, 300]
 _TRACE_MAX_BYTES_ALLOWLIST = [80_000, 200_000, 500_000]
+_MAX_STEPS_DEFAULT = 16
+_MAX_STEPS_MIN = 4
+_MAX_STEPS_MAX = 50
 _RUNTIME_OVERRIDE_KEYS = {
     "llm_model",
     "llm_timeout_seconds",
+    "max_steps",
     "default_debug_trace",
     "default_include_prompt",
     "default_include_raw_llm_output",
@@ -195,6 +200,7 @@ def _runtime_config_response(request: Request) -> dict[str, Any]:
         "runtime_config": {
             "llm_model": effective.llm_model,
             "llm_timeout_seconds": int(effective.llm_timeout_seconds),
+            "max_steps": int(overrides.get("max_steps", _MAX_STEPS_DEFAULT)),
             "default_debug_trace": bool(overrides.get("default_debug_trace", False)),
             "default_include_prompt": bool(overrides.get("default_include_prompt", False)),
             "default_include_raw_llm_output": bool(overrides.get("default_include_raw_llm_output", False)),
@@ -211,6 +217,7 @@ def _runtime_config_response(request: Request) -> dict[str, Any]:
         "allowlists": {
             "llm_models": _MODEL_ALLOWLIST,
             "llm_timeout_seconds": _TIMEOUT_ALLOWLIST,
+            "max_steps": {"min": _MAX_STEPS_MIN, "max": _MAX_STEPS_MAX, "default": _MAX_STEPS_DEFAULT},
             "trace_max_bytes": _TRACE_MAX_BYTES_ALLOWLIST,
         },
         "native_fc": {
@@ -222,7 +229,7 @@ def _runtime_config_response(request: Request) -> dict[str, Any]:
         "memory_runtime": {
             "mode": "native_tool_loop",
             "core_memory_blocks": ["persona", "human", "product", "sales_strategy", "customer_intelligence"],
-            "tools": ["core_memory_append", "memory_insert", "memory_replace", "send_message"],
+            "tools": ["core_memory_append", "memory_insert", "memory_replace", "memory_rethink", "send_message"],
         },
     }
 
@@ -406,6 +413,7 @@ def create_turn(session_id: str, request: Request, payload: Any = Body(...)):
             session=session,
             user_message=user_message,
             debug_options=_runtime_debug_options(request, parsed.debug_trace),
+            max_steps=_runtime_overrides(request).get("max_steps", _MAX_STEPS_DEFAULT),
         )
     except V3SandboxRuntimeError as exc:
         if exc.session is not None:
@@ -461,6 +469,7 @@ def replay_session(session_id: str, request: Request):
                 session=replay,
                 user_message=replay_user_message,
                 debug_options=_replay_debug_options(request),
+                max_steps=_runtime_overrides(request).get("max_steps", _MAX_STEPS_DEFAULT),
             )
         except V3SandboxRuntimeError as exc:
             replay = exc.session or replay

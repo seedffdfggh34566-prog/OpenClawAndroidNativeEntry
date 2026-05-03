@@ -38,7 +38,13 @@ from backend.runtime.v3_sandbox.schemas import (
 def test_json_store_round_trips_session(tmp_path: Path) -> None:
     store = JsonFileV3SandboxStore(tmp_path)
     blocks = default_core_memory_blocks()
-    blocks["product"] = blocks["product"].model_copy(update={"value": "产品是销售助手。"})
+    blocks["product"] = blocks["product"].model_copy(
+        update={
+            "value": "产品是销售助手。",
+            "metadata": {"category": "saas"},
+            "tags": ["lead", "high"],
+        }
+    )
     session = V3SandboxSession(id="v3s_json", core_memory_blocks=blocks)
 
     store.create_session(session)
@@ -46,6 +52,8 @@ def test_json_store_round_trips_session(tmp_path: Path) -> None:
 
     assert reloaded.id == session.id
     assert reloaded.core_memory_blocks["product"].value == "产品是销售助手。"
+    assert reloaded.core_memory_blocks["product"].metadata == {"category": "saas"}
+    assert reloaded.core_memory_blocks["product"].tags == ["lead", "high"]
 
 
 def test_database_store_round_trips_session_and_normalized_events(tmp_path, monkeypatch) -> None:
@@ -57,9 +65,18 @@ def test_database_store_round_trips_session_and_normalized_events(tmp_path, monk
     reset_database_state()
     init_db()
 
+    blocks = default_core_memory_blocks()
+    blocks["product"] = blocks["product"].model_copy(
+        update={
+            "metadata": {"category": "saas"},
+            "tags": ["lead", "high"],
+        }
+    )
+    session = V3SandboxSession(id="v3s_db_store", core_memory_blocks=blocks)
+
     first = run_v3_sandbox_turn(
         settings=get_settings(),
-        session=V3SandboxSession(id="v3s_db_store"),
+        session=session,
         user_message=V3SandboxMessage(id="msg_user_1", role="user", content="我们做中小企业财税 SaaS。"),
         client=_SequenceLlmClient([_product_turn_calls()]),
     )
@@ -83,6 +100,8 @@ def test_database_store_round_trips_session_and_normalized_events(tmp_path, monk
     reloaded = DatabaseV3SandboxStore().get_session("v3s_db_store")
     assert "产品是中小企业财税 SaaS" in reloaded.core_memory_blocks["product"].value
     assert "目标联系人是老板本人" in reloaded.core_memory_blocks["customer_intelligence"].value
+    assert reloaded.core_memory_blocks["product"].metadata == {"category": "saas"}
+    assert reloaded.core_memory_blocks["product"].tags == ["lead", "high"]
 
     with get_session_factory()() as db:
         assert db.query(V3SandboxMessageRecord).filter_by(session_id="v3s_db_store").count() == 6
@@ -850,7 +869,7 @@ def test_compose_context_renders_block_description_in_system_prompt() -> None:
     session = V3SandboxSession(id="v3s_prompt_desc", core_memory_blocks=blocks)
     user_message = V3SandboxMessage(id="msg_user_1", role="user", content="把产品理解告诉我一下。")
 
-    messages = _build_tool_loop_messages(session, user_message)
+    messages, _summary_info = _build_tool_loop_messages(session, user_message)
 
     assert messages[0]["role"] == "system"
     system_prompt = messages[0]["content"]
@@ -862,6 +881,387 @@ def test_compose_context_renders_block_description_in_system_prompt() -> None:
     assert "limit: 10000 chars" in system_prompt
     assert "limit: 20000 chars" in system_prompt
     assert "used: 0 chars" in system_prompt
+
+
+def test_memory_rethink_replaces_block_value(backend_env, monkeypatch) -> None:
+    from backend.api.config import get_settings
+
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+    blocks = default_core_memory_blocks()
+    blocks["product"] = blocks["product"].model_copy(
+        update={"value": "旧产品信息第一行\n旧产品信息第二行"}
+    )
+    session = V3SandboxSession(id="v3s_rethink", core_memory_blocks=blocks)
+
+    rethink_call = _tool_call(
+        "call_rethink",
+        "memory_rethink",
+        {
+            "label": "product",
+            "new_memory": "产品是面向苏州小企业的销售管理培训，线下课为主。",
+        },
+    )
+    send_after = _tool_call(
+        "call_send_after",
+        "send_message",
+        {"message": "已更新产品理解。"},
+    )
+    client = _SequenceLlmClient([[rethink_call, send_after]])
+
+    result = run_v3_sandbox_turn(
+        settings=get_settings(),
+        session=session,
+        user_message=V3SandboxMessage(id="msg_user_1", role="user", content="重新整理一下产品信息。"),
+        client=client,
+    )
+
+    assert result.session.core_memory_blocks["product"].value == "产品是面向苏州小企业的销售管理培训，线下课为主。"
+    rethink_events = [e for e in result.trace_event.tool_events if e.tool_name == "memory_rethink"]
+    assert len(rethink_events) == 1
+    assert rethink_events[0].status == "applied"
+    assert rethink_events[0].before_value == "旧产品信息第一行\n旧产品信息第二行"
+
+
+def test_memory_rethink_rejects_line_number_prefix(backend_env, monkeypatch) -> None:
+    from backend.api.config import get_settings
+
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+    session = V3SandboxSession(id="v3s_rethink_defense", core_memory_blocks=default_core_memory_blocks())
+
+    bad_rethink = _tool_call(
+        "call_bad_rethink",
+        "memory_rethink",
+        {
+            "label": "product",
+            "new_memory": "Line 1: 产品信息\nLine 2: 详细信息",
+        },
+    )
+    fallback_send = _tool_call(
+        "call_fallback_send",
+        "send_message",
+        {"message": "记录失败，已跳过。"},
+    )
+    client = _SequenceLlmClient([[bad_rethink, fallback_send]])
+
+    result = run_v3_sandbox_turn(
+        settings=get_settings(),
+        session=session,
+        user_message=V3SandboxMessage(id="msg_user_1", role="user", content="更新产品信息。"),
+        client=client,
+    )
+
+    rethink_events = [e for e in result.trace_event.tool_events if e.tool_name == "memory_rethink"]
+    assert len(rethink_events) == 1
+    assert rethink_events[0].status == "error"
+    assert "line number prefix" in rethink_events[0].error["message"].lower()
+
+
+def test_step_limit_respects_max_steps(backend_env, monkeypatch) -> None:
+    from backend.api.config import get_settings
+
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+
+    append_1 = _tool_call("call_1", "core_memory_append", {"label": "product", "content": "A"})
+    append_2 = _tool_call("call_2", "core_memory_append", {"label": "product", "content": "B"})
+    append_3 = _tool_call("call_3", "core_memory_append", {"label": "product", "content": "C"})
+    append_4 = _tool_call("call_4", "core_memory_append", {"label": "product", "content": "D"})
+
+    # With max_steps=4 (minimum), only 4 assistant calls are allowed.
+    # After the 4th call, _continue_or_return raises v3_tool_loop_exhausted
+    # before a 5th LLM call can happen.
+    client_exhaust = _SequenceLlmClient([[append_1], [append_2], [append_3], [append_4]])
+    with pytest.raises(ValueError, match="v3_tool_loop_exhausted"):
+        run_v3_sandbox_turn(
+            settings=get_settings(),
+            session=V3SandboxSession(id="v3s_step_limit_4"),
+            user_message=V3SandboxMessage(id="msg_user_2", role="user", content="测试。"),
+            client=client_exhaust,
+            max_steps=4,
+        )
+
+    # With max_steps=16 (default), the agent gets enough room for multiple assistant calls.
+    # Provide two turns: first appends, second send_message to terminate.
+    send_msg = _tool_call("call_send", "send_message", {"message": "done"})
+    client_ok = _SequenceLlmClient([[append_1, append_2], [send_msg]])
+    result_ok = run_v3_sandbox_turn(
+        settings=get_settings(),
+        session=V3SandboxSession(id="v3s_step_limit_16"),
+        user_message=V3SandboxMessage(id="msg_user_3", role="user", content="测试。"),
+        client=client_ok,
+        max_steps=16,
+    )
+    assert "A" in result_ok.session.core_memory_blocks["product"].value
+    assert result_ok.trace_event.error is None
+
+
+def test_runtime_config_max_steps_api(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("OPENCLAW_BACKEND_DATABASE_URL", f"sqlite:///{tmp_path / 'test.db'}")
+    reset_settings_cache()
+    reset_database_state()
+
+    from backend.api.main import create_app
+
+    with TestClient(create_app()) as client:
+        # Valid update
+        response = client.patch("/v3/sandbox/runtime-config", json={"max_steps": 24})
+        assert response.status_code == 200
+        assert response.json()["runtime_config"]["max_steps"] == 24
+
+        # Invalid: too low
+        bad_low = client.patch("/v3/sandbox/runtime-config", json={"max_steps": 3})
+        assert bad_low.status_code == 422
+
+        # Invalid: too high
+        bad_high = client.patch("/v3/sandbox/runtime-config", json={"max_steps": 51})
+        assert bad_high.status_code == 422
+
+        # Reset
+        reset_resp = client.post("/v3/sandbox/runtime-config/reset")
+        assert reset_resp.status_code == 200
+        assert reset_resp.json()["runtime_config"]["max_steps"] == 16
+
+    reset_database_state()
+    reset_settings_cache()
+
+
+def _make_long_session(n_messages: int = 40, words_per_message: int = 2000) -> V3SandboxSession:
+    """Build a session whose token count clearly exceeds the 0.75 threshold
+    on a 200k-window model (minimax-m2.5 default). Each message ≈ 10k tokens."""
+    long_text = " ".join(["sales automation platform"] * words_per_message)
+    messages = [
+        V3SandboxMessage(
+            id=f"msg_{i}",
+            role="user" if i % 2 == 0 else "assistant",
+            content=f"Message {i}: {long_text}",
+        )
+        for i in range(n_messages)
+    ]
+    return V3SandboxSession(id=f"v3s_compress_{n_messages}", messages=messages)
+
+
+def _mock_summary_completion(text: str) -> TokenHubCompletion:
+    return TokenHubCompletion(
+        content=text,
+        usage={"total_tokens": 20},
+        tool_calls=[],
+        finish_reason="stop",
+        raw_message={"role": "assistant", "content": text},
+    )
+
+
+def test_context_compression_persists_summary_and_advances_cursor(backend_env, monkeypatch) -> None:
+    from unittest.mock import patch
+    from backend.api.config import get_settings
+
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+    settings = get_settings()
+
+    session = _make_long_session()
+    user_message = V3SandboxMessage(id="msg_user", role="user", content="Final message.")
+    messages_before = len(session.messages)
+
+    with patch("backend.runtime.v3_sandbox.graph.TokenHubClient") as MockClient:
+        MockClient.return_value.complete_with_tools.return_value = _mock_summary_completion(
+            "Summary: seller sells sales automation; targets SMBs; pricing TBD."
+        )
+        built_messages, _summary_info = _build_tool_loop_messages(session, user_message, settings=settings)
+
+    # Summary banner should appear in the LLM payload.
+    summary_msgs = [
+        m for m in built_messages
+        if m.get("role") == "user" and "Summary of older conversation" in (m.get("content") or "")
+    ]
+    assert len(summary_msgs) == 1
+    assert "Summary: seller sells sales automation" in summary_msgs[0]["content"]
+
+    # Summary state should now be persisted on the session.
+    assert session.context_summary is not None
+    assert "Summary: seller sells sales automation" in session.context_summary
+    assert session.summary_recursion_count == 1
+    # Cursor should land on the last absorbed message. This test bypasses
+    # _load_state, so session.messages stays at 40 entries (msg_0..msg_39);
+    # historical = messages[:-1] = msg_0..msg_38 (39 entries); the recent
+    # window keeps the last 32 (msg_7..msg_38) and the cursor is msg_6.
+    assert session.summary_cursor_message_id == "msg_6"
+    # Original messages must NOT be modified or augmented.
+    assert len(session.messages) == messages_before
+
+
+def test_context_compression_recent_window_after_summary_is_32_originals(backend_env, monkeypatch) -> None:
+    from unittest.mock import patch
+    from backend.api.config import get_settings
+
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+    settings = get_settings()
+
+    session = _make_long_session()
+    user_message = V3SandboxMessage(id="msg_user", role="user", content="Final message.")
+
+    with patch("backend.runtime.v3_sandbox.graph.TokenHubClient") as MockClient:
+        MockClient.return_value.complete_with_tools.return_value = _mock_summary_completion("Summary v1.")
+        _, _ = _build_tool_loop_messages(session, user_message, settings=settings)
+
+    # The user message in the payload contains a "Recent conversation" block
+    # listing exactly 32 raw messages.
+    payload, _ = _build_tool_loop_messages(session, user_message, settings=settings)
+    user_payload = next(m for m in payload if m["role"] == "user" and "Recent conversation" in m["content"])
+    listed_indices = [
+        int(line.split("Message ", 1)[1].split(":", 1)[0])
+        for line in user_payload["content"].splitlines()
+        if line.startswith("[user] Message ") or line.startswith("[assistant] Message ")
+    ]
+    # Bypassing _load_state, historical = msg_0..msg_38; cursor = msg_6;
+    # recent window = msg_7..msg_38 = 32 entries.
+    assert listed_indices[0] == 7
+    assert listed_indices[-1] == 38
+    assert len(listed_indices) == 32
+
+
+def test_context_compression_recursive_uses_prior_summary(backend_env, monkeypatch) -> None:
+    from unittest.mock import patch
+    from backend.api.config import get_settings
+
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+    settings = get_settings()
+
+    # Pre-seed a session with an existing summary + cursor as if a previous
+    # turn had already triggered summarization.
+    session = _make_long_session()
+    session.context_summary = "Prior summary: seller sells X."
+    session.summary_cursor_message_id = "msg_7"
+    session.summary_recursion_count = 1
+    # Append more messages so that after_cursor is well over 32, forcing a
+    # second summarization this turn.
+    long_text = " ".join(["additional context payload"] * 2000)
+    for i in range(40, 80):
+        session.messages.append(
+            V3SandboxMessage(
+                id=f"msg_{i}",
+                role="user" if i % 2 == 0 else "assistant",
+                content=f"Message {i}: {long_text}",
+            )
+        )
+    user_message = V3SandboxMessage(id="msg_user", role="user", content="Final.")
+
+    captured_prompt: dict[str, str] = {}
+
+    def capture(messages, **kwargs):
+        captured_prompt["text"] = messages[0]["content"]
+        return _mock_summary_completion("Summary v2 merged.")
+
+    with patch("backend.runtime.v3_sandbox.graph.TokenHubClient") as MockClient:
+        MockClient.return_value.complete_with_tools.side_effect = capture
+        _, _ = _build_tool_loop_messages(session, user_message, settings=settings)
+
+    # The summarizer prompt should include the prior summary as authoritative.
+    assert "Previous summary" in captured_prompt["text"]
+    assert "Prior summary: seller sells X." in captured_prompt["text"]
+    # And recursion count advanced.
+    assert session.summary_recursion_count == 2
+    assert session.context_summary == "Summary v2 merged."
+
+
+def test_fresh_session_has_no_summary_state() -> None:
+    """A new session must default to no persistent summary, no cursor, and
+    zero recursions — Pydantic field defaults guarantee A-lite is opt-in."""
+    session = V3SandboxSession(id="v3s_fresh")
+    assert session.context_summary is None
+    assert session.summary_cursor_message_id is None
+    assert session.summary_recursion_count == 0
+
+
+def test_summary_state_round_trips_through_json_store(tmp_path: Path) -> None:
+    """A-lite summary fields must survive Pydantic JSON dump/validate so they
+    persist via the existing v3_sandbox_sessions.payload_json column without
+    a schema migration."""
+    store = JsonFileV3SandboxStore(tmp_path)
+    session = V3SandboxSession(
+        id="v3s_summary_persist",
+        context_summary="Stored summary text.",
+        summary_cursor_message_id="msg_42",
+        summary_recursion_count=3,
+    )
+    store.create_session(session)
+    reloaded = store.get_session("v3s_summary_persist")
+    assert reloaded.context_summary == "Stored summary text."
+    assert reloaded.summary_cursor_message_id == "msg_42"
+    assert reloaded.summary_recursion_count == 3
+
+
+def test_replay_does_not_reuse_persisted_summary(tmp_path, monkeypatch) -> None:
+    """Replay must derive summary from scratch rather than inheriting the
+    source session's persisted context_summary."""
+    monkeypatch.setenv("OPENCLAW_BACKEND_DATABASE_URL", f"sqlite:///{tmp_path / 'test.db'}")
+    monkeypatch.setenv("OPENCLAW_BACKEND_V3_SANDBOX_STORE_BACKEND", "database")
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+    reset_database_state()
+    init_db()
+
+    from unittest.mock import patch
+    from backend.api.config import get_settings
+    from backend.api.main import create_app
+
+    # Build a long session that triggers summarization.
+    session = _make_long_session()
+    settings = get_settings()
+
+    with patch("backend.runtime.v3_sandbox.graph.TokenHubClient") as MockClient:
+        MockClient.return_value.complete_with_tools.return_value = _mock_summary_completion(
+            "Summary: seller sells sales automation; targets SMBs; pricing TBD."
+        )
+        _build_tool_loop_messages(
+            session,
+            V3SandboxMessage(id="msg_user", role="user", content="Final."),
+            settings=settings,
+        )
+
+    assert session.context_summary is not None
+    assert session.summary_recursion_count == 1
+
+    store = DatabaseV3SandboxStore()
+    store.save_session(session)
+
+    with TestClient(create_app()) as client:
+        response = client.post(f"/v3/sandbox/sessions/{session.id}/replay")
+
+    assert response.status_code == 200
+    replay_session = response.json()["session"]
+    # Replay creates a fresh V3SandboxSession — summary fields must start empty.
+    assert replay_session["context_summary"] is None
+    assert replay_session["summary_cursor_message_id"] is None
+    assert replay_session["summary_recursion_count"] == 0
+
+    reset_database_state()
+    reset_settings_cache()
+
+
+def test_session_reset_clears_summary_fields(tmp_path: Path) -> None:
+    """Overwriting a session in the store with a fresh instance (reset) must
+    clear the three A-lite summary fields back to defaults."""
+    store = JsonFileV3SandboxStore(tmp_path)
+    session = V3SandboxSession(
+        id="v3s_reset",
+        context_summary="Old summary.",
+        summary_cursor_message_id="msg_old",
+        summary_recursion_count=5,
+    )
+    store.create_session(session)
+
+    # Simulate reset by saving a fresh session with the same ID.
+    reset_session = V3SandboxSession(id="v3s_reset")
+    store.save_session(reset_session)
+
+    reloaded = store.get_session("v3s_reset")
+    assert reloaded.context_summary is None
+    assert reloaded.summary_cursor_message_id is None
+    assert reloaded.summary_recursion_count == 0
 
 
 def _tool_call(call_id: str, name: str, arguments: dict[str, object]) -> TokenHubToolCall:

@@ -18,11 +18,11 @@
 
 ### Current task
 
-暂无。
+`docs/delivery/tasks/task_2026_05_03_v3_endpoint_a_lite_persistent_recursive_summary.md`
 
 ### Current task status
 
-无。
+`completed`
 
 ### Next queued task
 
@@ -55,6 +55,10 @@
 
 ## 4. Recently completed
 
+- `docs/delivery/tasks/task_2026_05_03_v3_endpoint_a_lite_persistent_recursive_summary.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_03_v3_endpoint_a_lite_persistent_recursive_summary.md`（done）
+- `docs/delivery/tasks/task_2026_05_02_v3_memory_rethink_step_limit_context_compression.md`（done，含附录 C Layer C 修正）
+- `docs/delivery/handoffs/handoff_2026_05_02_v3_memory_rethink_step_limit_context_compression.md`（done）
 - `docs/delivery/tasks/task_2026_05_02_v3_block_schema_and_legacy_cleanup.md`（done）
 - `docs/delivery/handoffs/handoff_2026_05_02_v3_block_schema_and_legacy_cleanup.md`（done）
 - `docs/delivery/tasks/task_2026_05_02_v3_letta_reference_study.md`（done）

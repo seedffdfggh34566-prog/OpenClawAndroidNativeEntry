@@ -59,7 +59,6 @@ class CreateV3SandboxDemoSeedRequest(ApiModel):
 AllowedV3SandboxModel = Literal[
     "minimax-m2.7",
     "deepseek-v4-flash",
-    "deepseek-v3.2",
     "kimi-k2.6",
     "glm-5.1",
     "deepseek-v3.1-terminus",

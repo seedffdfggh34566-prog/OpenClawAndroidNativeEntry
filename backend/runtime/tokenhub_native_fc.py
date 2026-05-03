@@ -7,7 +7,6 @@ V3_TOKENHUB_NATIVE_FC_DEFAULT_MODEL = "minimax-m2.7"
 V3_TOKENHUB_NATIVE_FC_MODEL_ALLOWLIST = [
     "minimax-m2.7",
     "deepseek-v4-flash",
-    "deepseek-v3.2",
     "kimi-k2.6",
     "glm-5.1",
     "deepseek-v3.1-terminus",
@@ -28,14 +27,6 @@ V3_TOKENHUB_NATIVE_FC_MODEL_POLICIES: dict[str, dict[str, Any]] = {
         "thinking_policy": 'use {"type":"disabled"} for named tool-choice probes',
         "tool_choice_modes": ["auto", "required", "named_with_thinking_disabled", "none"],
         "notes": "Strong speed/cost comparison model.",
-    },
-    "deepseek-v3.2": {
-        "native_tool_calling": True,
-        "recommended_role": "compatibility_smoke",
-        "temperature": 0,
-        "thinking_policy": "none",
-        "tool_choice_modes": ["auto", "required", "named", "none"],
-        "notes": "Compatibility baseline for native FC regression tests.",
     },
     "kimi-k2.6": {
         "native_tool_calling": True,

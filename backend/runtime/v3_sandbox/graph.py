@@ -37,7 +37,6 @@ _MODEL_CONTEXT_WINDOWS: dict[str, int] = {
     "minimax-m2.7": 200_000,
     "deepseek-v4-flash": 1_000_000,
     "deepseek-v3.1-terminus": 128_000,
-    "deepseek-v3.2": 128_000,
     "kimi-k2.6": 256_000,
     "glm-5.1": 200_000,
 }

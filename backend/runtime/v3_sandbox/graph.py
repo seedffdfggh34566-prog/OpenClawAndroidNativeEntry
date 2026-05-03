@@ -219,7 +219,7 @@ def _compose_context(state: V3SandboxGraphState) -> V3SandboxGraphState:
             "output": _maybe_node_io(state, {"tool_message_count": len(messages)}),
         },
     )
-    return {"tool_messages": messages, "summary_info": summary_info}
+    return {"tool_messages": messages, "summary_info": summary_info, "session": state["session"]}
 
 
 def _call_agent_with_tools(state: V3SandboxGraphState, *, client: TokenHubClient | None) -> V3SandboxGraphState:
@@ -503,7 +503,7 @@ def _maybe_run_summarization(
     historical: list[V3SandboxMessage],
     after_cursor: list[V3SandboxMessage],
     max_context_messages: int,
-) -> dict[str, Any] | None:
+) -> dict[str, Any]:
     """Endpoint-A-lite: if total token count of the in-context payload
     crosses the threshold, recursively summarize (existing summary + new
     after-cursor messages beyond the recent window) and persist the result
@@ -511,19 +511,26 @@ def _maybe_run_summarization(
     that the recent window is exactly max_context_messages original
     messages after the cursor.
 
-    Mutates session in place. Returns a dict with ``action`` and
-    ``llm_usage`` when summarization runs, or ``None`` when skipped.
+    Mutates session in place. Always returns a dict with ``action``:
+    - ``"created"`` / ``"refreshed"``: summarization ran and persisted.
+    - ``"noop_insufficient_messages"``: not enough after-cursor messages yet.
+    - ``"noop_below_threshold"``: token count below compression threshold.
+    - ``"noop_cursor_at_boundary"``: cursor already at the window boundary.
+    - ``"failed_tiktoken"``: tiktoken import or encoding failed.
+    - ``"failed_llm_empty_response"``: LLM returned empty content.
+    - ``"failed_llm_exception"``: LLM call raised an exception.
+    Successful actions also include ``"llm_usage"``.
     """
     try:
         import tiktoken
         encoding = tiktoken.get_encoding("cl100k_base")
     except Exception:
-        return
+        return {"action": "failed_tiktoken"}
 
     # We need at least max_context_messages + 1 after-cursor messages before
     # we can advance the cursor while keeping the recent window intact.
     if len(after_cursor) <= max_context_messages:
-        return
+        return {"action": "noop_insufficient_messages"}
 
     # Compute approximate token count of what the LLM would see this turn
     # if we DID NOT summarize: system prompt + existing summary banner +
@@ -539,13 +546,13 @@ def _maybe_run_summarization(
     token_count = len(encoding.encode(total_text))
     threshold = int(_context_window_for_model(settings.llm_model) * _CONTEXT_COMPRESSION_THRESHOLD_RATIO)
     if token_count < threshold:
-        return
+        return {"action": "noop_below_threshold"}
 
     # Messages to absorb into the summary this turn = everything in
     # after_cursor EXCEPT the most recent max_context_messages entries.
     to_absorb = after_cursor[:-max_context_messages]
     if not to_absorb:
-        return
+        return {"action": "noop_cursor_at_boundary"}
 
     summary_input_lines: list[str] = []
     if session.context_summary:
@@ -583,7 +590,7 @@ def _maybe_run_summarization(
             api_key=settings.llm_api_key,
             base_url=settings.llm_base_url,
             model=settings.llm_model,
-            timeout_seconds=max(settings.llm_timeout_seconds, 90.0),
+            timeout_seconds=settings.llm_summary_timeout_seconds,
         )
         completion = client.complete_with_tools(
             messages=[{"role": "user", "content": summary_prompt}],
@@ -593,21 +600,25 @@ def _maybe_run_summarization(
         )
         summary = completion.content.strip() if completion.content else ""
         if not summary:
-            return None
+            return {"action": "failed_llm_empty_response"}
         usage = _normalize_usage(completion.usage)
     except Exception:
-        return None
+        return {"action": "failed_llm_exception"}
 
-    new_cursor_id = to_absorb[-1].id
     action = "created" if session.summary_recursion_count == 0 else "refreshed"
     session.context_summary = summary
-    session.summary_cursor_message_id = new_cursor_id
+    session.summary_cursor_message_id = to_absorb[-1].id
+    # NOTE: summary_recursion_count is observability-only. It is exposed in
+    # trace metadata so /lab can show how many compactions a session has
+    # undergone, but it does NOT trigger any hard-refresh or gamma-style
+    # periodic reset. That mechanism was evaluated and rejected (not industry
+    # standard, does not fundamentally solve recursive degradation, conflicts
+    # with the recursive architecture).
     session.summary_recursion_count += 1
 
     return {
         "action": action,
         "llm_usage": usage,
-        "new_cursor_id": new_cursor_id,
     }
 
 
@@ -1056,7 +1067,7 @@ def _return_turn(state: V3SandboxGraphState) -> V3SandboxGraphState:
             "context_summary_chars": len(session.context_summary) if session.context_summary else 0,
             "summary_cursor_message_id": session.summary_cursor_message_id,
             "summary_recursion_count": session.summary_recursion_count,
-            "summary_action": summary_info["action"] if summary_info else "noop",
+            "summary_action": summary_info["action"] if summary_info else "noop_no_settings",
             "summary_llm_usage": summary_info.get("llm_usage") if summary_info else None,
         },
         tool_events=state.get("tool_events", []),

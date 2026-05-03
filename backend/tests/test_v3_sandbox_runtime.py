@@ -1264,6 +1264,88 @@ def test_session_reset_clears_summary_fields(tmp_path: Path) -> None:
     assert reloaded.summary_recursion_count == 0
 
 
+def test_summarization_llm_exception_does_not_mutate_session(backend_env, monkeypatch) -> None:
+    """LLM call raising an exception must leave session fields untouched and
+    return action='failed_llm_exception'."""
+    from unittest.mock import patch
+    from backend.api.config import get_settings
+
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+    settings = get_settings()
+
+    session = _make_long_session()
+    user_message = V3SandboxMessage(id="msg_user", role="user", content="Final message.")
+
+    with patch("backend.runtime.v3_sandbox.graph.TokenHubClient") as MockClient:
+        MockClient.return_value.complete_with_tools.side_effect = RuntimeError("LLM unavailable")
+        _, summary_info = _build_tool_loop_messages(session, user_message, settings=settings)
+
+    assert summary_info is not None
+    assert summary_info["action"] == "failed_llm_exception"
+    assert session.context_summary is None
+    assert session.summary_recursion_count == 0
+    assert session.summary_cursor_message_id is None
+
+
+def test_summarization_llm_empty_response_does_not_mutate_session(backend_env, monkeypatch) -> None:
+    """LLM returning empty content must leave session fields untouched and
+    return action='failed_llm_empty_response'."""
+    from unittest.mock import patch
+    from backend.api.config import get_settings
+
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+    settings = get_settings()
+
+    session = _make_long_session()
+    user_message = V3SandboxMessage(id="msg_user", role="user", content="Final message.")
+
+    empty_completion = _mock_summary_completion("")
+
+    with patch("backend.runtime.v3_sandbox.graph.TokenHubClient") as MockClient:
+        MockClient.return_value.complete_with_tools.return_value = empty_completion
+        _, summary_info = _build_tool_loop_messages(session, user_message, settings=settings)
+
+    assert summary_info is not None
+    assert summary_info["action"] == "failed_llm_empty_response"
+    assert session.context_summary is None
+    assert session.summary_recursion_count == 0
+    assert session.summary_cursor_message_id is None
+
+
+def test_summarization_tiktoken_failure_does_not_mutate_session(backend_env, monkeypatch) -> None:
+    """tiktoken import failure must leave session fields untouched and
+    return action='failed_tiktoken'."""
+    from unittest.mock import patch
+    from backend.api.config import get_settings
+    import sys
+
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+    settings = get_settings()
+
+    session = _make_long_session()
+    user_message = V3SandboxMessage(id="msg_user", role="user", content="Final message.")
+
+    # Force tiktoken import to fail by temporarily hiding the module.
+    real_tiktoken = sys.modules.get("tiktoken")
+    sys.modules["tiktoken"] = None  # type: ignore[assignment]
+    try:
+        _, summary_info = _build_tool_loop_messages(session, user_message, settings=settings)
+    finally:
+        if real_tiktoken is not None:
+            sys.modules["tiktoken"] = real_tiktoken
+        else:
+            del sys.modules["tiktoken"]
+
+    assert summary_info is not None
+    assert summary_info["action"] == "failed_tiktoken"
+    assert session.context_summary is None
+    assert session.summary_recursion_count == 0
+    assert session.summary_cursor_message_id is None
+
+
 def _tool_call(call_id: str, name: str, arguments: dict[str, object]) -> TokenHubToolCall:
     return TokenHubToolCall(
         id=call_id,

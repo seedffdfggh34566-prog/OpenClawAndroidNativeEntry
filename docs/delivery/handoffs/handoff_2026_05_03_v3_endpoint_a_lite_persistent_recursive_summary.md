@@ -83,7 +83,7 @@
 
 ## 4. 已知限制
 
-- **Summary 劣化**：每次递归压缩都损失细节；β prompt 工程化只能减缓不能根除。短会话（POC 通常 ≤ 50 turn）下递归深度 0–1，影响小。100+ turn 场景需评估 γ 周期性硬刷新。
+- **Summary 劣化**：每次递归压缩都损失细节；β prompt 工程化只能减缓不能根除。短会话（POC 通常 ≤ 50 turn）下递归深度 0–1，影响小。`summary_recursion_count` 仅作为 observability 字段暴露给 trace，**不触发任何硬刷新动作**；γ 周期性硬刷新机制已决定不实现（前沿框架亦未采用同类机制，且与递归架构冲突）。
 - **Replay 行为**：~~未显式禁用复用持久化 summary……未单独写 replay 测试~~ **已验证并闭环**。
   - `test_replay_does_not_reuse_persisted_summary`：通过 API replay 创建的新 session，`context_summary` / `summary_cursor_message_id` / `summary_recursion_count` 均从默认值开始，不会继承源 session 的 persisted summary。
   - `test_session_reset_clears_summary_fields`：通过 store 覆盖保存（reset）后，三个 summary 字段回归默认值。
@@ -94,7 +94,7 @@
 
 候选（需用户显式授权）：
 
-1. γ 周期性硬刷新（每 K 次递归全量重摘要）—— 等长会话场景出现
+1. ~~γ 周期性硬刷新（每 K 次递归全量重摘要）~~ **已否决**：非行业标准、无法根本解决递归劣化、与递归架构冲突。`summary_recursion_count` 保留为纯 observability。
 2. 60% warn 层（在 system prompt 注入 "memory_pressure: high" 提示）
 3. ADR-010 §6 #4 archival memory
 4. 从 allowlist 移除 deepseek-v3.2

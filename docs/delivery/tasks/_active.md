@@ -55,6 +55,8 @@
 
 ## 4. Recently completed
 
+- `docs/delivery/tasks/task_2026_05_03_v3_a_lite_review_followup.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_03_v3_a_lite_review_followup.md`（done）
 - `docs/delivery/tasks/task_2026_05_03_v3_endpoint_a_lite_persistent_recursive_summary.md`（done）
 - `docs/delivery/handoffs/handoff_2026_05_03_v3_endpoint_a_lite_persistent_recursive_summary.md`（done）
 - `docs/delivery/tasks/task_2026_05_02_v3_memory_rethink_step_limit_context_compression.md`（done，含附录 C Layer C 修正）

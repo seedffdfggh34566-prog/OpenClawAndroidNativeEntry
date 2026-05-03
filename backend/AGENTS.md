@@ -90,6 +90,21 @@ Backend LLM secrets are allowed only through process environment variables or lo
 - LLM traces may contain model output for local development, but must not record API keys, Authorization headers, full request bodies, or complete prompt messages unless a future task explicitly changes that policy.
 - Do not stage local DBs, trace JSON, `.env` files, or provider console exports that contain secret-like identifiers.
 
+### Dev Environment Contract
+
+- `make dev`（调用 `scripts/start-dev.sh`）是本地开发启动的 canonical 入口。
+- 任何改动如果触及以下任一，必须同步更新 `scripts/start-dev.sh` 和 `scripts/dev-environment.md`：
+  - 后端监听端口 / host
+  - Vite proxy target
+  - Alembic 配置位置或 migration 路径
+  - `.env` 必需变量变更
+  - 新增需要并行启动的服务（如 Redis、Celery）
+- 变更后必须验证 `make dev` 能在 30 秒内启动且 `/health` 返回 `{"status":"ok"}`。
+- Smoke test 分层：
+  - **Level A（轻量）**：`make dev-smoke` 检查 health + /lab 可访问。
+  - **Level B（中量）**：`backend/.venv/bin/python -m pytest backend/tests/test_v3_sandbox_runtime.py -x -q` 验证 mock LLM pipeline。
+  - **Level C（重量）**：`OPENCLAW_BACKEND_RUN_LIVE_LLM_SMOKE=1 pytest backend/tests/test_v3_sandbox_runtime.py` 验证真实 LLM。
+
 ---
 
 ## 5. Backend Validation Ladder

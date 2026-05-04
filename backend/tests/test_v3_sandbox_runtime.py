@@ -1572,6 +1572,6 @@ def test_empty_final_message_fallback() -> None:
 
     result = _return_turn(state)
     assistant_message = result["assistant_message"]
-    expected = "（Agent 在本轮执行了多个内部操作，但因上下文预算耗尽未发送最终回复。）"
+    expected = "（Agent 在本轮执行了多个内部操作，但未发送最终回复。）"
     assert assistant_message.content == expected
     assert result["trace_event"].parsed_output["assistant_message"] == expected

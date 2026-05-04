@@ -1088,7 +1088,7 @@ def _return_turn(state: V3SandboxGraphState) -> V3SandboxGraphState:
     session = state["session"]
     final_message = state.get("final_message", "")
     if not final_message:
-        final_message = "（Agent 在本轮执行了多个内部操作，但因上下文预算耗尽未发送最终回复。）"
+        final_message = "（Agent 在本轮执行了多个内部操作，但未发送最终回复。）"
     assistant_message = V3SandboxMessage(
         id=f"msg_assistant_{state['turn_id']}",
         role="assistant",

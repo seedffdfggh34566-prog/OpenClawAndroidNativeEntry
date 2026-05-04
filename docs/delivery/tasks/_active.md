@@ -1,6 +1,6 @@
 # 当前活跃任务
 
-更新时间：2026-05-02
+更新时间：2026-05-04
 
 ## 1. 使用说明
 
@@ -18,11 +18,11 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_2026_05_04_v3_context_threshold_and_guard.md`
+暂无。
 
 ### Current task status
 
-`completed`
+`completed`（上一个已完成的任务见 §4）。
 
 ### Next queued task
 

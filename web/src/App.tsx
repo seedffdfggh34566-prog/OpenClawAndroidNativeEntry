@@ -828,10 +828,10 @@ function TraceList({
         .map((event) => (
           <article className="trace-event" key={event.id}>
             <div className="row-between">
-                  <strong>{event.event_type}</strong>
-                  <span>{formatTime(event.created_at)}</span>
-                </div>
-                {event.error ? <p className="trace-error">{event.error.code}</p> : null}
+              <strong>{event.event_type}</strong>
+              <span>{formatTime(event.created_at)}</span>
+            </div>
+            {event.error ? <p className="trace-error">{event.error.code}</p> : null}
             {event.runtime_metadata?.early_return_reason === "context_budget_exhausted" ? (
               <p className="trace-warning">Context budget exhausted — loop ended early</p>
             ) : null}

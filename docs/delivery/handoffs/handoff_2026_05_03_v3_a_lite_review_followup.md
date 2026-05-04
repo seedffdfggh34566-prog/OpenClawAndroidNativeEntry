@@ -18,7 +18,7 @@ llm_summary_timeout_seconds: float = 90.0
 
 **`_compose_context`**
 
-return dict 加入 `"session": state["session"]`。原实现依赖 Python 引用语义——`_maybe_run_summarization` mutate session 后，LangGraph state 中的 session 指针仍指向同一对象，所以能生效；但一旦引入 checkpointing 或 reducer，mutation 会静默丢失。显式返回消除该脆弱性。
+return dict 加入 `"session": state["session"]`。**这是一个 bug 修复**：原实现依赖 Python 引用语义——`_maybe_run_summarization` mutate session 后，LangGraph state 中的 session 指针仍指向同一对象，所以当前能生效；但一旦引入 checkpointing 或 reducer，mutation 会静默丢失，导致摘要更新被丢弃。显式返回消除该隐患。
 
 **`_maybe_run_summarization`**
 
@@ -92,3 +92,19 @@ fallback `summary_action` 由 `"noop"` 改为 `"noop_no_settings"`，区分"sett
 1. 补充端到端 cursor 落点测试（通过 `run_v3_sandbox_turn` 验证生产路径 cursor = `msg_7`）
 2. `TokenHubClient` 复用（把 `client` 透传到 `_maybe_run_summarization`，需改图结构）
 3. γ 周期性硬刷新（每 K 次递归全量重摘要）
+
+---
+
+## 6. Review 修复（2026-05-04）
+
+本次交付经 `delivery-review` review 后补充以下修正：
+
+| 文件 | 修正内容 |
+|---|---|
+| `docs/delivery/tasks/_active.md` | 更新时间刷为 `2026-05-04`；已完成的 task 从 Current task 区移走，避免下次 agent 误读 |
+| `web/src/App.tsx` | `TraceList` JSX 缩进修正（`row-between` 子元素对齐） |
+| `backend/runtime/v3_sandbox/graph.py` | 空 `final_message` 兜底文案弱化，由"因上下文预算耗尽未发送最终回复"改为"未发送最终回复"，避免断言过强 |
+| `backend/tests/test_v3_sandbox_runtime.py` | 同步更新 `test_empty_final_message_fallback` expected 文案 |
+| `docs/delivery/handoffs/handoff_2026_05_03_v3_a_lite_review_followup.md` | `_compose_context` session 回传明确标注为 **bug 修复**（原措辞为"鲁棒性改进"） |
+
+验证：`backend/tests` 全量 **174 passed, 18 skipped**，零 regression。

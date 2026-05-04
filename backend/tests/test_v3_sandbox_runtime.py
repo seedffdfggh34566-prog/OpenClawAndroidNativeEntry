@@ -1487,3 +1487,91 @@ class _RepairLlmClient:
             tool_calls=tool_calls,
             finish_reason="tool_calls",
         )
+
+
+def test_threshold_changed_to_ninety() -> None:
+    from backend.runtime.v3_sandbox.graph import _CONTEXT_COMPRESSION_THRESHOLD_RATIO
+
+    assert _CONTEXT_COMPRESSION_THRESHOLD_RATIO == 0.90
+
+
+def test_ninety_five_percent_guard_returns_early(monkeypatch) -> None:
+    from backend.runtime.v3_sandbox.graph import _continue_or_return
+
+    class _HugeEncoder:
+        def encode(self, _text: str) -> list[int]:
+            return [0] * 200_000
+
+    monkeypatch.setattr("tiktoken.get_encoding", lambda _name: _HugeEncoder())
+
+    settings = type("Settings", (), {"llm_model": "minimax-m2.5"})()
+    state = {
+        "settings": settings,
+        "final_message": "",
+        "tool_events": [],
+        "tool_messages": [{"role": "assistant", "content": "x"}],
+        "max_steps": 16,
+        "runtime_metadata": {},
+    }
+
+    result = _continue_or_return(state)
+    assert result == "return"
+    assert state["runtime_metadata"]["early_return_reason"] == "context_budget_exhausted"
+
+
+def test_pressure_warning_injected_above_threshold(monkeypatch) -> None:
+    from unittest.mock import patch
+    from backend.api.config import get_settings, reset_settings_cache
+    from backend.runtime.v3_sandbox.graph import _build_tool_loop_messages
+
+    class _HugeEncoder:
+        def encode(self, _text: str) -> list[int]:
+            return [0] * 200_000
+
+    monkeypatch.setattr("tiktoken.get_encoding", lambda _name: _HugeEncoder())
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+    settings = get_settings()
+
+    session = _make_long_session(n_messages=40)
+    user_message = V3SandboxMessage(id="msg_user", role="user", content="Final message.")
+
+    with patch("backend.runtime.v3_sandbox.graph.TokenHubClient") as MockClient:
+        MockClient.return_value.complete_with_tools.return_value = _mock_summary_completion(
+            "Summary: test."
+        )
+        built_messages, _summary_info = _build_tool_loop_messages(session, user_message, settings=settings)
+
+    system_prompt = built_messages[0]["content"]
+    assert "Memory pressure warning" in system_prompt or "memory pressure warning" in system_prompt.lower()
+
+
+def test_empty_final_message_fallback() -> None:
+    from backend.runtime.v3_sandbox.graph import _return_turn
+    from backend.runtime.v3_sandbox.schemas import V3SandboxSession, V3SandboxDebugTraceOptions
+
+    session = V3SandboxSession(id="v3s_fallback")
+    state = {
+        "session": session,
+        "turn_id": "turn_1",
+        "final_message": "",
+        "runtime_metadata": {},
+        "started_perf": 0.0,
+        "tool_events": [],
+        "usage": {},
+        "debug_trace": None,
+        "debug_options": V3SandboxDebugTraceOptions(
+            verbose=False,
+            include_prompt=False,
+            include_raw_llm_output=False,
+            include_repair_attempts=False,
+            include_node_io=False,
+            include_state_diff=False,
+        ),
+    }
+
+    result = _return_turn(state)
+    assistant_message = result["assistant_message"]
+    expected = "（Agent 在本轮执行了多个内部操作，但因上下文预算耗尽未发送最终回复。）"
+    assert assistant_message.content == expected
+    assert result["trace_event"].parsed_output["assistant_message"] == expected

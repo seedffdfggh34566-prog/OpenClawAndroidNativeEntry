@@ -665,6 +665,21 @@ textarea {
   font-weight: 700;
 }
 
+.trace-warning {
+  color: #8a6d0b;
+  font-weight: 700;
+}
+
+.trace-warning-badge {
+  color: #8a6d0b;
+  font-weight: 700;
+  font-size: 0.75rem;
+  background: #fffbe6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #f0e6a3;
+}
+
 .overlay-backdrop,
 .trace-inspector-backdrop {
   position: fixed;

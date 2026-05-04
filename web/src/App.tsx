@@ -832,6 +832,9 @@ function TraceList({
                   <span>{formatTime(event.created_at)}</span>
                 </div>
                 {event.error ? <p className="trace-error">{event.error.code}</p> : null}
+            {event.runtime_metadata?.early_return_reason === "context_budget_exhausted" ? (
+              <p className="trace-warning">Context budget exhausted — loop ended early</p>
+            ) : null}
             <p>{event.tool_events.map((tool) => tool.tool_name).join(", ") || "no tool events"}</p>
             {event.debug_trace ? <p>{event.debug_trace.graph.nodes.join(" -> ")}</p> : null}
             <button type="button" className="secondary-button" onClick={() => onOpenInspector(event.id)}>
@@ -892,6 +895,9 @@ function TraceInspector({
                   <span>{formatTime(event.created_at)}</span>
                   <span>{event.tool_events.length} events</span>
                   {event.error ? <span>{event.error.code}</span> : null}
+                  {event.runtime_metadata?.early_return_reason === "context_budget_exhausted" ? (
+                    <span className="trace-warning-badge">Budget exhausted</span>
+                  ) : null}
                 </button>
               ))}
           </aside>

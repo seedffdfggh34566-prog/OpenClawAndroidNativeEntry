@@ -18,7 +18,7 @@
 
 ### Current task
 
-`docs/delivery/tasks/task_2026_05_03_v3_endpoint_a_lite_persistent_recursive_summary.md`
+`docs/delivery/tasks/task_2026_05_04_v3_context_threshold_and_guard.md`
 
 ### Current task status
 
@@ -55,6 +55,8 @@
 
 ## 4. Recently completed
 
+- `docs/delivery/tasks/task_2026_05_04_v3_context_threshold_and_guard.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_04_v3_context_threshold_and_guard.md`（done）
 - `docs/delivery/tasks/task_2026_05_03_v3_a_lite_review_followup.md`（done）
 - `docs/delivery/handoffs/handoff_2026_05_03_v3_a_lite_review_followup.md`（done）
 - `docs/delivery/tasks/task_2026_05_03_v3_endpoint_a_lite_persistent_recursive_summary.md`（done）

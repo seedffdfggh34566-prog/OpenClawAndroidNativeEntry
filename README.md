@@ -1,14 +1,15 @@
-# OpenClawAndroidNativeEntry
+# OpenClaw
 
-> 仓库名保留历史来源；当前 **V2.1 validated prototype path completed**，但 **V2.1 product milestone remains open under planning control**。
+> 仓库名保留历史来源；当前主线已切换为 **V3 Agent Sandbox-first Memory-native Sales Agent**。
+>
+> V2.1 作为 historical validated prototype 保留，不再作为默认开发方向。
 
-当前建议先阅读：
+进入仓库后优先阅读：
 
 1. [AGENTS.md](AGENTS.md)
 2. [docs/README.md](docs/README.md)
 3. [docs/product/project_status.md](docs/product/project_status.md)
 4. [docs/delivery/tasks/_active.md](docs/delivery/tasks/_active.md)
-5. [docs/how-to/operate/sales-workspace-prototype-demo-runbook.md](docs/how-to/operate/sales-workspace-prototype-demo-runbook.md)
 
 ---
 
@@ -17,126 +18,88 @@
 这个仓库现在应理解为：
 
 - **AI 销售助手 App 的产品级 mono-repo**
-- **V1 demo-ready baseline 的留存仓库**
-- **V2 workspace-native Sales Agent / Sales Workspace Kernel 的当前规划与实现入口**
-- **Android、backend、runtime、docs 共用的单一源工作区**
+- **V3 Agent Sandbox-first Memory-native Sales Agent 的 POC 与实现入口**
+- **Android、backend、Web `/lab`、docs 共用的单一源工作区**
 
 当前正式主线为：
 
-> **V2.1 validated prototype path completed；V2.1 product milestone remains open under planning control。**
+> **V3 Agent Sandbox-first Memory-native Sales Agent。**
 
-当前已验证 Sales Workspace Kernel、FastAPI prototype、Android workspace / Draft Review ID demo、Postgres / Alembic persistence baseline、Sales Workspace Postgres store、Draft Review audit persistence、deterministic chat-first backend prototype、5-sample backend conversational acceptance、Android chat-first workspace UI skeleton 与 Tencent TokenHub LLM runtime prototype。以上结论证明 prototype path，不等于完整 V2.1 product milestone 已关闭。
+当前已验证方向：session-scoped core memory blocks + native memory tool loop、`/v3/sandbox` backend-only runtime POC、`/lab` 内部测试入口、seed/reset/replay 控制、opt-in sandbox DB persistence、Settings runtime config、fullscreen Trace Inspector、recursive context summary with message-id cursor、layered smoke tests（A/B/C）。
 
-V1 已作为 demo-ready release candidate / learning milestone 收口，不再是默认开发方向。
+V2.1 Sales Workspace Kernel、Draft Review、Postgres persistence、chat-first prototype 作为 historical validated prototype 保留，不再是默认开发方向。
+
+V1 已冻结为 demo-ready release candidate / learning milestone。
 
 ---
 
 ## 当前执行入口
 
-当前 active task：
+当前 active task 以 [docs/delivery/tasks/_active.md](docs/delivery/tasks/_active.md) 为准。
 
-- 暂无自动排定任务。
-
-Next queued task：
-
-- 暂无 implementation task 自动开放。
-
-Current delivery package：
-
-- 暂无自动开放 delivery package。
-
-Sales Workspace Kernel prototype 已完成：
-
-- Pydantic schema
-- in-memory / JSON fixture store
-- WorkspacePatch apply
-- deterministic candidate ranking
-- Markdown projection
-- ContextPack compiler
-- no-DB FastAPI endpoints
-- Android read-only workspace demo
-- optional JSON file store prototype
-- deterministic Runtime PatchDraft prototype
-- PatchDraft review gate prototype
-- Android PatchDraft review UI prototype
-- V2 prototype demo runbook
-- clean demo verification
-- Draft review contract
-- Draft review routes prototype
-- Android Draft Review ID flow prototype
-- Postgres / Alembic persistence baseline
-- Sales Workspace persistence migration / repository / API Postgres store
-- Draft Review Postgres persistence and lifecycle events
-- pytest coverage
-
-当前 Draft review contract：
-
-- `docs/reference/api/sales-workspace-draft-review-contract.md`
-
-当前 Draft review routes prototype：
-
-- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
-
-V2.1 PRD acceptance gap review、conversational completion scope、5 个中文验收样例、backend conversational acceptance、Android polish、真机端到端验收、PRD Acceptance final review 和 Tencent TokenHub LLM runtime live eval 为 validated prototype path 提供证据。后续可由规划层开放 V2.1 continuation package；真正 V2.2 evidence / search / ContactPoint、正式 LangGraph、Android review history view 或 DB hardening 仍不自动开放。
-
-当前项目阶段状态以 [docs/product/project_status.md](docs/product/project_status.md) 为准；task / handoff 只作为证据，不自行定义产品阶段完成。
-
-当前不应自动实现：
+当前默认不得自动实现：
 
 - production hardening / 新增 API surface
-- SQLAlchemy ORM / Alembic migration / SQLite schema change
-- 新增或扩展 Android write path
-- 正式 LangGraph graph
 - 未经 task 开放的真实 LLM 扩展 / search provider
 - CRM pipeline / ContactPoint / 自动触达
 - V2.2 evidence / search / ContactPoint
+- production SaaS / auth / tenant
 
 ---
 
 ## 当前系统形态
 
 - `backend/`
-  - 当前正式业务后端与 V2 kernel prototype 位置
-  - V2.1 Sales Workspace Kernel 与 Postgres persistence baseline 已落地
+  - 当前 API edge 与 sandbox runtime host
+  - `/v3/sandbox`：V3 sandbox runtime POC（LangGraph native tool loop + TokenHub LLM runtime + core memory blocks + recursive summary）
+  - FastAPI + SQLite（当前默认 persistence baseline）
+- `web/`
+  - React + Vite 内部测试入口 `/lab`
+  - Settings、Trace Inspector、seed/reset/replay 控制面
 - `app/`
-  - Android 控制入口；当前已有 V2 workspace read-only demo 和 PatchDraft review UI prototype
+  - Android 控制入口；历史 V2 workspace read-only demo 保留
 - `docs/`
   - 产品方向、架构、任务、handoff 与 runbook 的正式入口
-- `backend/runtime/`
-  - Runtime / LangGraph Runtime 的执行层边界；当前已有 deterministic WorkspacePatchDraft prototype 和 explicit-flag Tencent TokenHub LLM runtime prototype
-
-Sales Workspace Kernel 是正式对象写回裁决层，不是 Runtime graph，也不是 Dev Agent。
 
 ---
 
-## 当前推荐阅读顺序
+## 常用验证命令
 
-无论是人工开发者还是 Dev Agent，进入仓库后建议按以下顺序阅读：
+V3 sandbox runtime（Level B smoke）：
 
-1. [AGENTS.md](AGENTS.md)
-2. [docs/README.md](docs/README.md)
-3. [docs/product/project_status.md](docs/product/project_status.md)
-4. [docs/product/overview.md](docs/product/overview.md)
-5. [docs/product/prd/ai_sales_assistant_v2_prd.md](docs/product/prd/ai_sales_assistant_v2_prd.md)
-6. [docs/adr/ADR-006-v2-conversational-sales-agent-baseline.md](docs/adr/ADR-006-v2-conversational-sales-agent-baseline.md)
-7. [docs/architecture/workspace/workspace-object-model.md](docs/architecture/workspace/workspace-object-model.md)
-8. [docs/architecture/workspace/sales-workspace-kernel.md](docs/architecture/workspace/sales-workspace-kernel.md)
-9. [docs/architecture/workspace/workspace-kernel-v0-scope.md](docs/architecture/workspace/workspace-kernel-v0-scope.md)
-10. [docs/delivery/tasks/_active.md](docs/delivery/tasks/_active.md)
-11. 当前 task / handoff
+```bash
+make backend-test
+```
 
-开发协作中的 agent 术语边界参考：
+V3 sandbox runtime（全量）：
 
-- [docs/how-to/operate/dev-agent-vs-sales-agent-runbook.md](docs/how-to/operate/dev-agent-vs-sales-agent-runbook.md)
+```bash
+make test
+```
+
+启动本地开发环境：
+
+```bash
+make dev        # 启动 backend + web
+make dev-smoke  # 启动并运行 Level A smoke check
+```
+
+Android 轻量入口检查：
+
+```bash
+./gradlew :app:tasks --offline
+```
 
 ---
 
-## 当前仓库结构
+## 仓库结构
 
 ```text
 OpenClawAndroidNativeEntry/
 ├─ app/          # Android 控制入口
-├─ backend/      # 后端与 Sales Workspace Kernel v0 prototype
+├─ backend/      # 后端 API 与 V3 sandbox runtime
+├─ web/          # React /lab 内部测试入口
+├─ scripts/      # 开发环境启动脚本
 ├─ docs/         # 正式文档、任务与 handoff
 └─ ...
 ```
@@ -148,7 +111,7 @@ docs/
 ├─ README.md
 ├─ product/
 ├─ architecture/
-│  └─ workspace/
+│  └─ v3/
 ├─ reference/
 ├─ how-to/
 ├─ adr/
@@ -158,61 +121,13 @@ docs/
 
 ---
 
-## 常用验证命令
-
-当前 backend 测试：
-
-```bash
-backend/.venv/bin/python -m pytest backend/tests -q
-```
-
-当前 Android 轻量入口检查：
-
-```bash
-./gradlew :app:tasks --offline
-```
-
-Sales Workspace Kernel v0 固定验证：
-
-```bash
-backend/.venv/bin/python -m pytest backend/tests/sales_workspace -q
-```
-
-Sales Workspace API / Runtime prototype 固定验证：
-
-```bash
-backend/.venv/bin/python -m pytest backend/tests/sales_workspace backend/tests/test_sales_workspace_api.py -q
-```
-
-Sales Workspace Draft Review routes 固定验证：
-
-```bash
-backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_draft_reviews_api.py -q
-```
-
-V2 Sales Workspace prototype demo：
-
-```bash
-docs/how-to/operate/sales-workspace-prototype-demo-runbook.md
-```
-
-Postgres-backed Sales Workspace verification：
-
-```bash
-docker compose -f compose.postgres.yml up -d
-OPENCLAW_BACKEND_DATABASE_URL=postgresql+psycopg://openclaw:openclaw_dev_password@127.0.0.1:55432/openclaw_dev backend/.venv/bin/alembic -c alembic.ini upgrade head
-OPENCLAW_BACKEND_POSTGRES_VERIFY_URL=postgresql+psycopg://openclaw:openclaw_dev_password@127.0.0.1:55432/openclaw_dev backend/.venv/bin/python -m pytest backend/tests/test_sales_workspace_repository.py backend/tests/test_sales_workspace_api_postgres_store.py backend/tests/test_sales_workspace_draft_reviews_postgres_store.py -q
-docker compose -f compose.postgres.yml down
-```
-
----
-
 ## 历史背景
 
 这个仓库起源于早期 OpenClaw Android Native Entry / HarmonyOS 宿主入口实验，因此仓库名和部分历史资料保留旧痕迹。
 
-这些内容现在只作为背景参考，统一放在：
+V2 历史资产可按需参考，但不再作为当前默认开发方向：
 
 - [docs/archive/openclaw/README.md](docs/archive/openclaw/README.md)
+- [docs/architecture/workspace/](docs/architecture/workspace/)
 
-历史资料不再主导当前 V2 workspace-native Sales Agent 的方向、任务入口或日常工作流。
+当前项目阶段状态以 [docs/product/project_status.md](docs/product/project_status.md) 为准；task / handoff 只作为证据，不自行定义产品阶段完成。

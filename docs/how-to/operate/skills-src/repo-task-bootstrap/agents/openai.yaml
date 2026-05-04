@@ -1,0 +1,5 @@
+interface:
+  display_name: "Repo Task Bootstrap"
+  short_description: "Structure repo-wide task scope before implementation."
+  default_prompt: "Use $repo-task-bootstrap to scope this repo task, validation, and handoff before implementation."
+

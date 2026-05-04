@@ -2,6 +2,8 @@
 
 更新时间：2026-04-28
 
+> 2026-04-29 scope note：本文档定义 V2.1 `real_llm_no_langgraph` structured output contract。它不是 V3 memory runtime contract；V3 cognitive memory update 不应被硬塞进 `patch_operations`。
+
 ## 1. Purpose
 
 本文档定义 V2.1 chat-first Product Sales Agent 使用 Tencent TokenHub LLM 时的 structured output contract。

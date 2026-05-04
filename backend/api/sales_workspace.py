@@ -971,6 +971,8 @@ def _format_llm_assistant_message(
     if output.message_type == "draft_summary":
         if has_draft_review:
             content = _replace_pending_draft_language(content)
+        else:
+            content = _remove_false_memory_claims(content)
         missing_labels = _missing_field_labels(output.missing_fields)
         if missing_labels:
             content = _trim_dangling_followup_intro(content)
@@ -985,6 +987,20 @@ def _format_llm_assistant_message(
                 + "\n\n我已把可保存到工作区的更新放在下方，写入前不会改变正式工作区。"
             )
     return _sanitize_user_visible_assistant_content(content)
+
+
+def _remove_false_memory_claims(content: str) -> str:
+    cleaned = re.sub(
+        r"我已将本轮有价值信息沉淀到工作区，当前卡片已更新[。.]?",
+        "这轮我先给出建议，未改动工作区卡片。",
+        content,
+    )
+    cleaned = re.sub(
+        r"(已|已经)?(沉淀|写入|保存)到工作区[^。\n]*[。.]?",
+        "这轮我先给出建议，未改动工作区卡片。",
+        cleaned,
+    )
+    return cleaned.strip()
 
 
 def _replace_pending_draft_language(content: str) -> str:
@@ -1391,10 +1407,13 @@ def _create_sales_agent_turn_for_thread(
         patch_draft = llm_result.patch_draft
         draft_review: WorkspacePatchDraftReview | None = None
         if patch_draft is not None:
+            memory_gate_decision = (
+                llm_result.memory_gate.decision if llm_result.memory_gate is not None else "auto_apply"
+            )
             try:
                 patch = materialize_workspace_patch(patch_draft)
                 preview_workspace = apply_workspace_patch(workspace, patch)
-                updated_workspace = store.apply_patch(patch)
+                updated_workspace = store.apply_patch(patch) if memory_gate_decision == "auto_apply" else None
             except WorkspaceVersionConflict as exc:
                 failed = agent_run.model_copy(
                     update={
@@ -1438,7 +1457,7 @@ def _create_sales_agent_turn_for_thread(
                 id=draft_review_id_for_draft(patch_draft.id),
                 workspace_id=workspace_id,
                 draft=patch_draft,
-                status="applied",
+                status="applied" if updated_workspace is not None else "previewed",
                 base_workspace_version=patch_draft.base_workspace_version,
                 created_by=patch_draft.author,
                 instruction=patch_draft.instruction,
@@ -1447,18 +1466,23 @@ def _create_sales_agent_turn_for_thread(
                     materialized_patch=patch,
                     preview_workspace_version=preview_workspace.workspace_version,
                     preview_ranking_board=preview_workspace.ranking_board,
-                    would_mutate=True,
+                    would_mutate=updated_workspace is not None,
                 ),
-                apply_result=WorkspacePatchDraftApplyResult(
-                    status="applied",
-                    materialized_patch_id=patch.id,
-                    workspace_version=updated_workspace.workspace_version,
-                    ranking_impact_summary=_ranking_impact_summary(updated_workspace.ranking_board),
-                    applied_at=utc_now(),
+                apply_result=(
+                    WorkspacePatchDraftApplyResult(
+                        status="applied",
+                        materialized_patch_id=patch.id,
+                        workspace_version=updated_workspace.workspace_version,
+                        ranking_impact_summary=_ranking_impact_summary(updated_workspace.ranking_board),
+                        applied_at=utc_now(),
+                    )
+                    if updated_workspace is not None
+                    else None
                 ),
             )
             review_store.save(draft_review)
-            workspace = updated_workspace
+            if updated_workspace is not None:
+                workspace = updated_workspace
 
         assistant_message = _assistant_message_for_llm_output(
             workspace=workspace,

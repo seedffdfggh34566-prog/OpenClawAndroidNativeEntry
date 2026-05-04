@@ -1,37 +1,12 @@
 # 当前活跃任务
 
-更新时间：2026-04-29
+更新时间：2026-05-04
 
 ## 1. 使用说明
 
-本文件用于告诉开发者和 Dev Agent：
+本文件是当前执行授权入口。它只说明当前是否有开放 task、是否允许 auto-continue、以及哪些内容不得自动实现。
 
-- 当前优先推进哪个正式任务
-- 当前是否开放 delivery package
-- 哪个任务只是背景材料
-- 当前是否允许自动继续执行下一项任务
-- 哪些内容仍禁止自动实现
-
----
-
-## 1.1 自动执行队列协议
-
-本文件是 Dev Agent 自动执行授权入口。
-
-项目阶段状态的权威入口是 `docs/product/project_status.md`。本文件只维护当前执行授权，不自行判断产品阶段是否完成。
-
-后续优先开放 `delivery package` 或 `delivery task`，而不是几分钟级 `step`。小步骤应优先写入 task 内部 checklist 或自动化契约。
-
-当 `Current delivery package` 或 `Current task` 标记为 `auto-continue: yes` 时，执行 agent 可在明确边界内连续完成内部 steps。
-
-自动继续不得越过：
-
-- 本文件 Current status / blocked 列出的边界
-- 当前 task 的 stop conditions
-- PRD / ADR / architecture baseline 的产品或架构边界
-- 需要 human decision 的范围变化
-
-当本文件写明“暂无自动排定任务”时，执行 agent 不得自行从历史 task 或 planned / blocked task 中挑选任务执行。
+产品阶段状态以 `docs/product/project_status.md` 为准。历史 task / handoff 只作为 evidence。
 
 ---
 
@@ -39,491 +14,121 @@
 
 ### Current delivery package
 
-暂无。当前开放单个 V2.1 Sales Workspace memory merge / auto-write bugfix task。
+暂无。
 
 ### Current task
 
-`docs/delivery/tasks/task_v2_1_sales_workspace_memory_merge_and_autowrite_bugfix.md`
+暂无。
+
+### Current task status
+
+`completed`（上一个已完成的任务见 §4）。
 
 ### Next queued task
 
-暂无下游 implementation task 自动开放。Sales Workspace memory merge / auto-write bugfix 已完成。
+暂无下游 implementation task 自动开放。
 
 ### Auto-continue
 
-`no`。`task_v2_1_sales_workspace_memory_merge_and_autowrite_bugfix.md` 已完成；暂无下游 implementation task 自动开放。
-
-### Recently completed
-
-- `docs/delivery/tasks/task_v2_1_sales_workspace_dev_diagnostics_inspector.md`（done）
-- `docs/delivery/tasks/task_v2_1_sales_workspace_memory_merge_and_autowrite_bugfix.md`（done）
-- `docs/delivery/handoffs/handoff_2026_04_29_v2_1_sales_workspace_memory_merge_and_autowrite_bugfix.md`（done）
-- `docs/delivery/tasks/task_v2_1_sales_workspace_answer_quality_and_device_bugfix.md`（done）
-- `docs/delivery/handoffs/handoff_2026_04_29_v2_1_sales_workspace_answer_quality_and_device_bugfix.md`（done）
-- `docs/delivery/handoffs/handoff_2026_04_28_v2_1_sales_workspace_dev_diagnostics_inspector.md`（done）
-- `docs/delivery/handoffs/handoff_2026_04_28_v2_1_android_chat_entry_recovery_planning.md`（planning handoff）
-- `docs/delivery/packages/package_v2_1_android_chat_entry_recovery.md`（done，Android chat surface productization evidence）
-- `docs/delivery/tasks/task_v2_1_android_chat_entry_recovery_and_demo_path.md`（done）
-- `docs/delivery/tasks/task_v2_1_android_openclaw_multithread_chat.md`（done）
-- `docs/delivery/tasks/task_v2_1_milestone_acceptance_review.md`（done）
-- `docs/delivery/tasks/task_v2_1_chat_first_workspace_start_gap_closure.md`（done）
-- `docs/delivery/handoffs/handoff_2026_04_28_v2_1_lightweight_start_entry_polish.md`（done）
-- `docs/product/research/v2_1_milestone_acceptance_review_2026_04_28.md`（done）
-- `docs/delivery/packages/package_v2_1_implementation_continuation.md`（done）
-- `docs/delivery/tasks/task_v2_1_postgres_verification_hardening.md`（done）
-- `docs/delivery/tasks/task_v2_1_llm_prompt_quality_followup.md`（done）
-- `docs/delivery/tasks/task_v2_1_trace_message_history_visibility.md`（done）
-- `docs/delivery/tasks/task_v2_1_android_workspace_onboarding.md`（done）
-- `docs/delivery/tasks/task_v2_1_demo_reproducibility_hardening.md`（done）
-- `docs/delivery/packages/package_v2_1_implementation_rebaseline.md`（done）
-- `docs/delivery/tasks/task_v2_1_implementation_rebaseline_and_gap_closure.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_kernel_backend_only_v0.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_post_v0_entry_sync.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_api_contract_v0.md`（done）
-- `docs/reference/api/sales-workspace-kernel-v0-contract.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_decision.md`（done）
-- `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_contract_fixture_examples.md`（done）
-- `docs/reference/api/sales-workspace-kernel-v0-examples.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`（done）
-- `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_prototype_demo_runbook.md`（done）
-- `docs/delivery/tasks/task_v2_post_demo_next_phase_decision.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_android_draft_review_id_flow_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_post_review_id_flow_persistence_decision_refresh.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`（done）
-- `docs/delivery/tasks/task_v2_postgres_dev_environment_baseline.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_schema_design.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_schema.md`（done / folded）
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_migration_v0.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`（done）
-- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`（done）
-- `docs/delivery/tasks/task_v2_1_completion_closeout.md`（done）
-- `docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`（done）
-- `docs/delivery/tasks/task_v2_1_chat_first_runtime_contract_examples.md`（done）
-- `docs/delivery/tasks/task_v2_1_chat_first_runtime_trace_persistence_schema_design.md`（done）
-- `docs/delivery/tasks/task_v2_1_chat_first_runtime_trace_persistence_migration_v0.md`（done）
-- `docs/delivery/tasks/task_v2_1_chat_first_runtime_backend_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_1_android_chat_first_workspace_ui_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_1_product_experience_demo_runbook.md`（done）
-- `docs/delivery/tasks/task_v2_1_product_experience_closeout.md`（done）
-- `docs/delivery/tasks/task_v2_1_prd_acceptance_gap_review.md`（done）
-- `docs/delivery/tasks/task_v2_1_conversational_completion_scope.md`（done）
-- `docs/delivery/tasks/task_v2_1_conversation_acceptance_examples.md`（done）
-- `docs/delivery/tasks/task_v2_1_conversational_implementation_queue.md`（done）
-- `docs/delivery/tasks/task_v2_1_clarifying_questions_backend_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_1_workspace_explanation_backend_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_1_product_profile_extraction_runtime.md`（done）
-- `docs/delivery/tasks/task_v2_1_lead_direction_adjustment_runtime.md`（done）
-- `docs/delivery/tasks/task_v2_1_conversation_acceptance_e2e.md`（done）
-- `docs/delivery/tasks/task_v2_1_android_conversation_polish.md`（done）
-- `docs/delivery/tasks/task_v2_1_android_conversation_sample_smoke.md`（done）
-- `docs/delivery/tasks/task_v2_1_product_experience_device_acceptance.md`（done）
-- `docs/delivery/tasks/task_v2_1_prd_acceptance_final_review.md`（done）
-- `docs/delivery/tasks/task_v2_1_product_experience_final_closeout.md`（done）
-- `docs/delivery/tasks/task_v2_1_llm_runtime_boundary_design.md`（done）
-- `docs/delivery/tasks/task_v2_1_llm_provider_dev_baseline.md`（done）
-- `docs/delivery/tasks/task_v2_1_sales_agent_structured_output_contract.md`（done）
-- `docs/delivery/tasks/task_v2_1_llm_sales_agent_turn_backend_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_1_llm_eval_acceptance_examples.md`（done）
-- `docs/delivery/tasks/task_v2_1_llm_runtime_docs_sync.md`（done）
-- `docs/delivery/tasks/task_v2_1_llm_runtime_closeout.md`（done）
-
-Sales Workspace Kernel backend-only v0 已完成，API contract v0 已冻结，persistence decision 已完成，contract fixture examples / state transition examples 已补齐，no-DB FastAPI prototype v0 已完成，Android read-only workspace demo 已完成，JSON file store prototype 已完成，Runtime PatchDraft prototype 已完成，PatchDraft review gate prototype 已完成，Android PatchDraft review UI prototype 已完成，V2 prototype demo runbook 已完成，post-demo 下一阶段决策已完成，Draft review contract 已完成，Draft review routes prototype 已完成，Android Draft Review ID flow prototype 已完成，post-review-id-flow persistence decision refresh 已完成，persistence baseline design 已完成，Postgres dev environment baseline 已完成，persistence schema design 已完成，persistence migration v0 已完成，repository layer v0 已完成，API Postgres store v0 已完成，Draft Review persistence v0 已完成，V2.1 engineering baseline closeout 已完成，V2.1 conversational backend acceptance 已完成，V2.1 Android polish / device acceptance 已完成，PRD Acceptance final review 已完成。这些内容证明 V2.1 validated prototype path，不等于完整 V2.1 product milestone 已关闭。
-
-V2.1 milestone acceptance review 已完成。2026-04-28 产品决策将“一句话启动 SalesWorkspace”弱化为轻量按钮“开始销售工作区”。Android OpenClaw-style multi-thread chat 已完成。当前开放 dev-only read-only Sales Workspace diagnostics inspector，用于开发排障和状态查看；V2.2 evidence / search / ContactPoint implementation 仍 blocked。
+`no`。
 
 ---
 
-## 3. 当前 V2.1 后续顺序
+## 3. 当前方向
 
-已完成：
+当前项目主线已定为：
 
-1. Sales Workspace Kernel backend API contract。
-2. Persistence decision。
-3. Contract fixture examples / state transition examples。
-4. Sales Workspace Backend API prototype v0。
-5. Android read-only workspace demo。
-6. Sales Workspace JSON file store prototype。
-7. Runtime PatchDraft prototype。
-8. PatchDraft review gate prototype。
-9. Android PatchDraft review UI prototype。
-10. Prototype demo runbook。
-11. Post-demo next phase decision。
-12. Draft review contract。
-13. Draft review routes prototype。
-14. Android Draft Review ID flow prototype。
-15. Post Review-ID Flow persistence decision refresh。
-16. Sales Workspace persistence baseline design。
-17. Postgres dev environment baseline。
-18. Sales Workspace persistence schema design。
-19. Sales Workspace persistence migration v0。
-20. Sales Workspace repository layer v0。
-21. Sales Workspace API Postgres store v0。
-22. Sales Workspace Draft Review persistence v0。
-23. V2.1 engineering baseline closeout。
-24. V2.1 chat-first runtime design。
-25. V2.1 chat-first runtime contract examples。
-26. V2.1 chat-first runtime trace persistence schema design。
-27. V2.1 chat-first runtime trace persistence migration v0。
-28. V2.1 chat-first runtime backend prototype。
-29. V2.1 Android chat-first workspace UI prototype。
-30. V2.1 product experience demo runbook。
-31. V2.1 product experience closeout。
+> **V3 Agent Sandbox-first Memory-native Sales Agent**
 
-继续完成：
+当前 V3 已有 backend-only sandbox runtime POC；更完整的 V3 product implementation、Web、Android 和 production SaaS 仍未开放。
 
-32. V2.1 PRD acceptance gap review。
-33. V2.1 conversational completion scope。
-34. V2.1 conversation acceptance examples。
-35. V2.1 conversational implementation queue。
-36. V2.1 clarifying questions backend prototype。
-37. V2.1 workspace explanation backend prototype。
-38. V2.1 product profile extraction runtime。
-39. V2.1 lead direction adjustment runtime。
-40. V2.1 conversation acceptance e2e。
-41. V2.1 Android conversation polish。
-42. V2.1 Android conversation sample smoke。
-43. V2.1 product experience device acceptance。
-44. V2.1 PRD acceptance final review。
-45. V2.1 product experience final closeout。
-46. V2.1 Tencent TokenHub LLM runtime boundary design。
-47. V2.1 LLM provider dev baseline。
-48. V2.1 Sales Agent structured output contract。
-49. V2.1 LLM sales-agent-turn backend prototype。
-50. V2.1 LLM eval acceptance examples。
-51. V2.1 LLM runtime docs sync。
-52. V2.1 LLM runtime closeout。
+最新入口：
 
-历史已完成但被人工验收反馈纠偏：
-
-53. V2.1 lightweight workspace start entry polish（delivery evidence only；不能作为 product-entry done 标准）。
-
-当前开放：
-
-54. V2.1 Android OpenClaw-style multi-thread chat（done）。
-55. V2.1 Sales Workspace dev diagnostics inspector（done）。
-56. V2.1 Sales Workspace answer quality and Android device bugfix（done）。
-
-后续 planned / blocked：
-
-- V2.2 evidence/search/contact docs-level planning 可由规划层单独开放。
-- V2.2 implementation、未经 task 开放的真实 LLM 扩展 / search、ContactPoint、CRM、正式 LangGraph、Android review history 和 DB hardening 继续 blocked。
-
-当前结论：
-
-- V2 MVP persistence baseline 采用 Postgres / Alembic。
-- SQLite 不作为 V2 Sales Workspace runtime fallback。
-- 不开放 production hardening 或新增 API surface。
-- `in-memory / JSON fixture` 与 JSON file store 仅作为 prototype / contract validation / demo continuity 支撑，不是正式 persistence baseline。
-- 最近完成 implementation task：`task_v2_1_sales_workspace_dev_diagnostics_inspector.md`。该任务新增 dev-only、read-only Sales Workspace diagnostics inspector，帮助开发者查看 workspace / conversation / trace / draft review 状态并定位不同步问题。不自动进入 Android product UI、auth / tenant / CRM / V2.2 search/contact、formal LangGraph、DB schema change 或 production hardening。
-- 当前已存在 no-DB FastAPI prototype：`backend/api/sales_workspace.py`。
-- 当前已存在 Android read-only workspace demo：top-level `Workspace` 页面。
-- 当前已存在可选 JSON file store prototype：`OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`。
-- 当前已存在 deterministic Runtime PatchDraft prototype：`task_v2_sales_workspace_runtime_patchdraft_prototype.md`。
-- 当前已存在 PatchDraft review gate prototype：`task_v2_sales_workspace_patchdraft_review_gate_prototype.md`。
-- 当前已存在 Android PatchDraft review UI prototype：`task_v2_android_patchdraft_review_ui_prototype.md`。
-- 当前已存在 V2 prototype demo runbook：`docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`。
-- 当前已完成 clean demo verification。
-- Draft review contract 已完成：`docs/reference/api/sales-workspace-draft-review-contract.md`。
-- Draft review routes prototype 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`。
-- Android Draft Review ID flow prototype 已完成：`docs/delivery/tasks/task_v2_android_draft_review_id_flow_prototype.md`。
-- Post Review-ID Flow persistence decision refresh 已完成：`docs/delivery/tasks/task_v2_post_review_id_flow_persistence_decision_refresh.md`。
-- Sales Workspace persistence baseline design 已完成：`docs/architecture/workspace/sales-workspace-persistence-baseline.md`。
-- Postgres dev environment baseline 已完成：`docs/delivery/tasks/task_v2_postgres_dev_environment_baseline.md`。
-- Sales Workspace persistence schema design 已完成：`docs/architecture/workspace/sales-workspace-persistence-schema.md`。
-- Sales Workspace persistence migration v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_persistence_migration_v0.md`。
-- Sales Workspace repository layer v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`。
-- Sales Workspace API Postgres store v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`。
-- Sales Workspace Draft Review persistence v0 已完成：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`。
-- V2.1 engineering baseline closeout 已完成：`docs/delivery/tasks/task_v2_1_completion_closeout.md`。
-- V2.1 chat-first Runtime design 已完成：`docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`。
-- V2.1 product experience early closeout 仅证明 deterministic chat-first demo flow；历史 final closeout 作为 prototype-path evidence 保留，当前 V2.1 milestone 状态以 `docs/product/project_status.md` 为准。
-- V2.1 PRD acceptance gap review 已完成：`docs/delivery/tasks/task_v2_1_prd_acceptance_gap_review.md`。
-- V2.1 conversational completion scope 已完成：`docs/delivery/tasks/task_v2_1_conversational_completion_scope.md`。
-- V2.1 conversation acceptance examples 已完成：`docs/delivery/tasks/task_v2_1_conversation_acceptance_examples.md`。
-- V2.1 conversational implementation queue 已完成：`docs/delivery/tasks/task_v2_1_conversational_implementation_queue.md`。
-- V2.1 clarifying questions backend prototype 已完成：`docs/delivery/tasks/task_v2_1_clarifying_questions_backend_prototype.md`。
-- V2.1 workspace explanation backend prototype 已完成：`docs/delivery/tasks/task_v2_1_workspace_explanation_backend_prototype.md`。
-- V2.1 product profile extraction runtime 已完成：`docs/delivery/tasks/task_v2_1_product_profile_extraction_runtime.md`。
-- V2.1 lead direction adjustment runtime 已完成：`docs/delivery/tasks/task_v2_1_lead_direction_adjustment_runtime.md`。
-- V2.1 conversation acceptance e2e 已完成：`docs/delivery/tasks/task_v2_1_conversation_acceptance_e2e.md`。
-- V2.1 Android conversation polish 已完成：`docs/delivery/tasks/task_v2_1_android_conversation_polish.md`。
-- V2.1 product experience device acceptance 已完成：`docs/delivery/tasks/task_v2_1_product_experience_device_acceptance.md`。
-- V2.1 PRD Acceptance final review 已完成：`docs/delivery/tasks/task_v2_1_prd_acceptance_final_review.md`。
-- V2.1 product experience final closeout 已完成，作为 prototype-path evidence 保留：`docs/delivery/tasks/task_v2_1_product_experience_final_closeout.md`。
-- production hardening、history read API 和 DB reconstruction hardening 继续 blocked。
-- 当前没有 next queued implementation task。
+- `docs/product/prd/ai_sales_assistant_v3_prd.md`
+- `docs/adr/ADR-009-v3-memory-native-sales-agent-direction.md`
+- `docs/adr/ADR-010-letta-as-reference-architecture.md`
+- `docs/architecture/v3/memory-native-sales-agent.md`
+- `docs/architecture/v3/letta-comparison.md`
+- `docs/architecture/v3/web-dual-entry-prototype.md`
 
 ---
 
-## 4. 当前禁止自动实现
+## 4. Recently completed
 
-除非后续单独创建 task 并写入本文件，否则执行 agent 不应自动实现：
-
-- 新增或扩展 Sales Workspace FastAPI endpoint（当前 task 明确允许的 dev-only read-only diagnostics route 除外）
-- SQLAlchemy ORM
-- Alembic migration
-- SQLite schema change
-- Postgres runtime cutover / pgvector
-- 新增或扩展 Android workspace 写入 UI
-- 正式 LangGraph graph
-- 未经 task 开放的真实 LLM 扩展
-- 联网搜索
-- 搜索 provider
-- CRM pipeline
-- ContactPoint
-- V2.2 evidence / search / ContactPoint
-- 自动触达
-- 多用户 / 权限 / 租户
-- 真实 Git commit / rollback / branch
-- Markdown parse-back
-- embedding / semantic retrieval
-- source URL fetch verification
-- 复杂 candidate merge
-- AnalysisReport 正式对象
-- V2.2 evidence / search / ContactPoint implementation
-
----
-
-## 5. 当前结论
-
-V2 已从“对话式专属销售 agent prototype”进一步收敛为：
-
-> **workspace-native sales agent / 中小企业专属销售工作区 Agent。**
-
-Sales Workspace Kernel 是 V2 主架构。
-
-LangGraph 后续只作为 runtime execution layer。
-
-backend-only v0 已证明：
-
-```text
-创建 workspace
--> 添加产品理解
--> 添加获客方向
--> 添加两轮候选客户研究结果
--> 第二轮新候选超过第一轮旧候选
--> 生成 ranking delta
--> 渲染 Markdown workspace
--> 编译 ContextPack
-```
-
-API contract v0 已冻结：
-
-- `docs/reference/api/sales-workspace-kernel-v0-contract.md`
-
-Persistence decision 已冻结：
-
-- `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
-
-Contract examples 已补齐：
-
-- `docs/reference/api/sales-workspace-kernel-v0-examples.md`
-- `docs/reference/api/examples/sales_workspace_kernel_v0/`
-
-Sales Workspace Backend API prototype v0 已完成：
-
-- `backend/api/sales_workspace.py`
-- `backend/tests/test_sales_workspace_api.py`
-- `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`
-
-Android read-only workspace demo 已完成：
-
-- `scripts/seed_sales_workspace_demo.py`
-- Android top-level `Workspace` 页面
-- `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`
-
-Sales Workspace JSON file store prototype 已完成：
-
-- `OPENCLAW_BACKEND_SALES_WORKSPACE_STORE_DIR`
-- `backend/sales_workspace/store.py`
-- `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`
-
-Runtime PatchDraft prototype 已完成：
-
-- `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
-
-PatchDraft review gate prototype 已完成：
-
-- `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`
-
-Android PatchDraft review UI prototype 已完成：
-
-- `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`
-
-V2 Sales Workspace prototype demo runbook 已完成：
-
-- `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`
-- `docs/delivery/tasks/task_v2_sales_workspace_prototype_demo_runbook.md`
-
-Post-demo next phase decision 已完成：
-
-- `docs/delivery/tasks/task_v2_post_demo_next_phase_decision.md`
-- 推荐下一阶段：`docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`
-
-Draft review contract 已完成：
-
-- `docs/reference/api/sales-workspace-draft-review-contract.md`
-- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`
-
-Draft review routes prototype 已完成：
-
-- `backend/sales_workspace/draft_reviews.py`
-- `backend/tests/test_sales_workspace_draft_reviews_api.py`
-- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
-
-Android Draft Review ID flow prototype 已完成：
-
-- `docs/delivery/tasks/task_v2_android_draft_review_id_flow_prototype.md`
-
-Post Review-ID Flow persistence decision refresh 已完成：
-
-- `docs/delivery/tasks/task_v2_post_review_id_flow_persistence_decision_refresh.md`
-
-Sales Workspace persistence baseline design 已完成：
-
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`
-- `docs/architecture/workspace/sales-workspace-persistence-baseline.md`
-
-Sales Workspace persistence schema design 已完成：
-
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_schema_design.md`
-- `docs/architecture/workspace/sales-workspace-persistence-schema.md`
-
-Sales Workspace persistence migration v0 已完成：
-
-- `docs/delivery/tasks/task_v2_sales_workspace_persistence_migration_v0.md`
-
-Sales Workspace repository layer v0 已完成：
-
-- `docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`
-
-Sales Workspace API Postgres store v0 已完成：
-
-- `docs/delivery/tasks/task_v2_sales_workspace_api_postgres_store_v0.md`
-
-Sales Workspace Draft Review persistence v0 已完成：
-
-- `docs/delivery/tasks/task_v2_sales_workspace_draft_review_persistence_v0.md`
-
-V2.1 engineering baseline closeout 已完成：
-
-- `docs/delivery/tasks/task_v2_1_completion_closeout.md`
-
-当前自动排定任务：
-
-- 暂无。
-
-后续 planned / blocked：
-
-- `docs/delivery/tasks/task_v2_2_runtime_langgraph_design.md`（blocked until explicitly opened）
-- `docs/delivery/tasks/task_v2_2_android_review_history_planning.md`（blocked until explicitly opened）
-- `docs/delivery/tasks/task_v2_2_search_evidence_boundary_design.md`（blocked until explicitly opened）
-- `docs/delivery/tasks/task_v2_runtime_langgraph_design.md`（blocked until explicitly opened）
-- `docs/delivery/tasks/task_v2_android_review_history_view.md`（blocked until explicitly opened）
-- `docs/delivery/tasks/task_v2_1_chat_first_runtime_contract_examples.md`（done）
-- `docs/delivery/tasks/task_v2_1_chat_first_runtime_trace_persistence_schema_design.md`（done）
-- `docs/delivery/tasks/task_v2_1_chat_first_runtime_trace_persistence_migration_v0.md`（done）
-- `docs/delivery/tasks/task_v2_1_chat_first_runtime_backend_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_1_android_chat_first_workspace_ui_prototype.md`（done）
-- `docs/delivery/tasks/task_v2_1_product_experience_demo_runbook.md`（done）
-- `docs/delivery/tasks/task_v2_1_product_experience_closeout.md`（done）
+- `docs/delivery/tasks/task_2026_05_04_v3_context_threshold_and_guard.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_04_v3_context_threshold_and_guard.md`（done）
+- `docs/delivery/tasks/task_2026_05_03_v3_a_lite_review_followup.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_03_v3_a_lite_review_followup.md`（done）
+- `docs/delivery/tasks/task_2026_05_03_v3_endpoint_a_lite_persistent_recursive_summary.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_03_v3_endpoint_a_lite_persistent_recursive_summary.md`（done）
+- `docs/delivery/tasks/task_2026_05_02_v3_memory_rethink_step_limit_context_compression.md`（done，含附录 C Layer C 修正）
+- `docs/delivery/handoffs/handoff_2026_05_02_v3_memory_rethink_step_limit_context_compression.md`（done）
+- `docs/delivery/tasks/task_2026_05_02_v3_block_schema_and_legacy_cleanup.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_02_v3_block_schema_and_legacy_cleanup.md`（done）
+- `docs/delivery/tasks/task_2026_05_02_v3_letta_reference_study.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_02_v3_letta_reference_study.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_letta_inspired_core_memory_tool_loop_poc.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_tokenhub_native_tool_calling_adapter_poc.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_tokenhub_native_tool_calling_adapter_poc.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_tencent_tokenhub_native_fc_model_probe.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_tencent_tokenhub_native_fc_model_probe.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_lab_settings_trace_inspector.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_lab_settings_trace_inspector.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_lab_full_trace_visualization.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_lab_full_trace_visualization.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_lab_db_persistence_inspection.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_lab_db_persistence_inspection.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_sandbox_memory_persistence.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_sandbox_memory_persistence.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_lab_seed_reset_replay.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_lab_seed_reset_replay.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_sandbox_runtime_poc.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_sandbox_runtime_poc.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_web_lab_scaffold.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_web_lab_scaffold.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_sandbox_first_docs_rebaseline.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_agents_product_neutral_entry.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_agents_product_neutral_entry.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_v3_web_dual_entry_direction.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_v3_web_dual_entry_direction.md`（done）
+- `docs/delivery/tasks/task_2026_04_29_v3_repo_skill_guardrail_refresh.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_29_v3_repo_skill_guardrail_refresh.md`（done）
+- `docs/delivery/tasks/task_2026_04_29_agents_compression_skill_migration.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_29_agents_compression_skill_migration.md`（done）
+- `docs/delivery/tasks/task_2026_04_29_v3_docs_rebaseline.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_29_v3_docs_rebaseline.md`（done）
+- `docs/delivery/tasks/task_2026_04_29_langgraph_letta_memory_direction_docs.md`（done / transitional record）
+- `docs/delivery/handoffs/handoff_2026_04_29_langgraph_letta_memory_direction_docs.md`（done / transitional record）
+- `docs/delivery/tasks/task_v2_1_context_defect_device_deep_test_memory_pipeline.md`（done）
 
 ---
 
-## 6. 当前执行入口
+## 5. 当前禁止自动实现
 
-优先阅读：
+除非后续 task 明确开放，不得自动实现：
 
-1. `AGENTS.md`
-2. `docs/README.md`
-3. `docs/product/overview.md`
-4. `docs/product/prd/ai_sales_assistant_v2_prd.md`
-5. `docs/architecture/workspace/workspace-object-model.md`
-6. `docs/architecture/workspace/sales-workspace-kernel.md`
-7. `docs/architecture/workspace/workspace-kernel-v0-scope.md`
-8. `docs/architecture/workspace/markdown-projection.md`
-9. `docs/architecture/workspace/context-pack-compiler.md`
-10. `docs/reference/api/sales-workspace-kernel-v0-contract.md`
-11. `docs/reference/api/sales-workspace-kernel-v0-examples.md`
-12. `docs/adr/ADR-007-v2-sales-workspace-persistence-decision.md`
-13. `docs/delivery/tasks/task_v2_sales_workspace_backend_api_prototype_v0.md`
-14. `docs/delivery/tasks/task_v2_android_workspace_readonly_view.md`
-15. `docs/delivery/tasks/task_v2_sales_workspace_json_store_prototype.md`
-16. `docs/delivery/tasks/task_v2_sales_workspace_runtime_patchdraft_prototype.md`
-17. `docs/delivery/tasks/task_v2_sales_workspace_patchdraft_review_gate_prototype.md`
-18. `docs/delivery/tasks/task_v2_android_patchdraft_review_ui_prototype.md`
-19. `docs/how-to/operate/sales-workspace-prototype-demo-runbook.md`
-20. `docs/delivery/tasks/task_v2_post_demo_next_phase_decision.md`
-21. `docs/reference/api/sales-workspace-draft-review-contract.md`
-22. `docs/delivery/tasks/task_v2_sales_workspace_draft_review_contract.md`
-23. `docs/delivery/tasks/task_v2_sales_workspace_draft_review_routes_prototype.md`
-24. `docs/delivery/tasks/task_v2_android_draft_review_id_flow_prototype.md`
-25. `docs/delivery/tasks/task_v2_post_review_id_flow_persistence_decision_refresh.md`
-26. `docs/delivery/tasks/task_v2_sales_workspace_persistence_baseline_design.md`
-27. `docs/architecture/workspace/sales-workspace-persistence-baseline.md`
-28. `docs/delivery/tasks/task_v2_postgres_dev_environment_baseline.md`
-29. `docs/how-to/operate/postgres-dev-environment.md`
-30. `docs/delivery/tasks/task_v2_sales_workspace_persistence_schema_design.md`
-31. `docs/architecture/workspace/sales-workspace-persistence-schema.md`
-32. `docs/delivery/tasks/task_v2_sales_workspace_persistence_migration_v0.md`
-33. `docs/delivery/tasks/task_v2_sales_workspace_repository_layer_v0.md`
-34. `docs/delivery/tasks/task_v2_1_chat_first_runtime_design.md`
-35. `docs/architecture/runtime/v2-1-chat-first-runtime-design.md`
-36. `docs/reference/api/sales-workspace-chat-first-runtime-contract.md`
-37. `docs/delivery/tasks/task_v2_1_chat_first_runtime_contract_examples.md`
-38. `docs/delivery/tasks/task_v2_1_chat_first_runtime_trace_persistence_schema_design.md`
-39. `docs/delivery/tasks/task_v2_1_chat_first_runtime_trace_persistence_migration_v0.md`
-40. `docs/delivery/tasks/task_v2_1_chat_first_runtime_backend_prototype.md`
-41. `docs/delivery/tasks/task_v2_1_android_chat_first_workspace_ui_prototype.md`
-42. `docs/delivery/tasks/task_v2_1_product_experience_demo_runbook.md`
-43. `docs/delivery/tasks/task_v2_1_product_experience_closeout.md`
-44. 本文件
+- 超出 V3 sandbox runtime POC 的 LangGraph / LangChain runtime。
+- Letta server 接入。
+- 超出 opt-in V3 sandbox persistence 的 memory DB schema / migration。
+- 正式 customer intelligence schema / 自动建档 / 候选客户排序或打分实现。
+- 超出 `/lab` DB persistence inspection 内部测试能力的 Web UI implementation。
+- 超出 `/lab` full trace visualization 内部调试能力的 Web UI implementation。
+- Android UI 重写。
+- V2.2 search / ContactPoint。
+- CRM / outreach / bulk contact / 不可逆导出。
+- production SaaS / auth / tenant。
 
 ---
 
-## 7. Auto-continue allowed when
+## 6. 推荐下游候选
 
-当前无 implementation task 自动开放。
+以下仅为候选，不代表已开放：
 
-最近完成的自动继续范围仅允许：
+1. `V3 workspace user prototype planning`
+2. `V3 archival memory design`
+3. `V3 /lab trace playback`
+4. `V3 LangGraph Studio adapter spike`
 
-- 执行 `docs/delivery/tasks/task_v2_1_sales_workspace_dev_diagnostics_inspector.md`。
-- 新增 dev-only、read-only diagnostics inspector 及最小 backend validation。
-- 查看现有 Sales Workspace、conversation、trace、draft review 和 workspace version 诊断信息。
-- 明确证明 inspector 不写入 workspace、不暴露 secrets。
-- 不跨入 Android product UI、V2.2 search / ContactPoint、CRM、formal LangGraph、auth / tenant、DB schema change、production hardening 或 milestone completion claim。
-
-后续若开放其他 delivery package，应同时写明：
-
-- package 名称
-- task 类型
-- 允许连续完成的内部 steps
-- 可编辑范围
-- 禁止编辑范围
-- 自动继续条件
-- stop conditions
-- package handoff 要求
-
-执行 agent 不应自动继续 V2.2 Runtime / LangGraph、Android review history、search evidence、ContactPoint、CRM、DB hardening 或未经 task 开放的真实 LLM/search/contact implementation。后续任务必须由规划层明确开放。
-
----
-
-## 8. Stop conditions
-
-命中以下任一条件时停止并交回规划层：
-
-- 需要改变 V2 产品方向。
-- 需要新增或扩展当前 task 允许的 dev-only read-only diagnostics route 之外的 API route。
-- 需要新增 Android product UI、Android write path 或复杂交互。
-- 需要接正式 LangGraph / search，或扩展未经 task 开放的 LLM capability。
-- 需要引入新外部依赖。
-- 需要开放 production hardening 或新增 API surface。
+执行 agent 不得自行从候选项中开工。

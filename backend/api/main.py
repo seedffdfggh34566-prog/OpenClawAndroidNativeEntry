@@ -31,6 +31,10 @@ from backend.api.sales_workspace import (
     create_sales_workspace_store,
     router as sales_workspace_router,
 )
+from backend.api.v3_sandbox import (
+    create_v3_sandbox_store,
+    router as v3_sandbox_router,
+)
 from backend.api.schemas import (
     AnalysisRunCreateRequest,
     AnalysisRunCreateResponse,
@@ -203,7 +207,9 @@ def create_app() -> FastAPI:
     app.state.sales_workspace_store = create_sales_workspace_store()
     app.state.sales_workspace_draft_review_store = create_draft_review_store()
     app.state.sales_workspace_chat_trace_store = create_chat_trace_store()
+    app.state.v3_sandbox_store = create_v3_sandbox_store()
     app.include_router(sales_workspace_router)
+    app.include_router(v3_sandbox_router)
 
     @app.middleware("http")
     async def request_logging_middleware(request, call_next):

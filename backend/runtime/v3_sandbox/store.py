@@ -1,0 +1,243 @@
+from __future__ import annotations
+
+from pathlib import Path
+from threading import Lock
+from typing import Any
+
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session, sessionmaker
+
+from backend.api.database import get_session_factory
+from backend.api.models import (
+    V3SandboxCoreMemoryBlockTransitionEventRecord,
+    V3SandboxMessageRecord,
+    V3SandboxSessionRecord,
+    V3SandboxTraceEventRecord,
+)
+from backend.runtime.v3_sandbox.schemas import V3SandboxSession, utc_now
+
+
+class V3SandboxSessionNotFound(KeyError):
+    pass
+
+
+class V3SandboxStoreConfigError(ValueError):
+    pass
+
+
+class InMemoryV3SandboxStore:
+    def __init__(self) -> None:
+        self._sessions: dict[str, V3SandboxSession] = {}
+        self._lock = Lock()
+
+    def create_session(self, session: V3SandboxSession) -> V3SandboxSession:
+        with self._lock:
+            self._sessions[session.id] = session
+        return session
+
+    def get_session(self, session_id: str) -> V3SandboxSession:
+        with self._lock:
+            try:
+                return self._sessions[session_id].model_copy(deep=True)
+            except KeyError as exc:
+                raise V3SandboxSessionNotFound(session_id) from exc
+
+    def save_session(self, session: V3SandboxSession) -> V3SandboxSession:
+        with self._lock:
+            self._sessions[session.id] = session.model_copy(deep=True)
+        return session
+
+    def list_sessions(self) -> list[V3SandboxSession]:
+        with self._lock:
+            return [session.model_copy(deep=True) for session in self._sessions.values()]
+
+
+class JsonFileV3SandboxStore(InMemoryV3SandboxStore):
+    def __init__(self, store_dir: str | Path) -> None:
+        super().__init__()
+        self.store_dir = Path(store_dir)
+        self.store_dir.mkdir(parents=True, exist_ok=True)
+
+    def create_session(self, session: V3SandboxSession) -> V3SandboxSession:
+        saved = super().create_session(session)
+        self._write_session(saved)
+        return saved
+
+    def get_session(self, session_id: str) -> V3SandboxSession:
+        try:
+            return super().get_session(session_id)
+        except V3SandboxSessionNotFound:
+            path = self._session_path(session_id)
+            if not path.exists():
+                raise
+            session = V3SandboxSession.model_validate_json(path.read_text(encoding="utf-8"))
+            super().save_session(session)
+            return session
+
+    def save_session(self, session: V3SandboxSession) -> V3SandboxSession:
+        saved = super().save_session(session)
+        self._write_session(saved)
+        return saved
+
+    def list_sessions(self) -> list[V3SandboxSession]:
+        for path in sorted(self.store_dir.glob("*.json")):
+            session = V3SandboxSession.model_validate_json(path.read_text(encoding="utf-8"))
+            super().save_session(session)
+        return super().list_sessions()
+
+    def _write_session(self, session: V3SandboxSession) -> None:
+        self._session_path(session.id).write_text(
+            session.model_dump_json(indent=2),
+            encoding="utf-8",
+        )
+
+    def _session_path(self, session_id: str) -> Path:
+        safe_id = "".join(char if char.isalnum() or char in {"_", "-"} else "_" for char in session_id)
+        return self.store_dir / f"{safe_id}.json"
+
+
+class DatabaseV3SandboxStore:
+    def __init__(self, session_factory: sessionmaker[Session] | None = None) -> None:
+        self._session_factory = session_factory or get_session_factory()
+
+    def create_session(self, session: V3SandboxSession) -> V3SandboxSession:
+        return self.save_session(session)
+
+    def get_session(self, session_id: str) -> V3SandboxSession:
+        with self._session_factory() as db:
+            record = db.get(V3SandboxSessionRecord, session_id)
+            if record is None:
+                raise V3SandboxSessionNotFound(session_id)
+            return V3SandboxSession.model_validate(record.payload_json)
+
+    def save_session(self, session: V3SandboxSession) -> V3SandboxSession:
+        snapshot = session.model_copy(deep=True)
+        with self._session_factory() as db:
+            db.merge(
+                V3SandboxSessionRecord(
+                    session_id=snapshot.id,
+                    title=snapshot.title,
+                    payload_json=snapshot.model_dump(mode="json"),
+                    created_at=snapshot.created_at,
+                    updated_at=snapshot.updated_at,
+                )
+            )
+            self._replace_normalized_rows(db, snapshot)
+            db.commit()
+        return snapshot
+
+    def list_sessions(self) -> list[V3SandboxSession]:
+        with self._session_factory() as db:
+            records = db.scalars(select(V3SandboxSessionRecord).order_by(V3SandboxSessionRecord.updated_at)).all()
+            return [V3SandboxSession.model_validate(record.payload_json) for record in records]
+
+    def inspection_counts(self, session_id: str) -> dict[str, int]:
+        with self._session_factory() as db:
+            if db.get(V3SandboxSessionRecord, session_id) is None:
+                raise V3SandboxSessionNotFound(session_id)
+            return {
+                "messages": db.query(V3SandboxMessageRecord).filter_by(session_id=session_id).count(),
+                "traces": db.query(V3SandboxTraceEventRecord).filter_by(session_id=session_id).count(),
+                "core_memory_block_transitions": db.query(
+                    V3SandboxCoreMemoryBlockTransitionEventRecord
+                ).filter_by(session_id=session_id).count(),
+            }
+
+    def core_memory_transitions(self, session_id: str) -> list[dict[str, Any]]:
+        with self._session_factory() as db:
+            if db.get(V3SandboxSessionRecord, session_id) is None:
+                raise V3SandboxSessionNotFound(session_id)
+            records = (
+                db.scalars(
+                    select(V3SandboxCoreMemoryBlockTransitionEventRecord)
+                    .where(V3SandboxCoreMemoryBlockTransitionEventRecord.session_id == session_id)
+                    .order_by(
+                        V3SandboxCoreMemoryBlockTransitionEventRecord.created_at,
+                        V3SandboxCoreMemoryBlockTransitionEventRecord.transition_event_id,
+                    )
+                )
+                .all()
+            )
+            return [
+                {
+                    "id": item.transition_event_id,
+                    "transition_type": item.tool_name,
+                    "block_label": item.block_label,
+                    "status": item.status,
+                    "trace_event_id": item.trace_event_id,
+                    "turn_id": item.turn_id,
+                    "tool_event_id": item.tool_event_id,
+                    "tool_call_id": item.tool_call_id,
+                    "before_value": item.before_value,
+                    "after_value": item.after_value,
+                    "payload": item.payload_json,
+                    "created_at": item.created_at,
+                }
+                for item in records
+            ]
+
+    def _replace_normalized_rows(self, db: Session, session: V3SandboxSession) -> None:
+        for table in (
+            V3SandboxCoreMemoryBlockTransitionEventRecord,
+            V3SandboxTraceEventRecord,
+            V3SandboxMessageRecord,
+        ):
+            db.execute(delete(table).where(table.session_id == session.id))
+
+        for message in session.messages:
+            db.add(
+                V3SandboxMessageRecord(
+                    session_id=session.id,
+                    message_id=message.id,
+                    role=message.role,
+                    content=message.content,
+                    payload_json=message.model_dump(mode="json"),
+                    created_at=message.created_at,
+                )
+            )
+
+        for trace_event in session.trace:
+            db.add(
+                V3SandboxTraceEventRecord(
+                    session_id=session.id,
+                    trace_event_id=trace_event.id,
+                    turn_id=trace_event.turn_id,
+                    event_type=trace_event.event_type,
+                    runtime_metadata_json=trace_event.runtime_metadata,
+                    parsed_output_json=trace_event.parsed_output,
+                    error_json=trace_event.error,
+                    payload_json=trace_event.model_dump(mode="json"),
+                    created_at=trace_event.created_at,
+                )
+            )
+
+        for transition in _core_memory_block_transition_events(session):
+            db.add(V3SandboxCoreMemoryBlockTransitionEventRecord(**transition))
+
+
+def _core_memory_block_transition_events(session: V3SandboxSession) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for trace_event in session.trace:
+        for index, tool_event in enumerate(trace_event.tool_events):
+            if tool_event.block_label is None:
+                continue
+            if tool_event.tool_name not in {"core_memory_append", "memory_insert", "memory_replace"}:
+                continue
+            events.append(
+                {
+                    "session_id": session.id,
+                    "transition_event_id": f"{trace_event.id}:{index}:{tool_event.tool_name}:{tool_event.block_label}",
+                    "trace_event_id": trace_event.id,
+                    "turn_id": trace_event.turn_id,
+                    "tool_event_id": tool_event.id,
+                    "tool_call_id": tool_event.tool_call_id,
+                    "tool_name": tool_event.tool_name,
+                    "block_label": tool_event.block_label,
+                    "status": tool_event.status,
+                    "before_value": tool_event.before_value,
+                    "after_value": tool_event.after_value,
+                    "payload_json": tool_event.model_dump(mode="json"),
+                    "created_at": tool_event.created_at or trace_event.created_at or utc_now(),
+                }
+            )
+    return events

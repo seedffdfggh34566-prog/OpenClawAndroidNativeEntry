@@ -1,80 +1,54 @@
 # Skill Spec: `backend-db-risk-check`
 
-更新时间：2026-04-23
-
-## Skill name
-
-`backend-db-risk-check`
+更新时间：2026-04-30
 
 ## Purpose
 
-对 backend persistence、迁移、数据库工具层和数据库权限边界相关改动做风险分级与守门；同时吸收原 `schema_and_migration` 方案的正式对象演进与迁移约束。
+对 backend persistence、memory storage、sandbox working state、customer intelligence storage、migration 和 DB tooling 做 V3 风险分级，避免 sandbox-first 方向过早冻结成 formal object / production CRM 数据模型。
 
 ## When to trigger
 
-适用于以下改动：
-
 - `backend/api/database.py`
 - `backend/api/models.py`
-- `backend/data/*`
-- `backend/pyproject.toml` 中的 DB 依赖变化
-- 涉及 `SQLite -> Postgres`
-- 涉及 `pgvector`
-- 涉及 `MCP Toolbox for Databases`
+- `backend/alembic/`
+- backend DB dependency 变化
+- memory blocks、archival memory、embedding / retrieval storage
+- sandbox workspace working state、customer intelligence storage
+- SQLite / Postgres / pgvector / MCP database tooling / DB permissions
 
 ## Required repo docs
 
 - 根 `AGENTS.md`
 - `backend/AGENTS.md`
 - `docs/README.md`
-- `docs/architecture/backend/backend-agent-stack-phased-adoption.md`
-- 当前 task
-- 对应 handoff
+- `docs/adr/ADR-009-v3-memory-native-sales-agent-direction.md`
+- `docs/architecture/v3/memory-native-sales-agent.md`
+- 当前 task / handoff
 
-## Allowed tools / commands
-
-- `git diff -- backend/api/database.py backend/api/models.py backend/pyproject.toml`
-- `rg "sqlite|postgres|pgvector|database|engine|session" backend docs`
-- `backend/.venv/bin/python -m pytest backend/tests`
-- `backend/.venv/bin/alembic upgrade head`
-- `backend/.venv/bin/alembic check`
+V1/V2 persistence docs 只作 historical / compatibility reference。
 
 ## Expected outputs / evidence
 
-输出应至少包括：
-
-- 这次改动是 schema shape、storage baseline、migration risk 还是 DB tooling risk
-- 是否涉及新增或修改正式对象
-- 是否需要 version / status 字段
-- 是否触及 SQLite / Postgres / pgvector / DB tooling 边界
-- 是否需要新 task 或新架构说明
-- 当前最小验证做到了哪一步
+- DB risk category
+- schema / migration 是否改变
+- 是否过早把 sandbox working state 固化成 formal object schema
+- memory / working-state / customer-intelligence storage 是否改变
+- SQLite / Postgres / pgvector / DB tooling 是否涉及
+- LangGraph checkpoint 是否被误当成业务 memory 主存
+- 是否需要 dedicated follow-up task
+- 已执行或仍需执行的验证
 
 ## Stop / escalate conditions
 
-遇到以下情况应停止并升级：
-
-- 需要正式迁移数据库基线
-- 涉及 destructive schema change 或数据迁移
-- 计划给 agent / tool 放开 arbitrary SQL
-- 计划引入 `pgvector` 但 retrieval 需求尚未进入正式 scope
-
-## Bundled resources plan
-
-本 Skill 后续允许补充：
-
-- DB migration risk checklist
-- least-privilege DB tooling checklist
-- migration naming checklist
-- SQLite 开发期限制说明
-- 未来 PostgreSQL cutover 前的 schema anti-pattern 清单
-
-本阶段不要求脚本实现。
+- 未开放 task 就启动 memory schema / migration
+- sandbox working state 被过早合并进 formal object table 或 production CRM model
+- LangGraph checkpoint 成为唯一长期 memory store
+- destructive schema evolution
+- 未开放 retrieval / embedding task 就引入 pgvector
+- DB tools 给 runtime 或 Product Sales Agent unrestricted SQL、生产 CRM 写入、真实外部触达或不可逆导出
 
 ## Non-goals
 
-- 不替代正式数据库迁移 task
-- 不直接执行数据库迁移
-- 不自动批准 `Postgres`、`pgvector` 或 DB tool server 接入
-- 不成为生产数据库操作入口
-- 不单独再拆一个 `schema_and_migration` skill
+- 不替代数据库迁移 task。
+- 不执行数据库迁移。
+- 不批准 Postgres、pgvector 或 DB tool server 接入。

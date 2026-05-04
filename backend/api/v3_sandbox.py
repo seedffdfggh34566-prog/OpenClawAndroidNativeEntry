@@ -1,0 +1,625 @@
+from __future__ import annotations
+
+from typing import Any, Literal
+from uuid import uuid4
+
+from fastapi import APIRouter, Body, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+from backend.api.config import get_settings
+from backend.runtime.v3_sandbox import (
+    DatabaseV3SandboxStore,
+    InMemoryV3SandboxStore,
+    JsonFileV3SandboxStore,
+    V3SandboxDebugTraceOptions,
+    V3SandboxRuntimeError,
+    V3SandboxReplayReport,
+    V3SandboxSessionNotFound,
+    V3SandboxStoreConfigError,
+    run_v3_sandbox_turn,
+)
+from backend.runtime.tokenhub_native_fc import (
+    V3_TOKENHUB_NATIVE_FC_DEFAULT_MODEL,
+    V3_TOKENHUB_NATIVE_FC_MODEL_ALLOWLIST,
+    V3_TOKENHUB_NATIVE_FC_MODEL_POLICIES,
+)
+from backend.runtime.v3_sandbox.schemas import (
+    CoreMemoryToolEvent,
+    V3SandboxMessage,
+    V3SandboxSession,
+    V3SandboxTraceEvent,
+    default_core_memory_blocks,
+    utc_now,
+)
+
+
+router = APIRouter(prefix="/v3/sandbox", tags=["v3-sandbox"])
+
+
+class ApiModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class CreateV3SandboxSessionRequest(ApiModel):
+    session_id: str | None = None
+    title: str = "V3 Sandbox Session"
+
+
+class CreateV3SandboxTurnRequest(ApiModel):
+    content: str = Field(min_length=1)
+    debug_trace: V3SandboxDebugTraceOptions | None = None
+
+
+class CreateV3SandboxDemoSeedRequest(ApiModel):
+    scenario: str = "sales_training_correction"
+
+
+AllowedV3SandboxModel = Literal[
+    "minimax-m2.7",
+    "deepseek-v4-flash",
+    "kimi-k2.6",
+    "glm-5.1",
+]
+AllowedV3SandboxTimeout = Literal[90, 120, 180, 300]
+AllowedV3SandboxTraceMaxBytes = Literal[80_000, 200_000, 500_000]
+
+
+class V3SandboxRuntimeConfigPatch(ApiModel):
+    llm_model: AllowedV3SandboxModel | None = None
+    llm_timeout_seconds: AllowedV3SandboxTimeout | None = None
+    max_steps: int | None = Field(default=None, ge=4, le=50)
+    default_debug_trace: bool | None = None
+    default_include_prompt: bool | None = None
+    default_include_raw_llm_output: bool | None = None
+    default_include_state_diff: bool | None = None
+    replay_debug_trace: bool | None = None
+    trace_max_bytes: AllowedV3SandboxTraceMaxBytes | None = None
+
+
+V3SandboxStore = InMemoryV3SandboxStore | JsonFileV3SandboxStore | DatabaseV3SandboxStore
+
+_V3_DEFAULT_LLM_MODEL = V3_TOKENHUB_NATIVE_FC_DEFAULT_MODEL
+_MODEL_ALLOWLIST = V3_TOKENHUB_NATIVE_FC_MODEL_ALLOWLIST
+_NATIVE_FC_MODEL_POLICIES = V3_TOKENHUB_NATIVE_FC_MODEL_POLICIES
+_TIMEOUT_ALLOWLIST = [90, 120, 180, 300]
+_TRACE_MAX_BYTES_ALLOWLIST = [80_000, 200_000, 500_000]
+_MAX_STEPS_DEFAULT = 16
+_MAX_STEPS_MIN = 4
+_MAX_STEPS_MAX = 50
+_RUNTIME_OVERRIDE_KEYS = {
+    "llm_model",
+    "llm_timeout_seconds",
+    "max_steps",
+    "default_debug_trace",
+    "default_include_prompt",
+    "default_include_raw_llm_output",
+    "default_include_state_diff",
+    "replay_debug_trace",
+    "trace_max_bytes",
+}
+
+
+def create_v3_sandbox_store() -> V3SandboxStore:
+    backend = (get_settings().v3_sandbox_store_backend or "").strip().lower()
+    store_path = get_settings().v3_sandbox_store_path
+    if backend == "database":
+        return DatabaseV3SandboxStore()
+    if backend == "memory":
+        return InMemoryV3SandboxStore()
+    if backend == "json":
+        if store_path is None:
+            raise V3SandboxStoreConfigError("v3_sandbox_json_store_dir_required")
+        return JsonFileV3SandboxStore(store_path)
+    if backend:
+        raise V3SandboxStoreConfigError(f"unsupported_v3_sandbox_store_backend:{backend}")
+    if store_path is not None:
+        return JsonFileV3SandboxStore(store_path)
+    return InMemoryV3SandboxStore()
+
+
+def _store(request: Request) -> V3SandboxStore:
+    store = getattr(request.app.state, "v3_sandbox_store", None)
+    if store is None:
+        store = create_v3_sandbox_store()
+        request.app.state.v3_sandbox_store = store
+    return store
+
+
+def _runtime_overrides(request: Request) -> dict[str, Any]:
+    overrides = getattr(request.app.state, "v3_sandbox_runtime_overrides", None)
+    if overrides is None:
+        overrides = {}
+        request.app.state.v3_sandbox_runtime_overrides = overrides
+    return overrides
+
+
+def _effective_settings(request: Request):
+    settings = get_settings()
+    overrides = _runtime_overrides(request)
+    update: dict[str, Any] = {"llm_model": overrides.get("llm_model", _V3_DEFAULT_LLM_MODEL)}
+    if "llm_timeout_seconds" in overrides:
+        update["llm_timeout_seconds"] = overrides["llm_timeout_seconds"]
+    return settings.model_copy(update=update)
+
+
+def _runtime_debug_options(request: Request, explicit: V3SandboxDebugTraceOptions | None) -> V3SandboxDebugTraceOptions | None:
+    if explicit is not None:
+        return explicit
+    overrides = _runtime_overrides(request)
+    if not overrides.get("default_debug_trace", False):
+        return None
+    return V3SandboxDebugTraceOptions(
+        verbose=True,
+        include_prompt=bool(overrides.get("default_include_prompt", False)),
+        include_raw_llm_output=bool(overrides.get("default_include_raw_llm_output", False)),
+        include_repair_attempts=True,
+        include_node_io=True,
+        include_state_diff=bool(overrides.get("default_include_state_diff", False)),
+        max_bytes=int(overrides.get("trace_max_bytes", 80_000)),
+    )
+
+
+def _replay_debug_options(request: Request) -> V3SandboxDebugTraceOptions | None:
+    overrides = _runtime_overrides(request)
+    if not overrides.get("replay_debug_trace", False):
+        return None
+    return V3SandboxDebugTraceOptions(
+        verbose=True,
+        include_prompt=bool(overrides.get("default_include_prompt", False)),
+        include_raw_llm_output=bool(overrides.get("default_include_raw_llm_output", False)),
+        include_repair_attempts=True,
+        include_node_io=True,
+        include_state_diff=bool(overrides.get("default_include_state_diff", False)),
+        max_bytes=int(overrides.get("trace_max_bytes", 80_000)),
+    )
+
+
+def _runtime_config_response(request: Request) -> dict[str, Any]:
+    settings = get_settings()
+    effective = _effective_settings(request)
+    overrides = dict(_runtime_overrides(request))
+    effective_policy = _NATIVE_FC_MODEL_POLICIES.get(effective.llm_model, {})
+    return {
+        "backend_status": {
+            "store": _store_status(_store(request)),
+            "llm_provider": effective.llm_provider,
+            "llm_model": effective.llm_model,
+            "llm_api_key_status": "configured" if bool(settings.llm_api_key) else "missing",
+            "llm_timeout_seconds": effective.llm_timeout_seconds,
+            "native_fc_supported": bool(effective_policy.get("native_tool_calling", False)),
+            "native_fc_recommended_role": effective_policy.get("recommended_role", "unknown"),
+            "memory_runtime": "native_tool_loop",
+            "native_function_calling": True,
+            "langfuse_enabled": settings.langfuse_enabled,
+            "dev_llm_trace_enabled": settings.dev_llm_trace_enabled,
+        },
+        "runtime_config": {
+            "llm_model": effective.llm_model,
+            "llm_timeout_seconds": int(effective.llm_timeout_seconds),
+            "max_steps": int(overrides.get("max_steps", _MAX_STEPS_DEFAULT)),
+            "default_debug_trace": bool(overrides.get("default_debug_trace", False)),
+            "default_include_prompt": bool(overrides.get("default_include_prompt", False)),
+            "default_include_raw_llm_output": bool(overrides.get("default_include_raw_llm_output", False)),
+            "default_include_state_diff": bool(overrides.get("default_include_state_diff", False)),
+            "replay_debug_trace": bool(overrides.get("replay_debug_trace", False)),
+            "trace_max_bytes": int(overrides.get("trace_max_bytes", 80_000)),
+        },
+        "danger_readonly": {
+            "database_url_status": "configured" if bool(settings.database_url) else "default_sqlite",
+            "v3_sandbox_store_dir_status": "configured" if bool(settings.v3_sandbox_store_dir) else "not_configured",
+            "llm_api_key_status": "configured" if bool(settings.llm_api_key) else "missing",
+        },
+        "overrides": overrides,
+        "allowlists": {
+            "llm_models": _MODEL_ALLOWLIST,
+            "llm_timeout_seconds": _TIMEOUT_ALLOWLIST,
+            "max_steps": {"min": _MAX_STEPS_MIN, "max": _MAX_STEPS_MAX, "default": _MAX_STEPS_DEFAULT},
+            "trace_max_bytes": _TRACE_MAX_BYTES_ALLOWLIST,
+        },
+        "native_fc": {
+            "default_model": _V3_DEFAULT_LLM_MODEL,
+            "effective_model_policy": effective_policy,
+            "model_policies": _NATIVE_FC_MODEL_POLICIES,
+            "json_simulated_tool_calls_fallback": "reserved_not_enabled",
+        },
+        "memory_runtime": {
+            "mode": "native_tool_loop",
+            "core_memory_blocks": ["persona", "human", "product", "sales_strategy", "customer_intelligence"],
+            "tools": ["core_memory_append", "memory_insert", "memory_replace", "memory_rethink", "send_message"],
+        },
+    }
+
+
+def _error_response(*, status_code: int, code: str, message: str, details: dict[str, Any] | None = None) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content={"error": {"code": code, "message": message, "details": details or {}}},
+    )
+
+
+def _validation_error(exc: ValidationError) -> JSONResponse:
+    return _error_response(
+        status_code=422,
+        code="validation_error",
+        message="request body failed validation",
+        details={"errors": jsonable_encoder(exc.errors())},
+    )
+
+
+def _store_backend_name(store: V3SandboxStore) -> str:
+    if isinstance(store, DatabaseV3SandboxStore):
+        return "database"
+    if isinstance(store, JsonFileV3SandboxStore):
+        return "json"
+    return "memory"
+
+
+def _store_status(store: V3SandboxStore) -> dict[str, Any]:
+    backend = _store_backend_name(store)
+    return {
+        "backend": backend,
+        "database_enabled": backend == "database",
+        "json_enabled": backend == "json",
+        "transition_events_supported": backend == "database",
+    }
+
+
+@router.get("/store")
+def get_store_status(request: Request):
+    return _store_status(_store(request))
+
+
+@router.get("/runtime-config")
+def get_runtime_config(request: Request):
+    return _runtime_config_response(request)
+
+
+@router.patch("/runtime-config")
+def update_runtime_config(request: Request, payload: Any = Body(...)):
+    try:
+        parsed = V3SandboxRuntimeConfigPatch.model_validate(payload)
+    except ValidationError as exc:
+        return _validation_error(exc)
+    updates = parsed.model_dump(exclude_none=True)
+    overrides = _runtime_overrides(request)
+    for key, value in updates.items():
+        if key in _RUNTIME_OVERRIDE_KEYS:
+            overrides[key] = value
+    return _runtime_config_response(request)
+
+
+@router.post("/runtime-config/reset")
+def reset_runtime_config(request: Request):
+    _runtime_overrides(request).clear()
+    return _runtime_config_response(request)
+
+
+@router.post("/sessions")
+def create_session(request: Request, payload: Any = Body(...)):
+    try:
+        parsed = CreateV3SandboxSessionRequest.model_validate(payload)
+    except ValidationError as exc:
+        return _validation_error(exc)
+    session_id = parsed.session_id or f"v3s_{uuid4().hex[:12]}"
+    session = V3SandboxSession(id=session_id, title=parsed.title)
+    _store(request).create_session(session)
+    return JSONResponse(status_code=201, content=jsonable_encoder({"session": session}))
+
+
+@router.post("/demo-seeds")
+def create_demo_seed(request: Request, payload: Any = Body(...)):
+    try:
+        parsed = CreateV3SandboxDemoSeedRequest.model_validate(payload)
+    except ValidationError as exc:
+        return _validation_error(exc)
+    if parsed.scenario != "sales_training_correction":
+        return _error_response(
+            status_code=422,
+            code="unsupported_demo_seed_scenario",
+            message="unsupported demo seed scenario",
+            details={"scenario": parsed.scenario},
+        )
+    session = _sales_training_correction_seed()
+    _store(request).create_session(session)
+    return JSONResponse(status_code=201, content=jsonable_encoder({"session": session, "scenario": parsed.scenario}))
+
+
+@router.get("/sessions/{session_id}")
+def get_session(session_id: str, request: Request):
+    try:
+        session = _store(request).get_session(session_id)
+    except V3SandboxSessionNotFound:
+        return _error_response(
+            status_code=404,
+            code="not_found",
+            message="v3 sandbox session not found",
+            details={"session_id": session_id},
+        )
+    return {"session": session}
+
+
+@router.get("/sessions/{session_id}/trace")
+def get_session_trace(session_id: str, request: Request):
+    try:
+        session = _store(request).get_session(session_id)
+    except V3SandboxSessionNotFound:
+        return _error_response(
+            status_code=404,
+            code="not_found",
+            message="v3 sandbox session not found",
+            details={"session_id": session_id},
+        )
+    return {"session_id": session.id, "trace": session.trace}
+
+
+@router.get("/sessions/{session_id}/core-memory-transitions")
+def get_session_core_memory_transitions(session_id: str, request: Request):
+    store = _store(request)
+    try:
+        store.get_session(session_id)
+    except V3SandboxSessionNotFound:
+        return _error_response(
+            status_code=404,
+            code="not_found",
+            message="v3 sandbox session not found",
+            details={"session_id": session_id},
+        )
+    if not isinstance(store, DatabaseV3SandboxStore):
+        return {
+            "session_id": session_id,
+            "available": False,
+            "reason": "database_store_required",
+            "store": _store_status(store),
+            "counts": {},
+            "transitions": [],
+        }
+    return {
+        "session_id": session_id,
+        "available": True,
+        "reason": None,
+        "store": _store_status(store),
+        "counts": store.inspection_counts(session_id),
+        "transitions": store.core_memory_transitions(session_id),
+    }
+
+
+@router.post("/sessions/{session_id}/turns")
+def create_turn(session_id: str, request: Request, payload: Any = Body(...)):
+    try:
+        parsed = CreateV3SandboxTurnRequest.model_validate(payload)
+    except ValidationError as exc:
+        return _validation_error(exc)
+    try:
+        session = _store(request).get_session(session_id)
+    except V3SandboxSessionNotFound:
+        return _error_response(
+            status_code=404,
+            code="not_found",
+            message="v3 sandbox session not found",
+            details={"session_id": session_id},
+        )
+    user_message = V3SandboxMessage(
+        id=f"msg_user_{uuid4().hex[:12]}",
+        role="user",
+        content=parsed.content,
+    )
+    try:
+        result = run_v3_sandbox_turn(
+            settings=_effective_settings(request),
+            session=session,
+            user_message=user_message,
+            debug_options=_runtime_debug_options(request, parsed.debug_trace),
+            max_steps=_runtime_overrides(request).get("max_steps", _MAX_STEPS_DEFAULT),
+        )
+    except V3SandboxRuntimeError as exc:
+        if exc.session is not None:
+            _store(request).save_session(exc.session)
+        status_code = 503 if exc.code == "llm_runtime_unavailable" else 422
+        return _error_response(
+            status_code=status_code,
+            code=exc.code,
+            message=exc.message,
+            details={"session_id": session_id},
+        )
+    _store(request).save_session(result.session)
+    return {
+        "session": result.session,
+        "assistant_message": result.assistant_message,
+        "trace_event": result.trace_event,
+    }
+
+
+@router.post("/sessions/{session_id}/replay")
+def replay_session(session_id: str, request: Request):
+    store = _store(request)
+    try:
+        source_session = store.get_session(session_id)
+    except V3SandboxSessionNotFound:
+        return _error_response(
+            status_code=404,
+            code="not_found",
+            message="v3 sandbox session not found",
+            details={"session_id": session_id},
+        )
+
+    replay = V3SandboxSession(
+        id=f"v3s_replay_{uuid4().hex[:12]}",
+        title=f"Replay of {source_session.id}",
+    )
+    store.create_session(replay)
+    report = V3SandboxReplayReport(
+        status="completed",
+        source_session_id=source_session.id,
+        replay_session_id=replay.id,
+    )
+    user_messages = [message for message in source_session.messages if message.role == "user"]
+    for index, source_message in enumerate(user_messages, start=1):
+        replay_user_message = V3SandboxMessage(
+            id=f"msg_user_replay_{index}_{uuid4().hex[:8]}",
+            role="user",
+            content=source_message.content,
+        )
+        try:
+            result = run_v3_sandbox_turn(
+                settings=_effective_settings(request),
+                session=replay,
+                user_message=replay_user_message,
+                debug_options=_replay_debug_options(request),
+                max_steps=_runtime_overrides(request).get("max_steps", _MAX_STEPS_DEFAULT),
+            )
+        except V3SandboxRuntimeError as exc:
+            replay = exc.session or replay
+            store.save_session(replay)
+            report = V3SandboxReplayReport(
+                status="failed",
+                source_session_id=source_session.id,
+                replay_session_id=replay.id,
+                replayed_turns=index - 1,
+                failed_turn_index=index,
+                error={"code": exc.code, "message": exc.message},
+            )
+            return JSONResponse(
+                status_code=200,
+                content=jsonable_encoder({"session": replay, "replay": report}),
+            )
+        replay = result.session
+        report = report.model_copy(update={"replayed_turns": index})
+        store.save_session(replay)
+
+    return {"session": replay, "replay": report}
+
+
+def _sales_training_correction_seed() -> V3SandboxSession:
+    session_id = f"v3s_seed_{uuid4().hex[:12]}"
+    user_one = V3SandboxMessage(
+        id="msg_user_seed_1",
+        role="user",
+        content="我们做面向苏州小企业老板的销售管理培训，主要是线下课。",
+    )
+    assistant_one = V3SandboxMessage(
+        id="msg_assistant_seed_1",
+        role="assistant",
+        content="已记录产品理解，并形成第一批客户假设。",
+    )
+    user_two = V3SandboxMessage(
+        id="msg_user_seed_2",
+        role="user",
+        content="纠正一下，不是找 HR 或培训负责人，是找老板本人。",
+    )
+    assistant_two = V3SandboxMessage(
+        id="msg_assistant_seed_2",
+        role="assistant",
+        content="已将客户画像从 HR/培训负责人纠正为老板本人，并补充首轮访谈策略。",
+    )
+    core_blocks = default_core_memory_blocks()
+    core_product_before = core_blocks["product"].value
+    core_product_after = "产品是面向苏州小企业老板的线下销售管理培训，主要交付形式是线下课。"
+    core_ci_before = core_blocks["customer_intelligence"].value
+    core_ci_after_one = "假设：第一批客户可能优先找 HR 或培训负责人验证培训需求。"
+    core_ci_after_two = "确认：第一批客户应优先找小企业老板本人，而不是 HR 或培训负责人。"
+    core_strategy_before = core_blocks["sales_strategy"].value
+    core_strategy_after = "先围绕老板本人设计首轮访谈，验证业绩增长、团队管理和获客转化痛点。"
+    core_blocks["product"] = core_blocks["product"].model_copy(
+        update={"value": core_product_after, "updated_at": utc_now()}
+    )
+    core_blocks["customer_intelligence"] = core_blocks["customer_intelligence"].model_copy(
+        update={"value": core_ci_after_two, "updated_at": utc_now()}
+    )
+    core_blocks["sales_strategy"] = core_blocks["sales_strategy"].model_copy(
+        update={"value": core_strategy_after, "updated_at": utc_now()}
+    )
+    return V3SandboxSession(
+        id=session_id,
+        title="Seed: sales training correction",
+        core_memory_blocks=core_blocks,
+        messages=[user_one, assistant_one, user_two, assistant_two],
+        trace=[
+            V3SandboxTraceEvent(
+                id="trace_seed_1",
+                session_id=session_id,
+                turn_id="turn_seed_1",
+                event_type="v3_sandbox_demo_seed",
+                runtime_metadata={"mode": "deterministic_seed", "scenario": "sales_training_correction"},
+                tool_events=[
+                    CoreMemoryToolEvent(
+                        id="tool_seed_1_product",
+                        tool_call_id="call_seed_1_product",
+                        tool_name="core_memory_append",
+                        arguments={"label": "product", "content": core_product_after},
+                        status="applied",
+                        result={"ok": True, "label": "product", "operation": "append"},
+                        block_label="product",
+                        before_value=core_product_before,
+                        after_value=core_product_after,
+                    ),
+                    CoreMemoryToolEvent(
+                        id="tool_seed_1_customer_intelligence",
+                        tool_call_id="call_seed_1_customer_intelligence",
+                        tool_name="core_memory_append",
+                        arguments={"label": "customer_intelligence", "content": core_ci_after_one},
+                        status="applied",
+                        result={"ok": True, "label": "customer_intelligence", "operation": "append"},
+                        block_label="customer_intelligence",
+                        before_value=core_ci_before,
+                        after_value=core_ci_after_one,
+                    ),
+                    CoreMemoryToolEvent(
+                        id="tool_seed_1_send_message",
+                        tool_call_id="call_seed_1_send_message",
+                        tool_name="send_message",
+                        arguments={"message": assistant_one.content},
+                        status="applied",
+                        result={"ok": True, "message": assistant_one.content},
+                    ),
+                ],
+                parsed_output={"assistant_message": assistant_one.content},
+            ),
+            V3SandboxTraceEvent(
+                id="trace_seed_2",
+                session_id=session_id,
+                turn_id="turn_seed_2",
+                event_type="v3_sandbox_demo_seed",
+                runtime_metadata={"mode": "deterministic_seed", "scenario": "sales_training_correction"},
+                tool_events=[
+                    CoreMemoryToolEvent(
+                        id="tool_seed_2_customer_intelligence",
+                        tool_call_id="call_seed_2_customer_intelligence",
+                        tool_name="memory_replace",
+                        arguments={
+                            "label": "customer_intelligence",
+                            "old_content": core_ci_after_one,
+                            "new_content": core_ci_after_two,
+                        },
+                        status="applied",
+                        result={"ok": True, "label": "customer_intelligence", "operation": "replace"},
+                        block_label="customer_intelligence",
+                        before_value=core_ci_after_one,
+                        after_value=core_ci_after_two,
+                    ),
+                    CoreMemoryToolEvent(
+                        id="tool_seed_2_sales_strategy",
+                        tool_call_id="call_seed_2_sales_strategy",
+                        tool_name="core_memory_append",
+                        arguments={"label": "sales_strategy", "content": core_strategy_after},
+                        status="applied",
+                        result={"ok": True, "label": "sales_strategy", "operation": "append"},
+                        block_label="sales_strategy",
+                        before_value=core_strategy_before,
+                        after_value=core_strategy_after,
+                    ),
+                    CoreMemoryToolEvent(
+                        id="tool_seed_2_send_message",
+                        tool_call_id="call_seed_2_send_message",
+                        tool_name="send_message",
+                        arguments={"message": assistant_two.content},
+                        status="applied",
+                        result={"ok": True, "message": assistant_two.content},
+                    ),
+                ],
+                parsed_output={"assistant_message": assistant_two.content},
+            ),
+        ],
+        updated_at=utc_now(),
+    )

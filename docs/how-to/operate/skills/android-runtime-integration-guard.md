@@ -1,6 +1,6 @@
 # Skill Spec: `android-runtime-integration-guard`
 
-更新时间：2026-04-23
+更新时间：2026-04-29
 
 ## Skill name
 
@@ -21,9 +21,12 @@
 - `AndroidManifest.xml`
 - OpenClaw 启动链路
 - Dashboard URL
+- V3 runtime API / backend URL handling
 - 权限 / exported / intent / deep link 相关逻辑
 
 它应作为高风险 Android 任务的前置判断器，通常先于 `android-build-verify` 触发。
+
+V3 方向不自动开放 Android UI 或 control-entry 重写。OpenClaw、Termux、Dashboard 路径保留为历史/控制入口风险区，只有当前 task 明确要求时才进入实现。
 
 ## Required repo docs
 
@@ -62,6 +65,7 @@
 - 需要修改设备假设
 - 需要改动 Manifest 边界或产品 / backend 合同含义
 - 当前变更已经超出 Android 控制入口职责
+- 未开放 task 就启动 V3 Android implementation
 - 需要依赖最新官方 Android guidance 才能做出守门结论，但尚未查证
 
 ## Bundled resources plan

@@ -1,6 +1,6 @@
 # Skill Spec: `android-logcat-triage`
 
-更新时间：2026-04-23
+更新时间：2026-04-29
 
 ## Skill name
 
@@ -20,6 +20,8 @@
 - `Termux / OpenClaw` 异常
 - Dashboard / 连接异常
 - 需要补充真机运行证据时
+
+V3 方向不自动开放 Android implementation。只有当前 task 涉及 Android runtime behavior、device evidence 或 backend/runtime connection 症状时才使用本 Skill。
 
 通常在 `android-build-verify` 发现运行失败，或 `android-runtime-integration-guard` 要求补更多诊断证据时触发。
 
@@ -60,6 +62,7 @@ Android 文档 / Android Knowledge Base，但这不是默认第一步。
 - WebView / Dashboard
 - `Termux / command dispatch`
 - backend / network / connection
+- V3 runtime API connection symptoms
 
 ## Stop / escalate conditions
 

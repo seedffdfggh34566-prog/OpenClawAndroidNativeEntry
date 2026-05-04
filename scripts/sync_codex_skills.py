@@ -11,6 +11,7 @@ MANAGED_SKILLS = [
     "android-build-verify",
     "android-runtime-integration-guard",
     "android-logcat-triage",
+    "repo-task-bootstrap",
     "task-handoff-sync",
     "backend-task-bootstrap",
     "backend-local-verify",

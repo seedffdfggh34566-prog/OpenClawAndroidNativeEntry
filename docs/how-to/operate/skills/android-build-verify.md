@@ -1,6 +1,6 @@
 # Skill Spec: `android-build-verify`
 
-更新时间：2026-04-23
+更新时间：2026-04-29
 
 ## Skill name
 
@@ -19,6 +19,8 @@
 - 资源改动
 - `AndroidManifest.xml` 改动
 - 与 backend / runtime 集成相关的 Android 改动
+
+V3 方向不自动开放 Android implementation。只有当前 task 明确触及 `app/` 或要求 Android 验证时才使用本 Skill。
 
 如果存在明显高风险运行时集成改动，应先由 `android-runtime-integration-guard` 判定风险，再决定调用本 Skill。
 

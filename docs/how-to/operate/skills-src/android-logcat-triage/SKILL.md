@@ -13,6 +13,8 @@ Read these repo files first:
 2. `app/AGENTS.md`
 3. the current task and related handoff or runbook
 
+V3 direction does not automatically open Android implementation. Use this skill for evidence gathering only when the current task involves Android runtime behavior, device evidence, or backend/runtime connection symptoms.
+
 Use Android Knowledge Base only when log interpretation depends on recent platform behavior, permissions, or system policy.
 
 ## Allowed commands
@@ -36,6 +38,7 @@ Do not run destructive device commands. Do not clear logs unless the user or tas
    - WebView or Dashboard
    - Termux or command dispatch
    - backend, network, or connection
+   - V3 runtime API connection symptoms
 5. State what is supported by evidence and what remains uncertain.
 
 ## What to report

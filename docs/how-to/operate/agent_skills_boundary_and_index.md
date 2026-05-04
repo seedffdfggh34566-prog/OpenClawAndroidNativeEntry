@@ -205,13 +205,15 @@ Notes:
    - 负责视觉变更的截图验证或截图基线检查建议
 4. `task-handoff-sync-check`
    - 负责 task、handoff、README 导航的一致性巡检
-5. `backend-task-bootstrap`
+5. `repo-task-bootstrap`
+   - 负责非 backend 专属的仓库级 task / validation / handoff 模板收口
+6. `backend-task-bootstrap`
    - 负责 backend task / validation / handoff 模板收口
-6. `backend-local-verify`
+7. `backend-local-verify`
    - 负责后端最小测试、启动与 `/health` 验证摘要
-7. `backend-runtime-boundary-guard`
+8. `backend-runtime-boundary-guard`
    - 负责 runtime 与产品后端边界巡检
-8. `backend-api-change-check`
+9. `backend-api-change-check`
    - 负责 API / schema / object 含义漂移守门
 
 这些候选都应被理解为：
@@ -237,13 +239,14 @@ Notes:
 1. `android-build-verify`
 2. `android-runtime-integration-guard`
 3. `android-logcat-triage`
-4. `task-handoff-sync`
-5. `backend-task-bootstrap`
-6. `backend-local-verify`
-7. `backend-api-change-check`
-8. `backend-db-risk-check`
-9. `backend-runtime-boundary-guard`
-10. `backend-contract-sync`
+4. `repo-task-bootstrap`
+5. `task-handoff-sync`
+6. `backend-task-bootstrap`
+7. `backend-local-verify`
+8. `backend-api-change-check`
+9. `backend-db-risk-check`
+10. `backend-runtime-boundary-guard`
+11. `backend-contract-sync`
 
 当前 `android-ui-change-check` 仍只保留在 spec 层，暂不安装为 real skill。
 

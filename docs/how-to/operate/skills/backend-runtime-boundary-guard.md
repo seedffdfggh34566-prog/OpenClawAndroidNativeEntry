@@ -1,76 +1,50 @@
 # Skill Spec: `backend-runtime-boundary-guard`
 
-更新时间：2026-04-23
-
-## Skill name
-
-`backend-runtime-boundary-guard`
+更新时间：2026-04-30
 
 ## Purpose
 
-对产品后端与 runtime 执行层之间的边界做守门，避免 runtime 逻辑越权成为产品真相层，或把产品后端静默改造成 agent runtime 宿主；同时吸收当前阶段轻量 `agent_run_lifecycle` 要求。
+守住 V3 sandbox-first 边界：runtime memory、workspace working state 和 customer intelligence working state 可以开放、自编辑、由 agent 维护；不要把 V3 初期写死为 formal object / PatchDraft / Kernel 流程。
 
 ## When to trigger
 
-适用于以下改动：
-
 - `backend/runtime/*`
-- `backend/api/services.py` 中的 run processing 逻辑
-- `AgentRun`、正式对象写回链路
-- 计划引入 `LangGraph`、`MCP`、observability tracing、tool server 的任务
+- `AgentRun` 或 run-processing flow
+- LangGraph / LangChain runtime 接入
+- memory tools、自编辑 memory、archival memory、memory status labels
+- sandbox working state / customer intelligence working state
+- 试图把 V3 初期重新导向 formal object、PatchDraft 或 Kernel 默认路径
+- MCP、observability、tool server 改变 runtime 权限
 
 ## Required repo docs
 
 - 根 `AGENTS.md`
 - `backend/AGENTS.md`
 - `docs/README.md`
-- `docs/architecture/system-context.md`
-- `docs/architecture/backend/backend-agent-stack-phased-adoption.md`
-- 当前 task
-- 对应 handoff
+- `docs/adr/ADR-009-v3-memory-native-sales-agent-direction.md`
+- `docs/architecture/v3/memory-native-sales-agent.md`
+- 当前 task / handoff
 
-## Allowed tools / commands
-
-- `rg "AgentRun|StubRuntimeAdapter|runtime|output_refs|input_refs" backend docs`
-- `git diff -- backend/runtime backend/api/services.py docs/architecture`
-- `backend/.venv/bin/python -m pytest backend/tests`
-- `backend/.venv/bin/python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8013`
+V1/V2 runtime 文档只作 historical reference。
 
 ## Expected outputs / evidence
 
-输出应至少包括：
-
-- 这次改动是否改变了 product backend / runtime 边界
-- 当前 run 状态口径是否仍保持轻量实现
-- 输入引用、输出引用和错误记录如何变化
-- runtime 仍然只承担什么职责
-- formal object writeback 是否仍经由产品后端
-- 是否需要提升为专门的 runtime adoption task
+- 是否改变 sandbox-first 假设
+- 是否允许 runtime memory 保存 observed / inferred / hypothesis / confirmed / rejected / superseded
+- 是否把 sandbox working state 过早冻结成 formal object / PatchDraft / Kernel 流程
+- 是否误把 LangGraph checkpoint 当成业务 memory 主存
+- 是否需要 dedicated V3 runtime / memory / working-state / customer-intelligence task
 
 ## Stop / escalate conditions
 
-遇到以下情况应停止并升级：
-
-- runtime 直接接管正式对象主真相
-- 准备把 `LangGraph` 扩展成整个后端框架
-- 准备把 `MCP` 扩展成内部服务总线
-- observability、tooling、runtime framework 变更超出当前 task
-
-## Bundled resources plan
-
-本 Skill 后续允许补充：
-
-- runtime boundary checklist
-- `AgentRun` / object writeback verification checklist
-- 轻量 run lifecycle checklist
-
-本阶段不要求脚本实现。
+- V3 sandbox working state 被强制塞进 formal object / PatchDraft / Kernel 流程
+- 因为 memory 是推断或假设就阻止 runtime 认知形成
+- LangGraph checkpoint 成为唯一长期业务 memory 存储
+- 未开放 task 就开始 V3 runtime implementation
+- MCP / DB tools 暴露 unrestricted SQL、生产 CRM 写入、真实外部触达或不可逆导出
 
 ## Non-goals
 
-- 不直接实现新的 runtime 编排
-- 不替代架构决策
-- 不替代 `backend-local-verify`
-- 不自动批准 `LangGraph` 或 `MCP` 接入
-- 不假设 `waiting_for_user`、interrupt/resume、durable checkpoints 已落地
-- 不单独再拆一个 `agent_run_lifecycle` skill，除非真实 runtime 生命周期能力进入 scope
+- 不实现 runtime。
+- 不批准 LangGraph / MCP / DB tool 接入。
+- 不替代 ADR 或 V3 architecture。

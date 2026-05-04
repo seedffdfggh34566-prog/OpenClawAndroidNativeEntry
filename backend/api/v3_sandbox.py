@@ -61,7 +61,6 @@ AllowedV3SandboxModel = Literal[
     "deepseek-v4-flash",
     "kimi-k2.6",
     "glm-5.1",
-    "deepseek-v3.1-terminus",
 ]
 AllowedV3SandboxTimeout = Literal[90, 120, 180, 300]
 AllowedV3SandboxTraceMaxBytes = Literal[80_000, 200_000, 500_000]

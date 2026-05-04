@@ -36,15 +36,15 @@ _MODEL_CONTEXT_WINDOWS: dict[str, int] = {
     "minimax-m2.5": 200_000,
     "minimax-m2.7": 200_000,
     "deepseek-v4-flash": 1_000_000,
-    "deepseek-v3.1-terminus": 128_000,
     "kimi-k2.6": 256_000,
     "glm-5.1": 200_000,
 }
 _DEFAULT_CONTEXT_WINDOW = 128_000
 # Summarize older messages once total in-context tokens cross this fraction
-# of the model context window (Letta uses ~0.9; we leave more headroom for
-# the assistant response and for tiktoken/model tokenizer mismatch).
-_CONTEXT_COMPRESSION_THRESHOLD_RATIO = 0.75
+# of the model context window. Letta uses ~0.9; we align with that now that
+# all allowlisted models have >= 200k windows, leaving headroom for the
+# assistant response and tiktoken/model tokenizer mismatch.
+_CONTEXT_COMPRESSION_THRESHOLD_RATIO = 0.90
 
 
 class V3SandboxRuntimeError(RuntimeError):
@@ -383,6 +383,21 @@ def _continue_or_return(state: V3SandboxGraphState) -> str:
     call_count = sum(1 for message in state.get("tool_messages", []) if message.get("role") == "assistant")
     if call_count >= max_steps:
         raise ValueError("v3_tool_loop_exhausted")
+    # Graceful loop exit if tool_messages have consumed >95 % of context budget,
+    # preventing a mid-loop overflow that would otherwise crash the turn.
+    settings = state.get("settings")
+    if settings:
+        try:
+            import tiktoken
+            encoding = tiktoken.get_encoding("cl100k_base")
+            tool_text = json.dumps(state.get("tool_messages", []), ensure_ascii=False)
+            token_count = len(encoding.encode(tool_text))
+            threshold = int(_context_window_for_model(settings.llm_model) * 0.95)
+            if token_count > threshold:
+                state["runtime_metadata"]["early_return_reason"] = "context_budget_exhausted"
+                return "return"
+        except Exception:
+            pass
     return "continue"
 
 
@@ -437,6 +452,34 @@ def _build_tool_loop_messages(
         cursor_index = _find_cursor_index(historical, session.summary_cursor_message_id)
         after_cursor = historical[cursor_index + 1:] if cursor_index is not None else historical
 
+    # Pressure warning: if total payload exceeds 75 % of context window,
+    # inject a hint recommending incremental memory ops (not memory_rethink).
+    if settings:
+        try:
+            import tiktoken
+            encoding = tiktoken.get_encoding("cl100k_base")
+            _pressure_parts: list[str] = [system_prompt]
+            _existing_summary = _summary_message_for_payload(session)
+            if _existing_summary:
+                _pressure_parts.append(_existing_summary["content"])
+            _pressure_parts.extend(f"[{m.role}] {m.content}" for m in after_cursor)
+            if user_message.content:
+                _pressure_parts.append(user_message.content)
+            _pressure_text = "\n".join(_pressure_parts)
+            _pressure_tokens = len(encoding.encode(_pressure_text))
+            _pressure_threshold = int(_context_window_for_model(settings.llm_model) * 0.75)
+            if _pressure_tokens > _pressure_threshold:
+                system_lines.append("")
+                system_lines.append(
+                    "⚠️ Memory pressure warning: conversation context is approaching the model limit. "
+                    "To avoid losing information, proactively consolidate key facts into core memory using "
+                    "memory_insert, memory_replace, or core_memory_append. Avoid large reorganizations "
+                    "(memory_rethink) under pressure; prefer small, precise edits."
+                )
+                system_prompt = "\n".join(system_lines)
+        except Exception:
+            pass
+
     summary_message = _summary_message_for_payload(session)
     recent_history = after_cursor
 
@@ -450,7 +493,8 @@ def _build_tool_loop_messages(
     user_lines.append(
         "First update core memory when useful, then call send_message. "
         "Use memory_insert or memory_replace for precise corrections when an exact substring anchor is available; "
-        "use core_memory_append for new facts or hypotheses."
+        "use core_memory_append for new facts or hypotheses. "
+        "Use memory_rethink only for large sweeping reorganizations of a memory block; for small precise edits, prefer memory_insert or memory_replace."
     )
     user_lines.append("")
     user_lines.append(f"Current user message:\n{user_message.content}")
@@ -1042,14 +1086,17 @@ def _core_memory_summary(session: V3SandboxSession) -> dict[str, dict[str, Any]]
 def _return_turn(state: V3SandboxGraphState) -> V3SandboxGraphState:
     started = perf_counter()
     session = state["session"]
+    final_message = state.get("final_message", "")
+    if not final_message:
+        final_message = "（Agent 在本轮执行了多个内部操作，但因上下文预算耗尽未发送最终回复。）"
     assistant_message = V3SandboxMessage(
         id=f"msg_assistant_{state['turn_id']}",
         role="assistant",
-        content=state["final_message"],
+        content=final_message,
     )
     session.messages.append(assistant_message)
     parsed_output = {
-        "assistant_message": state["final_message"],
+        "assistant_message": final_message,
         "tool_event_count": len(state.get("tool_events", [])),
     }
     summary_info = state.get("summary_info")

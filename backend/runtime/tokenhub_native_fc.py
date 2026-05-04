@@ -9,7 +9,6 @@ V3_TOKENHUB_NATIVE_FC_MODEL_ALLOWLIST = [
     "deepseek-v4-flash",
     "kimi-k2.6",
     "glm-5.1",
-    "deepseek-v3.1-terminus",
 ]
 V3_TOKENHUB_NATIVE_FC_MODEL_POLICIES: dict[str, dict[str, Any]] = {
     "minimax-m2.7": {
@@ -43,14 +42,6 @@ V3_TOKENHUB_NATIVE_FC_MODEL_POLICIES: dict[str, dict[str, Any]] = {
         "thinking_policy": "none",
         "tool_choice_modes": ["auto", "required", "named", "none"],
         "notes": "Strong comparison lane pending cost/latency evaluation.",
-    },
-    "deepseek-v3.1-terminus": {
-        "native_tool_calling": True,
-        "recommended_role": "legacy_fallback",
-        "temperature": 0,
-        "thinking_policy": "none",
-        "tool_choice_modes": ["auto", "required", "named", "none"],
-        "notes": "Legacy fallback; not preferred as new default.",
     },
 }
 

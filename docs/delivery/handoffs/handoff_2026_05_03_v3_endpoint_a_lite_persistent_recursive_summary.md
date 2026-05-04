@@ -84,18 +84,22 @@
 ## 4. 已知限制
 
 - **Summary 劣化**：每次递归压缩都损失细节；β prompt 工程化只能减缓不能根除。短会话（POC 通常 ≤ 50 turn）下递归深度 0–1，影响小。`summary_recursion_count` 仅作为 observability 字段暴露给 trace，**不触发任何硬刷新动作**；γ 周期性硬刷新机制已决定不实现（前沿框架亦未采用同类机制，且与递归架构冲突）。
+  - 压缩阈值已从 0.75 提升至 **0.90**（Letta 实践对齐），在移除所有 128k 窗口模型后，最低窗口为 200k，90% 阈值仍留有 response headroom。
+  - 新增 **75% memory-pressure warning**：system prompt 中注入中文警告，推荐 agent 使用增量操作（memory_insert / memory_replace / core_memory_append）主动整理 memory，避免在高压下使用 memory_rethink。
+  - 新增 **95% tool-loop guard**：`_continue_or_return` 中通过 tiktoken 精确计数，若 tool_messages 超过 95% 预算则优雅结束 loop，防止 turn 内溢出。
 - **Replay 行为**：~~未显式禁用复用持久化 summary……未单独写 replay 测试~~ **已验证并闭环**。
   - `test_replay_does_not_reuse_persisted_summary`：通过 API replay 创建的新 session，`context_summary` / `summary_cursor_message_id` / `summary_recursion_count` 均从默认值开始，不会继承源 session 的 persisted summary。
   - `test_session_reset_clears_summary_fields`：通过 store 覆盖保存（reset）后，三个 summary 字段回归默认值。
 - **tiktoken 计数偏差**：与 Tencent 模型实际 tokenizer ±20% 偏差，用于阈值判断够用。
 - **summary 写入失败时静默跳过**：若 LLM 返回空或 raise，不持久化、不计数；下一 turn 会再尝试。无 retry 机制。
+- **空 final_message 兜底**：若 tool loop 因 95% guard 或其他原因结束时 agent 未调用 send_message，`_return_turn` 自动填充默认中文消息，避免前端展示空回复。
 
 ## 5. 推荐下一步
 
 候选（需用户显式授权）：
 
 1. ~~γ 周期性硬刷新（每 K 次递归全量重摘要）~~ **已否决**：非行业标准、无法根本解决递归劣化、与递归架构冲突。`summary_recursion_count` 保留为纯 observability。
-2. 60% warn 层（在 system prompt 注入 "memory_pressure: high" 提示）
+2. ~~75% memory-pressure warning + 90% 压缩阈值 + 95% tool-loop guard~~ **已完成**（本 handoff 后续变更）。
 3. ADR-010 §6 #4 archival memory
-4. 从 allowlist 移除 deepseek-v3.2
+4. ~~从 allowlist 移除 deepseek-v3.2~~ **已完成**（v3 docs cleanup task）。
 5. ~~Replay-不复用-summary 的显式测试（覆盖§4 中标记的观察项）~~ **已完成**（`test_replay_does_not_reuse_persisted_summary` + `test_session_reset_clears_summary_fields`）

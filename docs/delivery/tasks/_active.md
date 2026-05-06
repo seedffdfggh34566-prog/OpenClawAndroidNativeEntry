@@ -1,6 +1,6 @@
 # 当前活跃任务
 
-更新时间：2026-05-05
+更新时间：2026-05-06
 
 ## 1. 使用说明
 
@@ -31,6 +31,7 @@
 ### Auto-continue
 
 `yes`（仅限本 task 内部，不得越界自动实现 §5 禁止项）。
+当 Current task 为"暂无"时，本字段保留上次活跃 task 的授权状态；新 task 被授权后自动沿用。
 
 ---
 
@@ -55,6 +56,8 @@
 
 ## 4. Recently completed
 
+- `docs/delivery/tasks/task_2026_05_06_v3_cross_turn_tool_loop_persistence.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_06_v3_cross_turn_tool_loop_persistence.md`（done）
 - `docs/delivery/tasks/task_2026_05_05_v3_smoke_threshold_trigger_scenarios.md`（done）
 - `docs/delivery/handoffs/handoff_2026_05_05_v3_smoke_threshold_trigger_scenarios.md`（done）
 - `docs/delivery/tasks/task_2026_05_04_v3_context_threshold_and_guard.md`（done）

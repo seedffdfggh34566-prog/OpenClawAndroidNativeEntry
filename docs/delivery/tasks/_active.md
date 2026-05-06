@@ -1,6 +1,6 @@
 # 当前活跃任务
 
-更新时间：2026-05-04
+更新时间：2026-05-05
 
 ## 1. 使用说明
 
@@ -22,7 +22,7 @@
 
 ### Current task status
 
-`completed`（上一个已完成的任务见 §4）。
+`completed`
 
 ### Next queued task
 
@@ -30,7 +30,7 @@
 
 ### Auto-continue
 
-`no`。
+`yes`（仅限本 task 内部，不得越界自动实现 §5 禁止项）。
 
 ---
 
@@ -55,8 +55,11 @@
 
 ## 4. Recently completed
 
+- `docs/delivery/tasks/task_2026_05_05_v3_smoke_threshold_trigger_scenarios.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_05_v3_smoke_threshold_trigger_scenarios.md`（done）
 - `docs/delivery/tasks/task_2026_05_04_v3_context_threshold_and_guard.md`（done）
 - `docs/delivery/handoffs/handoff_2026_05_04_v3_context_threshold_and_guard.md`（done）
+- `docs/delivery/handoffs/handoff_2026_05_04_v3_comprehensive_live_smoke.md`（done）
 - `docs/delivery/tasks/task_2026_05_03_v3_a_lite_review_followup.md`（done）
 - `docs/delivery/handoffs/handoff_2026_05_03_v3_a_lite_review_followup.md`（done）
 - `docs/delivery/tasks/task_2026_05_03_v3_endpoint_a_lite_persistent_recursive_summary.md`（done）
@@ -89,10 +92,10 @@
 - `docs/delivery/handoffs/handoff_2026_04_30_v3_web_lab_scaffold.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_v3_sandbox_first_docs_rebaseline.md`（done）
 - `docs/delivery/handoffs/handoff_2026_04_30_v3_sandbox_first_docs_rebaseline.md`（done）
-- `docs/delivery/tasks/task_2026_04_30_agents_product_neutral_entry.md`（done）
-- `docs/delivery/handoffs/handoff_2026_04_30_agents_product_neutral_entry.md`（done）
 - `docs/delivery/tasks/task_2026_04_30_v3_web_dual_entry_direction.md`（done）
 - `docs/delivery/handoffs/handoff_2026_04_30_v3_web_dual_entry_direction.md`（done）
+- `docs/delivery/tasks/task_2026_04_30_agents_product_neutral_entry.md`（done）
+- `docs/delivery/handoffs/handoff_2026_04_30_agents_product_neutral_entry.md`（done）
 - `docs/delivery/tasks/task_2026_04_29_v3_repo_skill_guardrail_refresh.md`（done）
 - `docs/delivery/handoffs/handoff_2026_04_29_v3_repo_skill_guardrail_refresh.md`（done）
 - `docs/delivery/tasks/task_2026_04_29_agents_compression_skill_migration.md`（done）

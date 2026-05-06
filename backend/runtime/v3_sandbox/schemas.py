@@ -106,8 +106,10 @@ class V3SandboxDebugTraceOptions(V3SandboxModel):
 
 class V3SandboxMessage(V3SandboxModel):
     id: str
-    role: Literal["user", "assistant"]
-    content: str = Field(min_length=1)
+    role: Literal["user", "assistant", "tool"]
+    content: str = ""
+    tool_calls: list[dict[str, Any]] | None = None
+    tool_call_id: str | None = None
     created_at: datetime = Field(default_factory=utc_now)
 
 

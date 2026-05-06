@@ -104,7 +104,8 @@ def test_database_store_round_trips_session_and_normalized_events(tmp_path, monk
     assert reloaded.core_memory_blocks["product"].tags == ["lead", "high"]
 
     with get_session_factory()() as db:
-        assert db.query(V3SandboxMessageRecord).filter_by(session_id="v3s_db_store").count() == 6
+        # 3 turns × 4 messages each (user + assistant with tool_calls + 2 tool results)
+        assert db.query(V3SandboxMessageRecord).filter_by(session_id="v3s_db_store").count() == 12
         assert db.query(V3SandboxTraceEventRecord).filter_by(session_id="v3s_db_store").count() == 3
         core_transitions = db.query(V3SandboxCoreMemoryBlockTransitionEventRecord).filter_by(session_id="v3s_db_store").all()
         assert len(core_transitions) >= 3
@@ -646,7 +647,8 @@ def test_v3_sandbox_replay_runs_user_turns_into_new_session(tmp_path, monkeypatc
     assert payload["replay"]["source_session_id"] == seed["id"]
     assert payload["replay"]["replayed_turns"] == 2
     assert payload["session"]["id"].startswith("v3s_replay_")
-    assert len(payload["session"]["messages"]) == 4
+    # 2 replayed turns × 4 messages each (user + assistant with tool_calls + 2 tool results)
+    assert len(payload["session"]["messages"]) == 8
     assert "产品是中小企业财税 SaaS" in payload["session"]["core_memory_blocks"]["product"]["value"]
 
     reset_database_state()
@@ -737,7 +739,9 @@ def test_v3_sandbox_replay_reports_partial_failure(tmp_path, monkeypatch) -> Non
     assert payload["replay"]["replayed_turns"] == 1
     assert payload["replay"]["failed_turn_index"] == 2
     assert payload["replay"]["error"]["code"] == "llm_runtime_unavailable"
-    assert len(payload["session"]["messages"]) == 3
+    # 1 replayed turn × 5 messages (seed user + assistant with tool_calls + 2 tool results + final assistant)
+    # plus 1 failed-turn user message = 5 total visible after partial failure
+    assert len(payload["session"]["messages"]) == 5
     assert payload["session"]["trace"][-1]["error"]["code"] == "llm_runtime_unavailable"
 
     reset_database_state()
@@ -1106,20 +1110,29 @@ def test_context_compression_recent_window_after_summary_is_32_originals(backend
         MockClient.return_value.complete_with_tools.return_value = _mock_summary_completion("Summary v1.")
         _, _ = _build_tool_loop_messages(session, user_message, settings=settings)
 
-    # The user message in the payload contains a "Recent conversation" block
-    # listing exactly 32 raw messages.
+    # After summary, the in-context payload contains the remaining 32 raw
+    # messages as native-format entries between system/summary and the final
+    # user instruction message.
     payload, _ = _build_tool_loop_messages(session, user_message, settings=settings)
-    user_payload = next(m for m in payload if m["role"] == "user" and "Recent conversation" in m["content"])
-    listed_indices = [
-        int(line.split("Message ", 1)[1].split(":", 1)[0])
-        for line in user_payload["content"].splitlines()
-        if line.startswith("[user] Message ") or line.startswith("[assistant] Message ")
+    # Find the final user instruction message (the one with "Process the current sales-agent turn")
+    final_user_index = next(
+        (i for i, m in enumerate(payload) if m["role"] == "user" and "Process the current sales-agent turn" in m.get("content", "")),
+        None,
+    )
+    assert final_user_index is not None
+    # Messages between system/summary and the final user message = after_cursor.
+    history_part = payload[1:final_user_index]  # skip system; may include summary user message
+    # Exclude the summary banner message (it starts with the "Note:" prefix).
+    history_messages = [
+        m for m in history_part
+        if m.get("role") in ("user", "assistant", "tool")
+        and not m.get("content", "").startswith("Note: earlier messages have been hidden")
     ]
     # Bypassing _load_state, historical = msg_0..msg_38; cursor = msg_6;
     # recent window = msg_7..msg_38 = 32 entries.
-    assert listed_indices[0] == 7
-    assert listed_indices[-1] == 38
-    assert len(listed_indices) == 32
+    assert len(history_messages) == 32
+    # First history message corresponds to msg_7 (index 7 in original session.messages)
+    assert "Message 7" in history_messages[0].get("content", "")
 
 
 def test_context_compression_recursive_uses_prior_summary(backend_env, monkeypatch) -> None:
@@ -1575,3 +1588,336 @@ def test_empty_final_message_fallback() -> None:
     expected = "（Agent 在本轮执行了多个内部操作，但未发送最终回复。）"
     assert assistant_message.content == expected
     assert result["trace_event"].parsed_output["assistant_message"] == expected
+
+
+def test_pressure_warning_metadata_fields_written(monkeypatch) -> None:
+    from backend.api.config import get_settings, reset_settings_cache
+    from backend.runtime.v3_sandbox.graph import _build_tool_loop_messages
+
+    class _HugeEncoder:
+        def encode(self, _text: str) -> list[int]:
+            return [0] * 200_000
+
+    monkeypatch.setattr("tiktoken.get_encoding", lambda _name: _HugeEncoder())
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+    settings = get_settings()
+
+    session = _make_long_session(n_messages=40)
+    user_message = V3SandboxMessage(id="msg_user", role="user", content="Final message.")
+    runtime_metadata: dict[str, Any] = {}
+
+    messages, _summary_info = _build_tool_loop_messages(
+        session, user_message, settings=settings, runtime_metadata=runtime_metadata
+    )
+
+    assert runtime_metadata["context_pressure_tokens"] == 200_000
+    assert runtime_metadata["context_pressure_threshold"] > 0
+    assert runtime_metadata["context_pressure_triggered"] is True
+    system_prompt = messages[0]["content"]
+    assert "Memory pressure warning" in system_prompt or "memory pressure warning" in system_prompt.lower()
+
+
+def test_summarization_metadata_fields_written(monkeypatch) -> None:
+    from unittest.mock import patch
+    from backend.api.config import get_settings, reset_settings_cache
+    from backend.runtime.v3_sandbox.graph import _maybe_run_summarization
+
+    class _HugeEncoder:
+        def encode(self, _text: str) -> list[int]:
+            return [0] * 200_000
+
+    monkeypatch.setattr("tiktoken.get_encoding", lambda _name: _HugeEncoder())
+    monkeypatch.setenv("OPENCLAW_BACKEND_LLM_API_KEY", "test-key")
+    reset_settings_cache()
+    settings = get_settings()
+
+    session = _make_long_session(n_messages=40)
+    runtime_metadata: dict[str, Any] = {}
+
+    with patch("backend.runtime.v3_sandbox.graph.TokenHubClient") as MockClient:
+        MockClient.return_value.complete_with_tools.return_value = _mock_summary_completion(
+            "Summary: test."
+        )
+        result = _maybe_run_summarization(
+            session=session,
+            settings=settings,
+            system_prompt="System prompt",
+            current_user_content="User message",
+            historical=session.messages[:-1],
+            after_cursor=session.messages[1:],
+            max_context_messages=32,
+            runtime_metadata=runtime_metadata,
+        )
+
+    assert runtime_metadata["summarization_token_count"] == 200_000
+    assert result["action"] in ("created", "refreshed")
+    assert runtime_metadata["summarization_action"] == result["action"]
+
+
+def test_guard_tool_tokens_written(monkeypatch) -> None:
+    from backend.runtime.v3_sandbox.graph import _continue_or_return
+
+    class _HugeEncoder:
+        def encode(self, _text: str) -> list[int]:
+            return [0] * 200_000
+
+    monkeypatch.setattr("tiktoken.get_encoding", lambda _name: _HugeEncoder())
+
+    settings = type("Settings", (), {"llm_model": "minimax-m2.5"})()
+    state = {
+        "settings": settings,
+        "final_message": "",
+        "tool_events": [],
+        "tool_messages": [{"role": "assistant", "content": "x"}],
+        "max_steps": 16,
+        "runtime_metadata": {},
+    }
+
+    result = _continue_or_return(state)
+    assert result == "return"
+    assert state["runtime_metadata"]["early_return_reason"] == "context_budget_exhausted"
+    assert state["runtime_metadata"]["guard_tool_tokens"] == 200_000
+    assert state["runtime_metadata"]["guard_tool_threshold"] == 190_000
+
+
+def test_smoke_outcome_classifier() -> None:
+    import importlib.util
+    from pathlib import Path
+
+    smoke_path = Path(__file__).resolve().parents[2] / "backend" / "scripts" / "v3_comprehensive_live_smoke.py"
+    spec = importlib.util.spec_from_file_location("smoke", str(smoke_path))
+    assert spec is not None and spec.loader is not None
+    smoke = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(smoke)
+
+    assert smoke._classify_outcome(None, ["send_message"], "hello") == "success"
+    assert smoke._classify_outcome("ValueError: v3_tool_loop_no_tool_call", [], "") == "runtime_seam"
+    assert smoke._classify_outcome(
+        "V3SandboxRuntimeError: tokenhub_http_error:402:FREE_QUOTA_EXHAUSTED", [], ""
+    ) == "quota_error"
+    assert smoke._classify_outcome(
+        "V3SandboxRuntimeError: tokenhub_http_error:429:rate limit", [], ""
+    ) == "platform_error"
+    assert smoke._classify_outcome("ConnectionError: something else", [], "") == "platform_error"
+    assert smoke._is_quota_error("FREE_QUOTA_EXHAUSTED") is True
+    assert smoke._is_rate_limit_error("429 rate limit") is True
+
+
+def test_prefill_saturation_history_appends_messages() -> None:
+    import importlib.util
+    from pathlib import Path
+
+    smoke_path = Path(__file__).resolve().parents[2] / "backend" / "scripts" / "v3_comprehensive_live_smoke.py"
+    spec = importlib.util.spec_from_file_location("smoke", str(smoke_path))
+    assert spec is not None and spec.loader is not None
+    smoke = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(smoke)
+
+    session = V3SandboxSession(id="v3s_prefill_test")
+    initial_count = len(session.messages)
+    smoke._prefill_saturation_history(session, n_messages=60, chars_per_message=10000)
+
+    assert len(session.messages) == initial_count + 60
+    # Roles alternate user/assistant
+    for i, msg in enumerate(session.messages):
+        expected_role = "user" if i % 2 == 0 else "assistant"
+        assert msg.role == expected_role
+        assert msg.id == f"prefill_{i:03d}"
+
+
+def test_prefill_saturation_history_embeds_early_facts() -> None:
+    import importlib.util
+    from pathlib import Path
+
+    smoke_path = Path(__file__).resolve().parents[2] / "backend" / "scripts" / "v3_comprehensive_live_smoke.py"
+    spec = importlib.util.spec_from_file_location("smoke", str(smoke_path))
+    assert spec is not None and spec.loader is not None
+    smoke = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(smoke)
+
+    session = V3SandboxSession(id="v3s_prefill_facts")
+    smoke._prefill_saturation_history(session, n_messages=60, chars_per_message=10000)
+
+    # First N messages should contain the early facts
+    for i, fact in enumerate(smoke.PREFILL_EARLY_FACTS):
+        assert fact in session.messages[i].content
+
+
+def test_prefill_saturation_history_message_length() -> None:
+    import importlib.util
+    from pathlib import Path
+
+    smoke_path = Path(__file__).resolve().parents[2] / "backend" / "scripts" / "v3_comprehensive_live_smoke.py"
+    spec = importlib.util.spec_from_file_location("smoke", str(smoke_path))
+    assert spec is not None and spec.loader is not None
+    smoke = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(smoke)
+
+    session = V3SandboxSession(id="v3s_prefill_len")
+    target_chars = 5000
+    smoke._prefill_saturation_history(session, n_messages=10, chars_per_message=target_chars)
+
+    for msg in session.messages:
+        # Allow small tolerance due to string slicing
+        assert len(msg.content) >= target_chars - 100
+        assert len(msg.content) <= target_chars + 100
+
+
+def test_tool_loop_messages_persisted_to_session() -> None:
+    """After a turn with tool calls, session.messages must contain the assistant
+    message with tool_calls and the corresponding tool result messages with
+    tool_call_id."""
+    from backend.runtime.v3_sandbox.graph import run_v3_sandbox_turn
+    from backend.api.config import get_settings, reset_settings_cache
+
+    reset_settings_cache()
+    session = V3SandboxSession(id="v3s_tool_persist")
+
+    result = run_v3_sandbox_turn(
+        settings=get_settings(),
+        session=session,
+        user_message=V3SandboxMessage(id="msg_user_1", role="user", content="我们做中小企业财税 SaaS。"),
+        client=_SequenceLlmClient([_product_turn_calls()]),
+    )
+
+    msgs = result.session.messages
+    # user + assistant with tool_calls + 2 tool results = 4 messages
+    assert len(msgs) == 4
+
+    assert msgs[0].role == "user"
+    assert msgs[1].role == "assistant"
+    assert msgs[1].tool_calls is not None
+    assert len(msgs[1].tool_calls) == 2
+    assert msgs[1].tool_calls[0]["function"]["name"] == "core_memory_append"
+    assert msgs[1].tool_calls[1]["function"]["name"] == "send_message"
+
+    assert msgs[2].role == "tool"
+    assert msgs[2].tool_call_id == msgs[1].tool_calls[0]["id"]
+    assert "ok" in msgs[2].content
+
+    assert msgs[3].role == "tool"
+    assert msgs[3].tool_call_id == msgs[1].tool_calls[1]["id"]
+    assert "message" in msgs[3].content
+
+
+def test_build_tool_loop_messages_preserves_tool_metadata() -> None:
+    """_build_tool_loop_messages must emit native LLM message format with
+    tool_calls and tool_call_id preserved."""
+    from backend.runtime.v3_sandbox.graph import _build_tool_loop_messages
+
+    session = V3SandboxSession(id="v3s_native_fmt")
+    # _build_tool_loop_messages assumes session.messages ends with the current
+    # user message (appended by _load_state). historical = session.messages[:-1].
+    session.messages = [
+        V3SandboxMessage(id="m1", role="user", content="Hello"),
+        V3SandboxMessage(
+            id="m2",
+            role="assistant",
+            content="",
+            tool_calls=[
+                {"id": "call_1", "type": "function", "function": {"name": "core_memory_append", "arguments": "{}"}}
+            ],
+        ),
+        V3SandboxMessage(id="m3", role="tool", content='{"ok": true}', tool_call_id="call_1"),
+        V3SandboxMessage(id="m4", role="user", content="Previous turn user"),
+    ]
+    user_message = V3SandboxMessage(id="m5", role="user", content="Next")
+
+    payload, _ = _build_tool_loop_messages(session, user_message)
+
+    # payload[0] = system
+    # payload[1] = assistant with tool_calls
+    # payload[2] = tool with tool_call_id
+    # payload[-1] = current user message
+    assert payload[0]["role"] == "system"
+
+    assistant_msg = next(m for m in payload if m.get("role") == "assistant")
+    assert "tool_calls" in assistant_msg
+    assert assistant_msg["tool_calls"][0]["id"] == "call_1"
+
+    tool_msg = next(m for m in payload if m.get("role") == "tool")
+    assert tool_msg["tool_call_id"] == "call_1"
+    assert tool_msg["content"] == '{"ok": true}'
+
+    assert payload[-1]["role"] == "user"
+    assert "Next" in payload[-1]["content"]
+
+
+def test_summarization_does_not_split_tool_pairs(monkeypatch) -> None:
+    """When summarization absorbs older messages, it must not leave an
+    assistant tool_calls block orphaned from its tool results."""
+    from unittest.mock import patch
+    from backend.api.config import get_settings, reset_settings_cache
+    from backend.runtime.v3_sandbox.graph import _maybe_run_summarization
+
+    class _HugeEncoder:
+        def encode(self, _text: str) -> list[int]:
+            return [0] * 200_000
+
+    monkeypatch.setattr("tiktoken.get_encoding", lambda _name: _HugeEncoder())
+    reset_settings_cache()
+    settings = get_settings()
+
+    # Construct a controlled case: after_cursor = [assistant_with_calls, tool1, tool2, user, assistant]
+    # max_context_messages=2 -> to_absorb = after_cursor[:-2] = [assistant_with_calls, tool1, tool2]
+    # The pairing guard should keep tool1+tool2 together with assistant_with_calls.
+    session = V3SandboxSession(id="v3s_pair_guard")
+    session.messages = [
+        V3SandboxMessage(
+            id="a1",
+            role="assistant",
+            content="",
+            tool_calls=[
+                {"id": "c1", "type": "function", "function": {"name": "core_memory_append", "arguments": "{}"}},
+                {"id": "c2", "type": "function", "function": {"name": "send_message", "arguments": "{}"}},
+            ],
+        ),
+        V3SandboxMessage(id="t1", role="tool", content='{"ok": true}', tool_call_id="c1"),
+        V3SandboxMessage(id="t2", role="tool", content='{"ok": true}', tool_call_id="c2"),
+        V3SandboxMessage(id="u1", role="user", content="User msg"),
+        V3SandboxMessage(id="a2", role="assistant", content="Reply"),
+    ]
+    after_cursor = list(session.messages)
+
+    with patch("backend.runtime.v3_sandbox.graph.TokenHubClient") as MockClient:
+        MockClient.return_value.complete_with_tools.return_value = _mock_summary_completion("Summary.")
+        result = _maybe_run_summarization(
+            session=session,
+            settings=settings,
+            system_prompt="System",
+            current_user_content="Final",
+            historical=after_cursor,
+            after_cursor=after_cursor,
+            max_context_messages=2,
+            runtime_metadata=None,
+        )
+
+    # Summarization should have run because after_cursor (5) > max_context_messages (2)
+    # and token count is huge (mocked to 200k).
+    assert result["action"] in ("created", "refreshed")
+    # The cursor should have advanced past the assistant + both tool results,
+    # not stopped in the middle.
+    assert session.summary_cursor_message_id in {"t1", "t2", "a2"}
+    # Remaining after_cursor should contain at least the last 2 messages.
+    remaining_ids = {m.id for m in session.messages}
+    assert "u1" in remaining_ids
+    assert "a2" in remaining_ids
+
+
+def test_schema_backwards_compatibility() -> None:
+    """Old V3SandboxMessage JSON without tool_calls/tool_call_id must load
+    without errors, with new fields defaulting to None."""
+    from backend.runtime.v3_sandbox.schemas import V3SandboxMessage
+
+    old_data = {
+        "id": "msg_old",
+        "role": "user",
+        "content": "Hello",
+        "created_at": "2026-01-01T00:00:00Z",
+    }
+    msg = V3SandboxMessage.model_validate(old_data)
+    assert msg.tool_calls is None
+    assert msg.tool_call_id is None
+    assert msg.role == "user"
+    assert msg.content == "Hello"

@@ -288,6 +288,33 @@ export async function getCoreMemoryTransitions(sessionId: string): Promise<V3San
   return requestJson(`/api/v3/sandbox/sessions/${sessionId}/core-memory-transitions`);
 }
 
+export type SmokeTurn = {
+  turn: number;
+  user_preview: string;
+  duration_seconds: number;
+  assistant_preview: string;
+  tool_calls: string[];
+  memory_block_lengths: Record<string, number>;
+  memory_block_snapshots: Record<string, string>;
+  context_summary_present: boolean;
+  summary_recursion_count: number;
+  early_return_reason: string | null;
+  token_count: number;
+  prompt_warning: boolean;
+  error: string | null;
+};
+
+export type SmokeStatusResponse = {
+  running: boolean;
+  total_turns: number;
+  completed_turns: number;
+  turns: SmokeTurn[];
+};
+
+export async function getSmokeStatus(): Promise<SmokeStatusResponse> {
+  return requestJson(`/api/v3/sandbox/smoke-status`);
+}
+
 async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...init,

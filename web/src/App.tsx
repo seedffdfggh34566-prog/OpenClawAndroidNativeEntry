@@ -4,6 +4,8 @@ import {
   AlertTriangle,
   Bot,
   Brain,
+  ChevronLeft,
+  ChevronRight,
   Database,
   FlaskConical,
   ListRestart,
@@ -27,10 +29,12 @@ import {
   getCoreMemoryTransitions,
   getRuntimeConfig,
   getSession,
+  getSmokeStatus,
   getStoreStatus,
   getTrace,
   resetRuntimeConfig,
   updateRuntimeConfig,
+  SmokeStatusResponse,
   V3SandboxDebugTraceOptions,
   V3SandboxCoreMemoryTransitionsResponse,
   V3SandboxRuntimeConfig,
@@ -81,6 +85,8 @@ export function App() {
   const [isTraceInspectorOpen, setIsTraceInspectorOpen] = useState(false);
   const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
+  const [smokeStatus, setSmokeStatus] = useState<SmokeStatusResponse | null>(null);
+  const [isSmokeMonitorOpen, setIsSmokeMonitorOpen] = useState(false);
 
   useEffect(() => {
     void checkBackend();
@@ -311,6 +317,10 @@ export function App() {
           <button type="button" className="icon-button" onClick={checkBackend} aria-label="Check backend">
             <RefreshCw size={16} />
           </button>
+          <button type="button" className="secondary-button" onClick={() => setIsSmokeMonitorOpen(true)}>
+            <FlaskConical size={16} />
+            Smoke
+          </button>
           <button type="button" className="secondary-button" onClick={() => setIsSettingsOpen(true)}>
             <Settings size={16} />
             Settings
@@ -419,6 +429,7 @@ export function App() {
           onClose={() => setIsTraceInspectorOpen(false)}
         />
       ) : null}
+      {isSmokeMonitorOpen ? <SmokeMonitor onClose={() => setIsSmokeMonitorOpen(false)} /> : null}
     </main>
   );
 }
@@ -863,6 +874,22 @@ function TraceInspector({
   const selectedDebugEvent =
     selectedTrace?.debug_trace?.events.find((event) => event.node === selectedNode) ?? selectedTrace?.debug_trace?.events[0] ?? null;
 
+  const currentIndex = trace.findIndex((event) => event.id === selectedTrace?.id);
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      const prev = trace[currentIndex - 1];
+      onSelectTrace(prev.id);
+      setSelectedNode(prev.debug_trace?.events[0]?.node ?? null);
+    }
+  };
+  const handleNext = () => {
+    if (currentIndex >= 0 && currentIndex < trace.length - 1) {
+      const next = trace[currentIndex + 1];
+      onSelectTrace(next.id);
+      setSelectedNode(next.debug_trace?.events[0]?.node ?? null);
+    }
+  };
+
   return (
     <div className="trace-inspector-backdrop" role="dialog" aria-modal="true" aria-label="Trace inspector">
       <section className="trace-inspector">
@@ -871,9 +898,17 @@ function TraceInspector({
             <div className="eyebrow">LangGraph Workflow</div>
             <h2>Trace Inspector</h2>
           </div>
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Close trace inspector">
-            <X size={16} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button type="button" className="icon-button" onClick={handlePrevious} disabled={currentIndex <= 0} aria-label="Previous turn">
+              <ChevronLeft size={16} />
+            </button>
+            <button type="button" className="icon-button" onClick={handleNext} disabled={currentIndex < 0 || currentIndex >= trace.length - 1} aria-label="Next turn">
+              <ChevronRight size={16} />
+            </button>
+            <button type="button" className="icon-button" onClick={onClose} aria-label="Close trace inspector">
+              <X size={16} />
+            </button>
+          </div>
         </div>
         <div className="trace-inspector-grid">
           <aside className="trace-sidebar">
@@ -978,6 +1013,94 @@ function TraceInspector({
             )}
           </section>
         </div>
+      </section>
+    </div>
+  );
+}
+
+function SmokeMonitor({ onClose }: { onClose: () => void }) {
+  const [status, setStatus] = useState<SmokeStatusResponse | null>(null);
+  const [expandedTurn, setExpandedTurn] = useState<number | null>(null);
+
+  useEffect(() => {
+    const poll = () => {
+      getSmokeStatus().then(setStatus).catch(() => {});
+    };
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getSignalIcons = (turn: SmokeStatusResponse["turns"][0]) => {
+    const icons: string[] = [];
+    if (turn.error) icons.push("❌");
+    else if (turn.early_return_reason) icons.push("🛑");
+    else if (turn.context_summary_present) icons.push("📦");
+    else if (turn.prompt_warning) icons.push("⚠️");
+    else icons.push("✅");
+    return icons.join(" ");
+  };
+
+  return (
+    <div className="overlay-backdrop" role="dialog" aria-modal="true" aria-label="Smoke monitor">
+      <section className="settings-drawer">
+        <div className="overlay-header">
+          <div>
+            <div className="eyebrow">Live Monitoring</div>
+            <h2>Smoke Test Monitor</h2>
+          </div>
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Close smoke monitor">
+            <X size={16} />
+          </button>
+        </div>
+        {status?.running ? (
+          <div className="settings-content">
+            <div className="status-grid">
+              <div>
+                <span>Progress</span>
+                <strong>{status.completed_turns} / {status.total_turns}</strong>
+              </div>
+              <div>
+                <span>Status</span>
+                <strong>{status.completed_turns >= status.total_turns ? "Completed" : "Running"}</strong>
+              </div>
+            </div>
+            <div className="smoke-turn-list">
+              {status.turns.map((turn) => (
+                <details key={turn.turn} className="smoke-turn-row" open={expandedTurn === turn.turn}>
+                  <summary onClick={() => setExpandedTurn(expandedTurn === turn.turn ? null : turn.turn)}>
+                    <span className="smoke-turn-signals">{getSignalIcons(turn)}</span>
+                    <strong>T{turn.turn}</strong>
+                    <span className="smoke-turn-preview">{turn.user_preview}</span>
+                    <span className="smoke-turn-duration">{turn.duration_seconds}s</span>
+                  </summary>
+                  <div className="smoke-turn-detail">
+                    <p><strong>Assistant:</strong> {turn.assistant_preview}</p>
+                    <p><strong>Tools:</strong> {turn.tool_calls.join(", ") || "none"}</p>
+                    {turn.memory_block_snapshots ? (
+                      <div className="smoke-memory-snapshots">
+                        {Object.entries(turn.memory_block_snapshots).map(([label, value]) => (
+                          <details key={label}>
+                            <summary>{label} ({value.length} chars)</summary>
+                            <pre>{value}</pre>
+                          </details>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="settings-content">
+            <p>No smoke test currently running.</p>
+            <pre style={{ fontSize: 12, background: "#f7faf4", padding: 10, borderRadius: 6 }}>
+OPENCLAW_BACKEND_RUN_LIVE_LLM_SMOKE=1 \
+python backend/scripts/v3_comprehensive_live_smoke.py
+            </pre>
+          </div>
+        )}
       </section>
     </div>
   );

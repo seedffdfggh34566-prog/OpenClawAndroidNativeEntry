@@ -199,7 +199,7 @@ def _load_state(state: V3SandboxGraphState) -> V3SandboxGraphState:
 def _compose_context(state: V3SandboxGraphState) -> V3SandboxGraphState:
     started = perf_counter()
     messages, summary_info = _build_tool_loop_messages(
-        state["session"], state["user_message"], settings=state.get("settings")
+        state["session"], state["user_message"], settings=state.get("settings"), runtime_metadata=state["runtime_metadata"]
     )
     _append_debug_event(
         state.get("debug_trace"),
@@ -280,6 +280,17 @@ def _call_agent_with_tools(state: V3SandboxGraphState, *, client: TokenHubClient
         raise ValueError("v3_tool_loop_no_tool_call")
 
     assistant_message = _assistant_tool_message(completion)
+    # Persist the assistant's tool_calls into session.messages so the next turn
+    # can see what tools were requested.
+    session = state["session"]
+    session.messages.append(
+        V3SandboxMessage(
+            id=f"msg_assistant_{state['turn_id']}_{len(session.messages)}",
+            role="assistant",
+            content=completion.content or "",
+            tool_calls=assistant_message.get("tool_calls"),
+        )
+    )
     event["duration_ms"] = _duration_ms(started)
     event["output"] = _maybe_node_io(
         state,
@@ -295,6 +306,7 @@ def _call_agent_with_tools(state: V3SandboxGraphState, *, client: TokenHubClient
         event["raw_output"] = completion.raw_message or completion.content
     _append_debug_event(state.get("debug_trace"), state["debug_options"], event)
     return {
+        "session": session,
         "raw_content": completion.content,
         "usage": completion.usage,
         "usage_total": usage_total,
@@ -341,6 +353,16 @@ def _execute_tool_calls(state: V3SandboxGraphState) -> V3SandboxGraphState:
                 message = result.get("message")
                 if isinstance(message, str) and message.strip():
                     final_message = message.strip()
+        # Persist tool results into session.messages so the next turn can see outcomes.
+        for tr_msg in tool_result_messages:
+            session.messages.append(
+                V3SandboxMessage(
+                    id=f"msg_tool_{state['turn_id']}_{len(session.messages)}",
+                    role="tool",
+                    content=tr_msg["content"],
+                    tool_call_id=tr_msg["tool_call_id"],
+                )
+            )
     except Exception as exc:
         event["status"] = "error"
         event["duration_ms"] = _duration_ms(started)
@@ -374,6 +396,27 @@ def _execute_tool_calls(state: V3SandboxGraphState) -> V3SandboxGraphState:
 
 
 def _continue_or_return(state: V3SandboxGraphState) -> str:
+    # Record guard metrics on every invocation so observability always sees the
+    # current accumulated tool_messages token count, even when final_message is
+    # already set and we are about to exit normally.
+    settings = state.get("settings")
+    if settings:
+        try:
+            import tiktoken
+            encoding = tiktoken.get_encoding("cl100k_base")
+            tool_text = json.dumps(state.get("tool_messages", []), ensure_ascii=False)
+            token_count = len(encoding.encode(tool_text))
+            threshold = int(_context_window_for_model(settings.llm_model) * 0.95)
+            # Scope: current accumulated tool_messages token count inside this turn's
+            # tool loop (includes tool calls and tool results generated so far).
+            state["runtime_metadata"]["guard_tool_tokens"] = token_count
+            state["runtime_metadata"]["guard_tool_threshold"] = threshold
+            if token_count > threshold:
+                state["runtime_metadata"]["early_return_reason"] = "context_budget_exhausted"
+                return "return"
+        except Exception:
+            pass
+
     if state.get("final_message"):
         return "return"
     tool_events = state.get("tool_events", [])
@@ -383,21 +426,6 @@ def _continue_or_return(state: V3SandboxGraphState) -> str:
     call_count = sum(1 for message in state.get("tool_messages", []) if message.get("role") == "assistant")
     if call_count >= max_steps:
         raise ValueError("v3_tool_loop_exhausted")
-    # Graceful loop exit if tool_messages have consumed >95 % of context budget,
-    # preventing a mid-loop overflow that would otherwise crash the turn.
-    settings = state.get("settings")
-    if settings:
-        try:
-            import tiktoken
-            encoding = tiktoken.get_encoding("cl100k_base")
-            tool_text = json.dumps(state.get("tool_messages", []), ensure_ascii=False)
-            token_count = len(encoding.encode(tool_text))
-            threshold = int(_context_window_for_model(settings.llm_model) * 0.95)
-            if token_count > threshold:
-                state["runtime_metadata"]["early_return_reason"] = "context_budget_exhausted"
-                return "return"
-        except Exception:
-            pass
     return "continue"
 
 
@@ -405,6 +433,7 @@ def _build_tool_loop_messages(
     session: V3SandboxSession,
     user_message: V3SandboxMessage,
     settings: Settings | None = None,
+    runtime_metadata: dict[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     system_lines = [
         "You are OpenClaw V3 Product Sales Agent running in a sandbox.",
@@ -447,6 +476,7 @@ def _build_tool_loop_messages(
             historical=historical,
             after_cursor=after_cursor,
             max_context_messages=max_context_messages,
+            runtime_metadata=runtime_metadata,
         )
         # Re-derive after_cursor in case summarization advanced the cursor
         cursor_index = _find_cursor_index(historical, session.summary_cursor_message_id)
@@ -468,6 +498,13 @@ def _build_tool_loop_messages(
             _pressure_text = "\n".join(_pressure_parts)
             _pressure_tokens = len(encoding.encode(_pressure_text))
             _pressure_threshold = int(_context_window_for_model(settings.llm_model) * 0.75)
+            # Scope: initial payload token count at turn start (system prompt + memory blocks
+            # + existing summary + after_cursor history + current user message). Does NOT
+            # include tool loop messages generated during this turn.
+            if runtime_metadata is not None:
+                runtime_metadata["context_pressure_tokens"] = _pressure_tokens
+                runtime_metadata["context_pressure_threshold"] = _pressure_threshold
+                runtime_metadata["context_pressure_triggered"] = _pressure_tokens > _pressure_threshold
             if _pressure_tokens > _pressure_threshold:
                 system_lines.append("")
                 system_lines.append(
@@ -481,29 +518,42 @@ def _build_tool_loop_messages(
             pass
 
     summary_message = _summary_message_for_payload(session)
-    recent_history = after_cursor
-
-    user_lines: list[str] = []
-    if recent_history:
-        user_lines.append("Recent conversation (oldest first):")
-        for message in recent_history:
-            user_lines.append(f"[{message.role}] {message.content}")
-        user_lines.append("")
-    user_lines.append("Process the current sales-agent turn.")
-    user_lines.append(
-        "First update core memory when useful, then call send_message. "
-        "Use memory_insert or memory_replace for precise corrections when an exact substring anchor is available; "
-        "use core_memory_append for new facts or hypotheses. "
-        "Use memory_rethink only for large sweeping reorganizations of a memory block; for small precise edits, prefer memory_insert or memory_replace."
-    )
-    user_lines.append("")
-    user_lines.append(f"Current user message:\n{user_message.content}")
 
     messages: list[dict[str, Any]] = [
         {"role": "system", "content": system_prompt},
     ]
     if summary_message:
         messages.append(summary_message)
+
+    # Convert after_cursor history to native LLM message format so tool
+    # metadata (tool_calls / tool_call_id) is preserved across turns.
+    for msg in after_cursor:
+        if msg.role == "assistant" and msg.tool_calls:
+            messages.append({
+                "role": "assistant",
+                "content": msg.content,
+                "tool_calls": msg.tool_calls,
+            })
+        elif msg.role == "tool":
+            messages.append({
+                "role": "tool",
+                "tool_call_id": msg.tool_call_id,
+                "content": msg.content,
+            })
+        else:
+            messages.append({"role": msg.role, "content": msg.content})
+
+    user_lines: list[str] = [
+        "Process the current sales-agent turn.",
+        (
+            "First update core memory when useful, then call send_message. "
+            "Use memory_insert or memory_replace for precise corrections when an exact substring anchor is available; "
+            "use core_memory_append for new facts or hypotheses. "
+            "Use memory_rethink only for large sweeping reorganizations of a memory block; for small precise edits, prefer memory_insert or memory_replace."
+        ),
+        "",
+        f"Current user message:\n{user_message.content}",
+    ]
     messages.append({"role": "user", "content": "\n".join(user_lines)})
     return messages, summary_info
 
@@ -547,6 +597,7 @@ def _maybe_run_summarization(
     historical: list[V3SandboxMessage],
     after_cursor: list[V3SandboxMessage],
     max_context_messages: int,
+    runtime_metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Endpoint-A-lite: if total token count of the in-context payload
     crosses the threshold, recursively summarize (existing summary + new
@@ -569,11 +620,15 @@ def _maybe_run_summarization(
         import tiktoken
         encoding = tiktoken.get_encoding("cl100k_base")
     except Exception:
+        if runtime_metadata is not None:
+            runtime_metadata["summarization_action"] = "failed_tiktoken"
         return {"action": "failed_tiktoken"}
 
     # We need at least max_context_messages + 1 after-cursor messages before
     # we can advance the cursor while keeping the recent window intact.
     if len(after_cursor) <= max_context_messages:
+        if runtime_metadata is not None:
+            runtime_metadata["summarization_action"] = "noop_insufficient_messages"
         return {"action": "noop_insufficient_messages"}
 
     # Compute approximate token count of what the LLM would see this turn
@@ -588,14 +643,40 @@ def _maybe_run_summarization(
         payload_parts.append(current_user_content)
     total_text = "\n".join(part for part in payload_parts if part)
     token_count = len(encoding.encode(total_text))
+    # Scope: same as context_pressure_tokens (turn-start payload without tool loop).
+    if runtime_metadata is not None:
+        runtime_metadata["summarization_token_count"] = token_count
     threshold = int(_context_window_for_model(settings.llm_model) * _CONTEXT_COMPRESSION_THRESHOLD_RATIO)
     if token_count < threshold:
+        if runtime_metadata is not None:
+            runtime_metadata["summarization_action"] = "noop_below_threshold"
         return {"action": "noop_below_threshold"}
 
     # Messages to absorb into the summary this turn = everything in
     # after_cursor EXCEPT the most recent max_context_messages entries.
     to_absorb = after_cursor[:-max_context_messages]
+
+    # Pairing safety: if the last absorbed message is an assistant with
+    # tool_calls, we must also absorb the corresponding tool results so the
+    # remaining history never contains an orphaned tool_calls block.
+    if to_absorb and to_absorb[-1].role == "assistant" and to_absorb[-1].tool_calls:
+        call_ids = {tc["id"] for tc in to_absorb[-1].tool_calls}
+        extra: list[V3SandboxMessage] = []
+        reserve_start = len(to_absorb)
+        for msg in after_cursor[reserve_start:]:
+            if msg.role == "tool" and msg.tool_call_id in call_ids:
+                extra.append(msg)
+                call_ids.discard(msg.tool_call_id)
+            elif msg.role == "tool":
+                break
+            else:
+                break
+        if extra:
+            to_absorb = to_absorb + extra
+
     if not to_absorb:
+        if runtime_metadata is not None:
+            runtime_metadata["summarization_action"] = "noop_cursor_at_boundary"
         return {"action": "noop_cursor_at_boundary"}
 
     summary_input_lines: list[str] = []
@@ -604,7 +685,15 @@ def _maybe_run_summarization(
         summary_input_lines.append(session.context_summary)
         summary_input_lines.append("")
     summary_input_lines.append("New messages to merge into the summary (oldest first):")
-    summary_input_lines.extend(f"[{m.role}] {m.content}" for m in to_absorb)
+    for m in to_absorb:
+        if m.role == "assistant" and m.tool_calls:
+            calls_str = "; ".join(
+                f"{tc['function']['name']}({tc['function']['arguments']})"
+                for tc in m.tool_calls
+            )
+            summary_input_lines.append(f"[{m.role}] {m.content or ''} | tool_calls: {calls_str}")
+        else:
+            summary_input_lines.append(f"[{m.role}] {m.content}")
     summary_input = "\n".join(summary_input_lines)
 
     summary_prompt = (
@@ -644,9 +733,13 @@ def _maybe_run_summarization(
         )
         summary = completion.content.strip() if completion.content else ""
         if not summary:
+            if runtime_metadata is not None:
+                runtime_metadata["summarization_action"] = "failed_llm_empty_response"
             return {"action": "failed_llm_empty_response"}
         usage = _normalize_usage(completion.usage)
     except Exception:
+        if runtime_metadata is not None:
+            runtime_metadata["summarization_action"] = "failed_llm_exception"
         return {"action": "failed_llm_exception"}
 
     action = "created" if session.summary_recursion_count == 0 else "refreshed"
@@ -659,6 +752,9 @@ def _maybe_run_summarization(
     # standard, does not fundamentally solve recursive degradation, conflicts
     # with the recursive architecture).
     session.summary_recursion_count += 1
+
+    if runtime_metadata is not None:
+        runtime_metadata["summarization_action"] = action
 
     return {
         "action": action,
@@ -1089,12 +1185,40 @@ def _return_turn(state: V3SandboxGraphState) -> V3SandboxGraphState:
     final_message = state.get("final_message", "")
     if not final_message:
         final_message = "（Agent 在本轮执行了多个内部操作，但未发送最终回复。）"
-    assistant_message = V3SandboxMessage(
-        id=f"msg_assistant_{state['turn_id']}",
-        role="assistant",
-        content=final_message,
-    )
-    session.messages.append(assistant_message)
+    # Find the last assistant message (added by _call_agent_with_tools) and
+    # update its content with the final send_message text. Tool results were
+    # appended after it by _execute_tool_calls, so messages[-1] may be a tool.
+    last_assistant_index: int | None = None
+    for i in range(len(session.messages) - 1, -1, -1):
+        if session.messages[i].role == "assistant":
+            last_assistant_index = i
+            break
+
+    if last_assistant_index is not None:
+        last = session.messages[last_assistant_index]
+        if not last.content.strip():
+            session.messages[last_assistant_index] = V3SandboxMessage(
+                id=last.id,
+                role="assistant",
+                content=final_message,
+                tool_calls=last.tool_calls,
+                created_at=last.created_at,
+            )
+            assistant_message = session.messages[last_assistant_index]
+        else:
+            assistant_message = V3SandboxMessage(
+                id=f"msg_assistant_{state['turn_id']}_final",
+                role="assistant",
+                content=final_message,
+            )
+            session.messages.append(assistant_message)
+    else:
+        assistant_message = V3SandboxMessage(
+            id=f"msg_assistant_{state['turn_id']}_final",
+            role="assistant",
+            content=final_message,
+        )
+        session.messages.append(assistant_message)
     parsed_output = {
         "assistant_message": final_message,
         "tool_event_count": len(state.get("tool_events", [])),

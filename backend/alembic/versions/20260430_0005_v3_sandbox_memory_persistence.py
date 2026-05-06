@@ -42,7 +42,7 @@ def upgrade() -> None:
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("payload_json", _json_payload(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-        sa.CheckConstraint("role in ('user', 'assistant')", name="ck_v3_sandbox_messages_role"),
+        sa.CheckConstraint("role in ('user', 'assistant', 'tool')", name="ck_v3_sandbox_messages_role"),
         sa.ForeignKeyConstraint(
             ["session_id"],
             ["v3_sandbox_sessions.session_id"],

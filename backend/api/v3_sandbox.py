@@ -491,6 +491,29 @@ def replay_session(session_id: str, request: Request):
     return {"session": replay, "replay": report}
 
 
+@router.get("/smoke-status")
+def get_smoke_status():
+    """Read incremental smoke test progress from JSONL written by the CLI script."""
+    import json
+    from pathlib import Path
+
+    jsonl_path = Path(__file__).resolve().parents[2] / "scripts" / "reports" / "current_smoke.jsonl"
+    if not jsonl_path.exists():
+        return {"running": False, "turns": []}
+
+    turns: list[dict[str, Any]] = []
+    try:
+        with open(jsonl_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    turns.append(json.loads(line))
+    except Exception:
+        return {"running": False, "turns": []}
+
+    return {"running": True, "total_turns": 35, "completed_turns": len(turns), "turns": turns}
+
+
 def _sales_training_correction_seed() -> V3SandboxSession:
     session_id = f"v3s_seed_{uuid4().hex[:12]}"
     user_one = V3SandboxMessage(

@@ -70,9 +70,11 @@ V2：
 ## 5. 文档目录
 
 - `product/`：当前产品方向、PRD、状态和 roadmap。
+  - `product/research/`：产品/业务验证型研究（eval、probe、acceptance、milestone closeout）。
 - `adr/`：关键方向和架构决策。
 - `architecture/`：V3 架构入口以及历史 workspace/runtime/data 参考。
 - `reference/`：API contract、examples、schemas、evals。
+- `research/`：实现缺口与源码机制研究。深入外部系统源码或内部实现，分析具体机制差异、定位缺口、为 implementation task 提供证据。与 `product/research/` 的区别见 `docs/research/README.md` §2。
 - `delivery/`：当前 task 入口、历史 task、handoff 和 evidence。
 - `how-to/`：运行、协作、调试和操作手册。
 - `archive/`：历史 OpenClaw 资料。
